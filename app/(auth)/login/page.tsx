@@ -54,6 +54,7 @@ export default function LoginPage() {
           <ul className="mt-2 space-y-1 font-mono">
             <li>admin@yonne.sn / Admin123!</li>
             <li>boutique.plateau@gmail.com / Demo123!</li>
+            <li>livreur.dakar@yonne.sn / Demo123!</li>
           </ul>
         </details>
       </div>
