@@ -39,3 +39,8 @@
   transform: rotate(-45deg);
   border: 2px solid white;
 }
+
+::selection { background: #D4A574; color: #3F2A1F; }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: #E8DFD0; border-radius: 5px; }
+::-webkit-scrollbar-thumb:hover { background: #D4A574; }

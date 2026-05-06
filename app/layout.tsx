@@ -13,7 +13,8 @@ const jetbrains = JetBrains_Mono({ subsets: ["latin"], variable: "--font-jetbrai
 
 export const metadata: Metadata = {
   title: "yonne · livraison intelligente Sénégal",
-  description: "Plateforme SaaS de livraison last-mile pour le Sénégal et l'Afrique de l'Ouest.",
+  description: "Plateforme SaaS de livraison last-mile pour le Sénégal et l'Afrique de l'Ouest. Surpasser Glovo grâce à 10 fonctionnalités sans équivalent.",
+  themeColor: "#FAF7F0",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
