@@ -40,6 +40,21 @@
   border: 2px solid white;
 }
 
+.incoming-pin {
+  background: #15803D;
+  width: 16px; height: 16px; border-radius: 50%;
+  border: 2px solid white;
+  box-shadow: 0 0 0 0 rgba(21,128,61,0.5);
+  animation: pulseEmerald 2s ease-in-out infinite;
+}
+@keyframes pulseEmerald {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(21,128,61,0.5); }
+  50% { box-shadow: 0 0 0 8px rgba(21,128,61,0); }
+}
+
+.sheet-enter  { transform: translateY(100%); }
+.sheet-active { transform: translateY(0); transition: transform 300ms cubic-bezier(0.4,0,0.2,1); }
+
 ::selection { background: #D4A574; color: #3F2A1F; }
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-thumb { background: #E8DFD0; border-radius: 5px; }

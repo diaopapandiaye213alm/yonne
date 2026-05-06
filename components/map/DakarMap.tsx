@@ -17,6 +17,7 @@ interface Props {
   center?: [number, number];
   zoom?: number;
   height?: string;
+  onPinClick?: (pinId: string) => void;
 }
 
 const DAKAR: [number, number] = [14.6928, -17.4467];
@@ -27,14 +28,19 @@ const icons = {
   dest:   divIcon({ className: "", html: '<div class="dest-pin"></div>',   iconSize: [18, 18], iconAnchor: [9, 18] }),
 };
 
-export default function DakarMap({ pins, trail, center = DAKAR, zoom = 12, height = "480px" }: Props) {
+export default function DakarMap({ pins, trail, center = DAKAR, zoom = 12, height = "480px", onPinClick }: Props) {
   const markers = useMemo(() => pins.map((p) => ({ ...p, icon: icons[p.kind] })), [pins]);
   return (
     <div style={{ height }} className="rounded-lg overflow-hidden border border-cream-200 shadow-card">
       <MapContainer center={center} zoom={zoom} style={{ height: "100%", width: "100%" }} scrollWheelZoom>
         <TileLayer attribution='&copy; OpenStreetMap' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
         {markers.map((m) => (
-          <Marker key={m.id} position={[m.lat, m.lng]} icon={m.icon} />
+          <Marker
+            key={m.id}
+            position={[m.lat, m.lng]}
+            icon={m.icon}
+            eventHandlers={onPinClick ? { click: () => onPinClick(m.id) } : {}}
+          />
         ))}
         {trail && (
           <Polyline positions={[trail.from, trail.to]} pathOptions={{ color: "#D4A574", weight: 3, dashArray: "6 6" }} />
