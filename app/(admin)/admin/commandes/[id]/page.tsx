@@ -1,7 +1,9 @@
-import { notFound } from "next/navigation";
+"use client";
+
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { orders } from "@/lib/mock-data/orders";
+import { useOrdersStore } from "@/lib/store/orders";
+import type { OrderStatus } from "@/lib/mock-data/orders";
 import { drivers } from "@/lib/mock-data/drivers";
 import { landmarks } from "@/lib/mock-data/landmarks";
 import { GlovoTimeline } from "@/components/tracking/GlovoTimeline";
@@ -28,9 +30,18 @@ const STATUS_COLORS: Record<string, string> = {
   "livrée":   "bg-emerald-500/20 text-emerald-700",
 };
 
+const NEXT_STATUS: Record<OrderStatus, OrderStatus | null> = {
+  "créée":    "assignée",
+  "assignée": "collecte",
+  "collecte": "en route",
+  "en route": "livrée",
+  "livrée":   null,
+};
+
 export default function CommandeDetailPage({ params }: { params: { id: string } }) {
+  const { orders, updateStatus } = useOrdersStore();
   const order = orders.find(o => o.id === params.id);
-  if (!order) notFound();
+  if (!order) return <div className="p-6 text-ink-500">Commande introuvable.</div>;
 
   const driver   = drivers.find(d => d.id === order.driverId);
   const landmark = landmarks.find(l => l.id === order.landmarkId);
@@ -40,6 +51,8 @@ export default function CommandeDetailPage({ params }: { params: { id: string } 
   const pins = landmark
     ? [{ id: "dest", lat: landmark.lat, lng: landmark.lng, kind: "dest" as const }]
     : [];
+
+  const next = NEXT_STATUS[order.status];
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -99,6 +112,22 @@ export default function CommandeDetailPage({ params }: { params: { id: string } 
           <h2 className="font-semibold text-ink-900 mb-4">Suivi</h2>
           <GlovoTimeline activeStage={STATUS_STAGE[order.status] ?? "created"} />
         </div>
+      </div>
+
+      <div className="flex items-center gap-3">
+        {next && (
+          <button
+            onClick={() => updateStatus(order.id, next)}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-display font-bold transition-colors"
+          >
+            Passer à : <span className="capitalize">{next}</span>
+          </button>
+        )}
+        {!next && order.status === "livrée" && (
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500/10 text-emerald-700 text-sm font-medium">
+            ✓ Commande livrée
+          </div>
+        )}
       </div>
     </div>
   );
