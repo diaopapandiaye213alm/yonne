@@ -30,7 +30,7 @@ const shopNames = [
 export const merchants: Merchant[] = shopNames.map((name, i) => ({
   id: `mch-${String(i + 1).padStart(3, "0")}`,
   name,
-  email: `contact${i + 1}@${name.toLowerCase().replace(/[^a-z]/g, "")}.sn`,
+  email: `contact${i + 1}@${name.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z]/g, "")}.sn`,
   phone: `+221 77 ${String(Math.floor(r(i + 1, 100, 999)))} ${String(Math.floor(r(i + 2, 1000, 9999)))}`,
   city: cities[Math.floor(r(i + 3, 0, cities.length))],
   plan: plans[Math.floor(r(i + 5, 0, plans.length))],

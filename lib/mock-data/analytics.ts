@@ -6,8 +6,8 @@ export const hourlyRevenue: HourlyRevenue[] = Array.from({ length: 24 }, (_, h) 
   const active = h >= 7 && h <= 22;
   return {
     hour: `${String(h).padStart(2, "0")}h`,
-    today:    active ? Math.floor(15_000 + Math.sin((h - 7) * 0.5) * 35_000 + (h * 1234 % 8000)) : 0,
-    lastWeek: active ? Math.floor(12_000 + Math.sin((h - 7) * 0.5) * 30_000 + (h * 987  % 6000)) : 0,
+    today:    active ? Math.floor(40_000 + Math.sin((h - 7) * 0.5) * 35_000 + (h * 1234 % 8000)) : 0,
+    lastWeek: active ? Math.floor(32_000 + Math.sin((h - 7) * 0.5) * 30_000 + (h * 987  % 6000)) : 0,
   };
 });
 
