@@ -7,7 +7,10 @@ import { landmarks } from "@/lib/mock-data/landmarks";
 import { GlovoTimeline } from "@/components/tracking/GlovoTimeline";
 import { ArrowLeft } from "lucide-react";
 
-const DakarMap = dynamic(() => import("@/components/map/DakarMap"), { ssr: false });
+const DakarMap = dynamic(() => import("@/components/map/DakarMap"), {
+  ssr: false,
+  loading: () => <div className="h-[300px] bg-cream-100 animate-pulse rounded-lg" />,
+});
 
 const STATUS_STAGE: Record<string, "created" | "assigned" | "enroute" | "delivered"> = {
   "créée":    "created",
@@ -89,7 +92,7 @@ export default function CommandeDetailPage({ params }: { params: { id: string } 
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="md:col-span-2 bg-white rounded-lg border border-cream-200 shadow-card overflow-hidden">
+        <div className="md:col-span-2 bg-white rounded-lg overflow-hidden">
           <DakarMap pins={pins} center={center} zoom={14} height="300px" />
         </div>
         <div className="bg-white rounded-lg border border-cream-200 shadow-card p-5">
