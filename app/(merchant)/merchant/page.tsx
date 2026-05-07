@@ -11,11 +11,13 @@ const STATUS_COLORS: Record<string, string> = {
   "livrée":   "bg-emerald-500/20 text-emerald-700",
 };
 
+export const dynamic = "force-dynamic";
+
 export default function MerchantAccueilPage() {
   const merchant  = merchants[0];
   const delivered = orders.filter(o => o.status === "livrée").length;
   const tauxLivre = Math.round(delivered / orders.length * 100);
-  const recent    = orders.slice(0, 5);
+  const recent    = [...orders].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5);
 
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-6">
