@@ -29,7 +29,7 @@ export default function LoginPage() {
         return;
       }
       const { redirect } = await res.json();
-      router.push(redirect);
+      router.push(redirect ?? "/");
     } catch {
       setError("Erreur réseau. Réessayez.");
     } finally {
@@ -53,7 +53,7 @@ export default function LoginPage() {
             <Label htmlFor="password">Mot de passe</Label>
             <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
           </div>
-          {error && <p className="text-sm text-red-600">{error}</p>}
+          {error && <p className="text-sm text-danger">{error}</p>}
           <Button type="submit" disabled={loading} className="w-full bg-emerald-500 hover:bg-emerald-600 shadow-glow-emerald">
             {loading ? "Connexion…" : "Se connecter"}
           </Button>
