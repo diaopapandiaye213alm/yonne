@@ -14,9 +14,10 @@ const STEPS = [
 interface Props {
   step: DeliveryStep;
   onAdvance: () => void;
+  disabled?: boolean;
 }
 
-export function DeliveryStepperCard({ step, onAdvance }: Props) {
+export function DeliveryStepperCard({ step, onAdvance, disabled }: Props) {
   return (
     <div className="bg-white rounded-t-xl p-4 space-y-3">
       <div className="space-y-2">
@@ -51,12 +52,18 @@ export function DeliveryStepperCard({ step, onAdvance }: Props) {
         })}
       </div>
 
-      <Button
-        className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-display font-bold mt-2"
-        onClick={onAdvance}
-      >
-        {STEPS[step].action}
-      </Button>
+      {disabled ? (
+        <div className="w-full mt-2 text-center text-sm text-ink-500 py-2 bg-cream-100 rounded-lg">
+          Simulation en cours…
+        </div>
+      ) : (
+        <Button
+          className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-display font-bold mt-2"
+          onClick={onAdvance}
+        >
+          {STEPS[step].action}
+        </Button>
+      )}
     </div>
   );
 }
