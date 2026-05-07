@@ -2,7 +2,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Wordmark } from "@/components/brand/Wordmark";
-import { authenticate } from "@/lib/auth-mock";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,19 +9,32 @@ import { ShieldCheck } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
+  const [email,    setEmail]    = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [error,    setError]    = useState<string | null>(null);
+  const [loading,  setLoading]  = useState(false);
 
-  function submit(e: React.FormEvent) {
+  async function submit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    const account = authenticate(email.trim(), password);
-    if (!account) {
-      setError("Email ou mot de passe invalide.");
-      return;
+    setLoading(true);
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim(), password }),
+      });
+      if (!res.ok) {
+        setError("Email ou mot de passe invalide.");
+        return;
+      }
+      const { redirect } = await res.json();
+      router.push(redirect);
+    } catch {
+      setError("Erreur réseau. Réessayez.");
+    } finally {
+      setLoading(false);
     }
-    router.push(account.redirect);
   }
 
   return (
@@ -41,8 +53,10 @@ export default function LoginPage() {
             <Label htmlFor="password">Mot de passe</Label>
             <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
           </div>
-          {error && <p className="text-sm text-danger">{error}</p>}
-          <Button type="submit" className="w-full bg-emerald-500 hover:bg-emerald-600 shadow-glow-emerald">Se connecter</Button>
+          {error && <p className="text-sm text-red-600">{error}</p>}
+          <Button type="submit" disabled={loading} className="w-full bg-emerald-500 hover:bg-emerald-600 shadow-glow-emerald">
+            {loading ? "Connexion…" : "Se connecter"}
+          </Button>
           <button type="button" className="block w-full text-center text-xs text-ink-500 hover:text-ink-700">Mot de passe oublié ?</button>
         </form>
         <div className="mt-6 flex items-center justify-center gap-2 text-xs text-ink-500">
