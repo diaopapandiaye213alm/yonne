@@ -14,7 +14,7 @@ const DakarMap = dynamic(() => import("@/components/map/DakarMap"), {
   loading: () => <div className="h-[300px] bg-cream-100 animate-pulse rounded-lg" />,
 });
 
-const STATUS_STAGE: Record<string, "created" | "assigned" | "enroute" | "delivered"> = {
+const STATUS_STAGE: Record<OrderStatus, "created" | "assigned" | "enroute" | "delivered"> = {
   "créée":    "created",
   "assignée": "assigned",
   "collecte": "assigned",
@@ -22,7 +22,7 @@ const STATUS_STAGE: Record<string, "created" | "assigned" | "enroute" | "deliver
   "livrée":   "delivered",
 };
 
-const STATUS_COLORS: Record<string, string> = {
+const STATUS_COLORS: Record<OrderStatus, string> = {
   "créée":    "bg-gray-100 text-gray-700",
   "assignée": "bg-blue-100 text-blue-700",
   "collecte": "bg-amber-100 text-amber-700",
@@ -110,7 +110,7 @@ export default function CommandeDetailPage({ params }: { params: { id: string } 
         </div>
         <div className="bg-white rounded-lg border border-cream-200 shadow-card p-5">
           <h2 className="font-semibold text-ink-900 mb-4">Suivi</h2>
-          <GlovoTimeline activeStage={STATUS_STAGE[order.status] ?? "created"} />
+          <GlovoTimeline activeStage={STATUS_STAGE[order.status]} />
         </div>
       </div>
 
