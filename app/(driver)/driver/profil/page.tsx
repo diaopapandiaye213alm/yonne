@@ -1,6 +1,5 @@
 "use client";
 import Image from "next/image";
-import Link from "next/link";
 import { drivers, avatarUrl } from "@/lib/mock-data/drivers";
 import { useDriverStore } from "@/lib/store/driver";
 import { Switch } from "@/components/ui/switch";
@@ -80,10 +79,12 @@ export default function ProfilPage() {
         </div>
       </div>
 
-      <Link href="/login" className="flex items-center gap-2 text-sm text-ink-500 hover:text-ink-900 transition-colors">
-        <LogOut className="w-4 h-4" />
-        Se déconnecter
-      </Link>
+      <form action="/api/auth/logout" method="POST">
+        <button type="submit" className="flex items-center gap-2 text-sm text-ink-500 hover:text-ink-900 transition-colors cursor-pointer">
+          <LogOut className="w-4 h-4" />
+          Se déconnecter
+        </button>
+      </form>
     </div>
   );
 }
