@@ -1,7 +1,7 @@
 "use client";
 import { create } from "zustand";
 
-interface SurgeState {
+export interface SurgeState {
   multiplier: number;
   autoMode: boolean;
   setMultiplier: (v: number) => void;
