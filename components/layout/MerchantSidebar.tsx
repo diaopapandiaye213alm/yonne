@@ -40,7 +40,7 @@ export function MerchantSidebar() {
       </nav>
       <div className="p-3 border-t border-cream-200">
         <form action="/api/auth/logout" method="POST">
-          <button type="submit" className="flex items-center gap-3 px-3 py-2 rounded-md text-sm text-ink-500 hover:bg-cream-100 w-full">
+          <button type="submit" className="flex items-center gap-3 px-3 py-2 rounded-md text-sm text-ink-500 hover:bg-cream-100 w-full text-left cursor-pointer">
             <LogOut className="w-4 h-4" /> Déconnexion
           </button>
         </form>
