@@ -3,7 +3,7 @@ import Link from "next/link";
 import { drivers, Tier } from "@/lib/mock-data/drivers";
 import { orders } from "@/lib/mock-data/orders";
 import { Progress } from "@/components/ui/progress";
-import { ArrowLeft, Star, Bike, Package } from "lucide-react";
+import { ArrowLeft, Star, Bike, Package, Wallet } from "lucide-react";
 
 const TIER_COLORS: Record<Tier, string> = {
   Bronze: "bg-amber-100 text-amber-700 border-amber-200",
@@ -49,10 +49,10 @@ export default function LivreurDetailPage({ params }: { params: { id: string } }
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { label: "Livraisons totales", value: String(driver.ordersToday * 14), icon: Package },
+          { label: "Livraisons totales", value: String(orders.filter(o => o.driverId === driver.id).length), icon: Package },
           { label: "Note moyenne",       value: `${driver.rating} ★`,           icon: Star },
           { label: "Véhicule",           value: driver.vehicle,                  icon: Bike },
-          { label: "Gains aujourd'hui",  value: `${driver.earningsToday.toLocaleString("fr-FR")} F`, icon: Package },
+          { label: "Gains aujourd'hui",  value: `${driver.earningsToday.toLocaleString("fr-FR")} F`, icon: Wallet },
         ].map(({ label, value, icon: Icon }) => (
           <div key={label} className="bg-white rounded-lg border border-cream-200 shadow-card p-4">
             <Icon className="w-4 h-4 text-ink-500 mb-2" />

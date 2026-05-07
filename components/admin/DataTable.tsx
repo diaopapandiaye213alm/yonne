@@ -16,7 +16,7 @@ interface Props<T> {
   pageSize?: number;
 }
 
-export function DataTable<T extends Record<string, unknown>>({ columns, data, onRowClick, pageSize = 20 }: Props<T>) {
+export function DataTable<T extends object>({ columns, data, onRowClick, pageSize = 20 }: Props<T>) {
   const [page, setPage] = useState(0);
   const totalPages = Math.max(1, Math.ceil(data.length / pageSize));
   const slice = data.slice(page * pageSize, (page + 1) * pageSize);
@@ -38,19 +38,22 @@ export function DataTable<T extends Record<string, unknown>>({ columns, data, on
             {slice.length === 0 && (
               <tr><td colSpan={columns.length} className="text-center py-10 text-ink-500 text-sm">Aucun résultat</td></tr>
             )}
-            {slice.map((row, i) => (
+            {slice.map((row, i) => {
+              const r = row as Record<string, unknown>;
+              return (
               <tr
-                key={String(row.id ?? i)}
+                key={String(r.id ?? i)}
                 className={cn("border-t border-cream-100 text-ink-900", onRowClick && "cursor-pointer hover:bg-cream-50 transition-colors")}
                 onClick={() => onRowClick?.(row)}
               >
                 {columns.map(col => (
                   <td key={col.key} className="px-4 py-3 whitespace-nowrap">
-                    {col.render ? col.render(row) : String(row[col.key] ?? "")}
+                    {col.render ? col.render(row) : String(r[col.key] ?? "")}
                   </td>
                 ))}
               </tr>
-            ))}
+              );
+            })}
           </tbody>
         </table>
       </div>
