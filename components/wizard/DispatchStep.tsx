@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useWizard } from "@/lib/store/wizard";
+import { useOrdersStore } from "@/lib/store/orders";
 import { drivers, avatarUrl, type Driver } from "@/lib/mock-data/drivers";
 import { Button } from "@/components/ui/button";
 import { Loader2, Star } from "lucide-react";
@@ -10,8 +11,12 @@ import { Loader2, Star } from "lucide-react";
 export function DispatchStep() {
   const w = useWizard();
   const router = useRouter();
+  const { addOrder } = useOrdersStore();
   const [phase, setPhase] = useState<"dispatching" | "assigned">("dispatching");
   const [assignedDriver, setAssignedDriver] = useState<Driver | null>(null);
+  const [orderId] = useState(
+    () => `YN-2026-${String(20000 + Math.floor(Math.random() * 9999))}`
+  );
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -32,7 +37,23 @@ export function DispatchStep() {
     );
   }
 
-  const orderId = `YN-2026-${String(20000 + Math.floor(Math.random() * 9999))}`;
+  function handleConfirm() {
+    addOrder({
+      id: orderId,
+      driverId: assignedDriver!.id,
+      landmarkId: w.landmarkId ?? "",
+      clientName: w.clientName,
+      clientPhone: w.clientPhone,
+      amount: w.amount,
+      paymentMethod: w.paymentMethod!,
+      insurance: w.insurance,
+      status: "assignée",
+      createdAt: new Date().toISOString(),
+      active: true,
+    });
+    w.reset();
+    router.push(`/merchant/commande/${orderId}`);
+  }
 
   return (
     <div className="max-w-xl mx-auto space-y-6 py-6">
@@ -57,7 +78,7 @@ export function DispatchStep() {
       <Button
         size="lg"
         className="w-full bg-gold-500 hover:bg-gold-600 text-ink-900 font-display font-bold shadow-glow"
-        onClick={() => { w.reset(); router.push(`/merchant/commande/${orderId}`); }}
+        onClick={handleConfirm}
       >
         Voir le suivi
       </Button>
