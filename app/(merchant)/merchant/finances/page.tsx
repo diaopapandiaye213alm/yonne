@@ -6,6 +6,7 @@ import type { PaymentMethod } from "@/lib/mock-data/orders";
 export default function FinancesPage() {
   const merchant       = merchants[0];
   const commissionRate = merchant.plan === "Premium" ? 0.15 : 0.12;
+  const commissionPct  = Math.round(commissionPct);
   const revenuBrut     = merchant.revenueThisMonth;
   const commission     = Math.round(revenuBrut * commissionRate);
   const net            = revenuBrut - commission;
@@ -24,14 +25,14 @@ export default function FinancesPage() {
       <div>
         <h1 className="text-2xl font-display font-bold text-ink-900">Finances</h1>
         <p className="text-sm text-ink-500 mt-1">
-          Plan {merchant.plan} · Commission {commissionRate * 100}%
+          Plan {merchant.plan} · Commission {commissionPct}%
         </p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {[
           { label: "Revenu brut ce mois",              value: `${revenuBrut.toLocaleString("fr-FR")} F`,   icon: TrendingUp },
-          { label: `Commission YONNE (${commissionRate * 100}%)`, value: `${commission.toLocaleString("fr-FR")} F`, icon: Percent },
+          { label: `Commission YONNE (${commissionPct}%)`, value: `${commission.toLocaleString("fr-FR")} F`, icon: Percent },
           { label: "Net marchand",                     value: `${net.toLocaleString("fr-FR")} F`,           icon: Wallet },
         ].map(({ label, value, icon: Icon }) => (
           <div key={label} className="bg-white rounded-lg border border-cream-200 shadow-card p-4">
