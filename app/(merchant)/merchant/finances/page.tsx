@@ -6,7 +6,7 @@ import type { PaymentMethod } from "@/lib/mock-data/orders";
 export default function FinancesPage() {
   const merchant       = merchants[0];
   const commissionRate = merchant.plan === "Premium" ? 0.15 : 0.12;
-  const commissionPct  = Math.round(commissionPct);
+  const commissionPct  = Math.round(commissionRate * 100);
   const revenuBrut     = merchant.revenueThisMonth;
   const commission     = Math.round(revenuBrut * commissionRate);
   const net            = revenuBrut - commission;
