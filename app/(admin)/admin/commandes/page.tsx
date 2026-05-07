@@ -81,10 +81,10 @@ export default function CommandesPage() {
         onFilter={(k, v) => setFilters(prev => ({ ...prev, [k]: v }))}
         onExport={handleExport}
       />
-      <DataTable
+      <DataTable<Order>
         columns={columns}
-        data={filtered as unknown as Record<string, unknown>[]}
-        onRowClick={o => router.push(`/admin/commandes/${(o as unknown as Order).id}`)}
+        data={filtered}
+        onRowClick={o => router.push(`/admin/commandes/${o.id}`)}
         pageSize={20}
       />
     </div>
