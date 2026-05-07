@@ -1,7 +1,7 @@
 "use client";
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { orders } from "@/lib/mock-data/orders";
+import { useOrdersStore } from "@/lib/store/orders";
 import { DataTable, Column } from "@/components/admin/DataTable";
 import { FilterBar, FilterDef } from "@/components/admin/FilterBar";
 import { downloadCsv } from "@/lib/utils/csv";
@@ -27,6 +27,7 @@ const FILTERS: FilterDef[] = [
 ];
 
 export default function MesCommandesPage() {
+  const { orders } = useOrdersStore();
   const router = useRouter();
   const [search,  setSearch]  = useState("");
   const [filters, setFilters] = useState<Record<string, string>>({});
@@ -38,7 +39,7 @@ export default function MesCommandesPage() {
       const matchStatus = !filters.status || o.status === filters.status;
       return matchSearch && matchStatus;
     });
-  }, [search, filters]);
+  }, [orders, search, filters]);
 
   const columns: Column<Order>[] = [
     { key: "id",            label: "ID",       render: o => <span className="font-mono text-xs text-emerald-500">{o.id}</span> },
