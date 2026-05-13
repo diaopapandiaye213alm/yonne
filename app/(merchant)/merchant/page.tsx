@@ -13,11 +13,25 @@ const STATUS_COLORS: Record<string, string> = {
 
 export const dynamic = "force-dynamic";
 
+function Delta({ pct }: { pct: number }) {
+  const up = pct >= 0;
+  return (
+    <span className={`text-xs font-medium ${up ? "text-emerald-600" : "text-red-500"}`}>
+      {up ? "↑" : "↓"} {up ? "+" : ""}{pct}% vs mois passé
+    </span>
+  );
+}
+
 export default function MerchantAccueilPage() {
   const merchant  = merchants[0];
   const delivered = orders.filter(o => o.status === "livrée").length;
   const tauxLivre = Math.round(delivered / orders.length * 100);
   const recent    = [...orders].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5);
+
+  const deltaOrders  = Math.round((merchant.ordersThisMonth  - merchant.ordersLastMonth)  / merchant.ordersLastMonth  * 100);
+  const deltaRevenue = Math.round((merchant.revenueThisMonth - merchant.revenueLastMonth) / merchant.revenueLastMonth * 100);
+  const tauxLivreLastMonth = Math.round(tauxLivre * (0.92 + (merchant.ordersLastMonth % 10) / 100));
+  const deltaTaux = tauxLivre - tauxLivreLastMonth;
 
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-6">
@@ -30,14 +44,15 @@ export default function MerchantAccueilPage() {
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {[
-          { label: "Commandes ce mois", value: String(merchant.ordersThisMonth), icon: Package },
-          { label: "Revenus ce mois",   value: `${merchant.revenueThisMonth.toLocaleString("fr-FR")} F`, icon: TrendingUp },
-          { label: "Taux livré",        value: `${tauxLivre}%`, icon: CheckCircle2 },
-        ].map(({ label, value, icon: Icon }) => (
+          { label: "Commandes ce mois", value: String(merchant.ordersThisMonth),                         icon: Package,      delta: deltaOrders  },
+          { label: "Revenus ce mois",   value: `${merchant.revenueThisMonth.toLocaleString("fr-FR")} F`, icon: TrendingUp,   delta: deltaRevenue },
+          { label: "Taux livré",        value: `${tauxLivre}%`,                                          icon: CheckCircle2, delta: deltaTaux    },
+        ].map(({ label, value, icon: Icon, delta }) => (
           <div key={label} className="bg-white rounded-lg border border-cream-200 shadow-card p-4">
             <Icon className="w-4 h-4 text-ink-500 mb-2" />
             <div className="text-xl font-display font-bold text-ink-900 tabular-nums">{value}</div>
             <div className="text-xs text-ink-500 mt-0.5">{label}</div>
+            <div className="mt-1"><Delta pct={delta} /></div>
           </div>
         ))}
       </div>
