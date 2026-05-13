@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ShieldCheck, CheckCircle2, Loader2 } from "lucide-react";
+import { useT } from "@/lib/i18n";
 
 const features = [
   "147 commandes traitées aujourd'hui",
@@ -15,6 +16,7 @@ const features = [
 
 export default function LoginPage() {
   const router = useRouter();
+  const t = useT();
   const [email,    setEmail]    = useState("");
   const [password, setPassword] = useState("");
   const [error,    setError]    = useState<string | null>(null);
@@ -99,17 +101,17 @@ export default function LoginPage() {
           {/* Logo mobile uniquement */}
           <div className="lg:hidden text-center mb-8">
             <Wordmark size="xl" />
-            <p className="mt-2 text-ink-500 text-sm">Livraison intelligente · Sénégal</p>
+            <p className="mt-2 text-ink-500 text-sm">{t("loginTagline")}</p>
           </div>
 
           <div className="mb-8">
-            <h1 className="text-2xl font-display font-bold text-ink-900">Connexion</h1>
-            <p className="text-ink-500 text-sm mt-1">Accédez à votre espace YONNE</p>
+            <h1 className="text-2xl font-display font-bold text-ink-900">{t("loginTitle")}</h1>
+            <p className="text-ink-500 text-sm mt-1">{t("loginSubtitle")}</p>
           </div>
 
           <form onSubmit={submit} className="space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{t("loginEmail")}</Label>
               <Input
                 id="email" type="email" value={email}
                 onChange={e => setEmail(e.target.value)}
@@ -118,7 +120,7 @@ export default function LoginPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Mot de passe</Label>
+              <Label htmlFor="password">{t("loginPassword")}</Label>
               <Input
                 id="password" type="password" value={password}
                 onChange={e => setPassword(e.target.value)} required
@@ -139,13 +141,13 @@ export default function LoginPage() {
               {loading ? (
                 <span className="flex items-center gap-2">
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  Connexion…
+                  {t("loginLoading")}
                 </span>
-              ) : "Se connecter"}
+              ) : t("loginCta")}
             </Button>
 
             <button type="button" className="block w-full text-center text-xs text-ink-500 hover:text-ink-700 transition-colors">
-              Mot de passe oublié ?
+              {t("loginForgot")}
             </button>
           </form>
 
@@ -155,7 +157,7 @@ export default function LoginPage() {
           </div>
 
           <details className="mt-6 text-xs text-ink-500 bg-white rounded-lg p-3 border border-cream-200 shadow-sm">
-            <summary className="cursor-pointer font-medium text-ink-700">Comptes de démo</summary>
+            <summary className="cursor-pointer font-medium text-ink-700">{t("loginDemoTitle")}</summary>
             <ul className="mt-2 space-y-1 font-mono text-ink-500">
               <li>admin@yonne.sn / Admin123!</li>
               <li>boutique.plateau@gmail.com / Demo123!</li>

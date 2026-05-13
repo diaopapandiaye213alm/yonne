@@ -5,6 +5,7 @@ import { useDriverStore } from "@/lib/store/driver";
 import { Switch } from "@/components/ui/switch";
 import { LogOut, Moon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n";
 
 const demo = drivers[0];
 
@@ -15,6 +16,7 @@ const tierStyle: Record<string, string> = {
 };
 
 export default function ProfilPage() {
+  const t = useT();
   const { online, inPrayer, setOnline, setInPrayer } = useDriverStore();
 
   return (
@@ -48,13 +50,13 @@ export default function ProfilPage() {
 
       <div className="bg-white rounded-lg border border-cream-200 divide-y divide-cream-100">
         <div className="flex items-center justify-between p-4">
-          <span className="text-sm font-medium text-ink-900">En ligne</span>
+          <span className="text-sm font-medium text-ink-900">{t("online")}</span>
           <Switch checked={online} onCheckedChange={setOnline} />
         </div>
         <div className="flex items-center justify-between p-4">
           <div className="flex items-center gap-2">
             <Moon className="w-4 h-4 text-gold-500" />
-            <span className="text-sm font-medium text-ink-900">Mode prière</span>
+            <span className="text-sm font-medium text-ink-900">{t("prayerMode")}</span>
           </div>
           <Switch checked={inPrayer} onCheckedChange={setInPrayer} />
         </div>
