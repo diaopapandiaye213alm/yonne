@@ -47,6 +47,7 @@ const sections: Section[] = [
     titleKey: "sectionOps",
     items: [
       { href: "/admin/groupage",   key: "navGroupage",   icon: GitMerge },
+      { href: "/admin/zones",      key: "navZones",      icon: MapPin },
       { href: "/admin/landmarks",  key: "navLandmarks",  icon: MapPin },
       { href: "/admin/fidelite",   key: "navFidelite",   icon: Trophy },
       { href: "/admin/parrainage", key: "navParrainage", icon: Gift },
