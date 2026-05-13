@@ -9,14 +9,23 @@ interface Props {
   hint?: string;
   spark?: number[];
   highlight?: boolean;
+  accent?: "emerald" | "gold" | "ink";
 }
 
-export function KpiCard({ label, value, delta, hint, spark, highlight }: Props) {
+const accentClasses = {
+  emerald: "bg-emerald-500",
+  gold:    "bg-gold-500",
+  ink:     "bg-ink-500",
+} as const;
+
+export function KpiCard({ label, value, delta, hint, spark, highlight, accent = "emerald" }: Props) {
   return (
     <div className={cn(
-      "bg-white rounded-lg shadow-card p-5 border border-cream-200",
+      "bg-white rounded-lg shadow-card p-5 border border-cream-200 group",
+      "hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200",
       highlight && "ring-2 ring-gold-500 shadow-glow"
     )}>
+      <div className={cn("h-0.5 w-8 rounded-full mb-4", accentClasses[accent])} />
       <div className="text-xs uppercase tracking-wider text-ink-500 font-medium">{label}</div>
       <div className="mt-2 flex items-baseline gap-3">
         <div className="text-2xl font-display font-bold text-ink-900 tabular-nums">{value}</div>
