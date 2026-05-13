@@ -11,6 +11,8 @@ export interface Merchant {
   status: MerchantStatus;
   ordersThisMonth: number;
   revenueThisMonth: number;
+  ordersLastMonth: number;
+  revenueLastMonth: number;
   joinedAt: string;
 }
 
@@ -35,8 +37,10 @@ export const merchants: Merchant[] = shopNames.map((name, i) => ({
   city: cities[Math.floor(r(i + 3, 0, cities.length))],
   plan: plans[Math.floor(r(i + 5, 0, plans.length))],
   status: i < 8 ? "actif" : "suspendu",
-  ordersThisMonth: Math.floor(r(i + 7, 40, 400)),
-  revenueThisMonth: Math.floor(r(i + 9, 200_000, 2_000_000) / 1000) * 1000,
+  ordersThisMonth:  Math.floor(r(i + 7,  40,       400)),
+  revenueThisMonth: Math.floor(r(i + 9,  200_000,  2_000_000) / 1000) * 1000,
+  ordersLastMonth:  Math.floor(r(i + 15, 30,       380)),
+  revenueLastMonth: Math.floor(r(i + 17, 150_000,  1_800_000) / 1000) * 1000,
   joinedAt: new Date(2025, Math.floor(r(i + 11, 0, 12)), Math.floor(r(i + 13, 1, 28)) + 1)
     .toISOString().split("T")[0],
 }));
