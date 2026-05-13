@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useOrdersStore } from "@/lib/store/orders";
@@ -7,7 +8,9 @@ import type { OrderStatus } from "@/lib/mock-data/orders";
 import { drivers } from "@/lib/mock-data/drivers";
 import { landmarks } from "@/lib/mock-data/landmarks";
 import { GlovoTimeline } from "@/components/tracking/GlovoTimeline";
-import { ArrowLeft, ChevronRight, Printer } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { toast } from "sonner";
+import { ArrowLeft, ChevronRight, Printer, UserCheck, Search } from "lucide-react";
 
 const DakarMap = dynamic(() => import("@/components/map/DakarMap"), {
   ssr: false,
@@ -38,10 +41,30 @@ const NEXT_STATUS: Record<OrderStatus, OrderStatus | null> = {
   "livrée":   null,
 };
 
+const onlineDrivers = drivers.filter(d => d.online && !d.inPrayer)
+  .sort((a, b) => b.scoreIA - a.scoreIA);
+
 export default function CommandeDetailPage({ params }: { params: { id: string } }) {
   const { orders, updateStatus } = useOrdersStore();
   const order = orders.find(o => o.id === params.id);
+
+  const [showDispatch,    setShowDispatch]    = useState(false);
+  const [driverSearch,    setDriverSearch]    = useState("");
+  const [selectedDriver,  setSelectedDriver]  = useState<string | null>(null);
+
   if (!order) return <div className="p-6 text-ink-500">Commande introuvable.</div>;
+
+  const filteredDrivers = onlineDrivers.filter(d =>
+    !driverSearch || d.name.toLowerCase().includes(driverSearch.toLowerCase())
+  );
+
+  function confirmDispatch() {
+    if (!selectedDriver) return;
+    const d = drivers.find(dr => dr.id === selectedDriver);
+    toast.success(`Livreur ${d?.name} assigné à ${order!.id}`);
+    setShowDispatch(false);
+    setSelectedDriver(null);
+  }
 
   const driver   = drivers.find(d => d.id === order.driverId);
   const landmark = landmarks.find(l => l.id === order.landmarkId);
@@ -70,6 +93,10 @@ export default function CommandeDetailPage({ params }: { params: { id: string } 
           <button type="button" onClick={() => window.print()}
             className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-cream-200 text-sm text-ink-600 hover:bg-cream-50 transition-colors print:hidden">
             <Printer className="w-4 h-4" /> Bon de livraison
+          </button>
+          <button type="button" onClick={() => setShowDispatch(v => !v)}
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-emerald-300 text-sm text-emerald-700 hover:bg-emerald-50 transition-colors print:hidden">
+            <UserCheck className="w-4 h-4" /> Dispatcher
           </button>
           {next && (
             <button
@@ -126,6 +153,65 @@ export default function CommandeDetailPage({ params }: { params: { id: string } 
           )}
         </div>
       </div>
+
+      {showDispatch && (
+        <div className="bg-white rounded-lg border border-emerald-200 shadow-card p-5 space-y-4 print:hidden animate-fade-in-up">
+          <div className="flex items-center justify-between">
+            <h2 className="font-semibold text-ink-900 flex items-center gap-2">
+              <UserCheck className="w-4 h-4 text-emerald-500" /> Dispatcher un livreur
+            </h2>
+            <span className="text-xs text-ink-500">{onlineDrivers.length} livreurs disponibles</span>
+          </div>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-400" />
+            <input
+              value={driverSearch}
+              onChange={e => setDriverSearch(e.target.value)}
+              placeholder="Rechercher un livreur…"
+              className="w-full pl-9 pr-3 py-2 border border-cream-200 rounded-lg text-sm focus:outline-none focus:border-emerald-400"
+            />
+          </div>
+          <div className="space-y-2 max-h-64 overflow-y-auto">
+            {filteredDrivers.length === 0 && (
+              <p className="text-sm text-ink-500 py-4 text-center">Aucun livreur disponible</p>
+            )}
+            {filteredDrivers.map(d => (
+              <button
+                key={d.id}
+                type="button"
+                onClick={() => setSelectedDriver(prev => prev === d.id ? null : d.id)}
+                className={`w-full flex items-center gap-3 p-3 rounded-lg border transition-colors text-left ${
+                  selectedDriver === d.id
+                    ? "border-emerald-400 bg-emerald-50"
+                    : "border-cream-200 hover:border-emerald-300 hover:bg-cream-50"
+                }`}
+              >
+                <div className="w-9 h-9 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-700 font-bold text-xs shrink-0">
+                  {d.name.split(" ").map((n: string) => n[0]).join("")}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium text-ink-900 text-sm">{d.name}</div>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Progress value={d.scoreIA} className="h-1.5 flex-1" />
+                    <span className="text-xs text-ink-500 tabular-nums w-12 shrink-0">Score {d.scoreIA}</span>
+                  </div>
+                </div>
+                <div className="text-xs text-ink-500 shrink-0">{d.rating} ★</div>
+              </button>
+            ))}
+          </div>
+          <div className="flex justify-end gap-2 pt-1 border-t border-cream-100">
+            <button type="button" onClick={() => { setShowDispatch(false); setSelectedDriver(null); }}
+              className="px-4 py-2 rounded-lg border border-cream-200 text-sm text-ink-600 hover:bg-cream-50 transition-colors">
+              Annuler
+            </button>
+            <button type="button" onClick={confirmDispatch} disabled={!selectedDriver}
+              className="px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-medium transition-colors">
+              Confirmer l&apos;assignation
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 print:hidden">
         <div className="md:col-span-2 bg-white rounded-lg overflow-hidden">

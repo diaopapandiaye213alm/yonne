@@ -1,6 +1,8 @@
 "use client";
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { UserPlus } from "lucide-react";
 import { drivers, Driver, Tier } from "@/lib/mock-data/drivers";
 import { DataTable, Column } from "@/components/admin/DataTable";
 import { FilterBar, FilterDef } from "@/components/admin/FilterBar";
@@ -75,9 +77,15 @@ export default function LivreursPage() {
 
   return (
     <div className="max-w-7xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-2xl font-display font-bold text-ink-900">Livreurs</h1>
-        <p className="text-sm text-ink-500 mt-1">{filtered.length} livreur{filtered.length > 1 ? "s" : ""}</p>
+      <div className="mb-6 flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-display font-bold text-ink-900">Livreurs</h1>
+          <p className="text-sm text-ink-500 mt-1">{filtered.length} livreur{filtered.length > 1 ? "s" : ""}</p>
+        </div>
+        <Link href="/admin/livreurs/nouveau"
+          className="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg px-4 py-2 text-sm font-medium transition-colors">
+          <UserPlus className="w-4 h-4" /> Nouveau livreur
+        </Link>
       </div>
       <FilterBar
         search={search} onSearch={setSearch}
