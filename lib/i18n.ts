@@ -62,6 +62,7 @@ const dict = {
   navParams:        { fr: "Paramètres",        en: "Settings",      wo: "Setal yi" },
   navCatalogue:     { fr: "Catalogue",         en: "Catalogue",     wo: "Liste yi" },
   navClients:       { fr: "Clients",           en: "Clients",       wo: "Jëkkër yi" },
+  navRapport:       { fr: "Rapport mensuel",   en: "Monthly report", wo: "Rapport bi" },
 
   // ── Admin dashboard ──
   dashboardLive:    { fr: "En direct",                         en: "Live",                       wo: "Yoon wii" },
