@@ -6,6 +6,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { QrCode, Download, Copy } from "lucide-react";
 
 export default function ParametresPage() {
   const merchant = merchants[0];
@@ -83,6 +84,42 @@ export default function ParametresPage() {
             </>
           )}
         </ul>
+      </div>
+
+      {/* QR Code boutique */}
+      <div className="bg-white rounded-lg border border-cream-200 shadow-card p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <QrCode className="w-4 h-4 text-ink-700" />
+          <h2 className="font-semibold text-ink-900">QR Code boutique</h2>
+        </div>
+        <p className="text-sm text-ink-500 mb-4">Partagez ce code avec vos clients pour qu'ils puissent passer commande directement via WhatsApp.</p>
+        <div className="flex items-center gap-6">
+          {/* QR placeholder — grid of squares */}
+          <div className="shrink-0 w-28 h-28 bg-ink-900 rounded-lg p-2">
+            <div className="w-full h-full grid grid-cols-7 gap-px">
+              {Array.from({ length: 49 }, (_, i) => (
+                <div key={i} className={`rounded-[1px] ${Math.random() > 0.5 ? "bg-white" : "bg-ink-900"}`} />
+              ))}
+            </div>
+          </div>
+          <div className="flex-1 space-y-3">
+            <div className="font-mono text-xs text-ink-600 bg-cream-50 rounded px-3 py-2 break-all">
+              yonne.sn/m/{merchant.id}
+            </div>
+            <div className="flex gap-2">
+              <button type="button"
+                onClick={() => { navigator.clipboard.writeText(`https://yonne.sn/m/${merchant.id}`).catch(() => {}); toast.success("Lien copié"); }}
+                className="flex items-center gap-1.5 text-xs border border-cream-200 text-ink-600 hover:bg-cream-50 px-3 py-1.5 rounded-lg transition-colors">
+                <Copy className="w-3.5 h-3.5" /> Copier le lien
+              </button>
+              <button type="button"
+                onClick={() => toast.success("QR Code téléchargé (PNG)")}
+                className="flex items-center gap-1.5 text-xs bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-1.5 rounded-lg transition-colors font-medium">
+                <Download className="w-3.5 h-3.5" /> Télécharger
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Notifications */}
