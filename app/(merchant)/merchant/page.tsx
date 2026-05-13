@@ -1,7 +1,9 @@
+"use client";
 import Link from "next/link";
 import { merchants } from "@/lib/mock-data/merchants";
 import { orders } from "@/lib/mock-data/orders";
 import { Package, TrendingUp, CheckCircle2, PlusSquare } from "lucide-react";
+import { useT, useLang } from "@/lib/i18n";
 
 const STATUS_COLORS: Record<string, string> = {
   "créée":    "bg-gray-100 text-gray-700",
@@ -11,18 +13,10 @@ const STATUS_COLORS: Record<string, string> = {
   "livrée":   "bg-emerald-500/20 text-emerald-700",
 };
 
-export const dynamic = "force-dynamic";
-
-function Delta({ pct }: { pct: number }) {
-  const up = pct >= 0;
-  return (
-    <span className={`text-xs font-medium ${up ? "text-emerald-600" : "text-red-500"}`}>
-      {up ? "↑" : "↓"} {up ? "+" : ""}{pct}% vs mois passé
-    </span>
-  );
-}
-
 export default function MerchantAccueilPage() {
+  const t    = useT();
+  const lang = useLang(s => s.lang);
+
   const merchant  = merchants[0];
   const delivered = orders.filter(o => o.status === "livrée").length;
   const tauxLivre = Math.round(delivered / orders.length * 100);
@@ -32,6 +26,17 @@ export default function MerchantAccueilPage() {
   const deltaRevenue = Math.round((merchant.revenueThisMonth - merchant.revenueLastMonth) / merchant.revenueLastMonth * 100);
   const tauxLivreLastMonth = Math.round(tauxLivre * (0.92 + (merchant.ordersLastMonth % 10) / 100));
   const deltaTaux = tauxLivre - tauxLivreLastMonth;
+
+  const dateStr = new Date().toLocaleDateString(lang === "en" ? "en-GB" : "fr-FR", { weekday: "long", day: "numeric", month: "long" });
+
+  function Delta({ pct }: { pct: number }) {
+    const up = pct >= 0;
+    return (
+      <span className={`text-xs font-medium ${up ? "text-emerald-600" : "text-red-500"}`}>
+        {up ? "↑" : "↓"} {up ? "+" : ""}{pct}% {t("vsLastMonth")}
+      </span>
+    );
+  }
 
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-6 animate-fade-in-up">
@@ -51,18 +56,18 @@ export default function MerchantAccueilPage() {
         <div className="relative">
           <div className="flex items-center gap-2 text-emerald-300/60 text-xs font-medium uppercase tracking-widest mb-1">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-live-pulse" />
-            {new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" })}
+            {dateStr}
           </div>
-          <h1 className="text-2xl font-display font-bold text-white">Bonjour, {merchant.name} 👋</h1>
+          <h1 className="text-2xl font-display font-bold text-white">{t("goodMorning")}, {merchant.name} 👋</h1>
           <p className="text-emerald-200/60 text-sm mt-0.5">Plan {merchant.plan} · Commission {merchant.plan === "Premium" ? "12%" : "15%"}</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {[
-          { label: "Commandes ce mois", value: String(merchant.ordersThisMonth),                         icon: Package,      delta: deltaOrders  },
-          { label: "Revenus ce mois",   value: `${merchant.revenueThisMonth.toLocaleString("fr-FR")} F`, icon: TrendingUp,   delta: deltaRevenue },
-          { label: "Taux livré",        value: `${tauxLivre}%`,                                          icon: CheckCircle2, delta: deltaTaux    },
+          { label: t("ordersThisMonth"),  value: String(merchant.ordersThisMonth),                         icon: Package,      delta: deltaOrders  },
+          { label: t("revenueThisMonth"), value: `${merchant.revenueThisMonth.toLocaleString("fr-FR")} F`, icon: TrendingUp,   delta: deltaRevenue },
+          { label: t("deliveryRate"),     value: `${tauxLivre}%`,                                          icon: CheckCircle2, delta: deltaTaux    },
         ].map(({ label, value, icon: Icon, delta }) => (
           <div key={label} className="bg-white rounded-lg border border-cream-200 shadow-card p-4">
             <Icon className="w-4 h-4 text-ink-500 mb-2" />
@@ -78,12 +83,12 @@ export default function MerchantAccueilPage() {
         className="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg py-3 px-6 font-display font-bold transition-colors"
       >
         <PlusSquare className="w-4 h-4" />
-        Nouvelle commande
+        {t("newOrder")}
       </Link>
 
       <div className="bg-white rounded-lg border border-cream-200 shadow-card">
         <div className="px-5 py-4 border-b border-cream-100">
-          <h2 className="font-semibold text-ink-900">Dernières commandes</h2>
+          <h2 className="font-semibold text-ink-900">{t("recentOrders")}</h2>
         </div>
         <div className="divide-y divide-cream-100">
           {recent.map(o => (

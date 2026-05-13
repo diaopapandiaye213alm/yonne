@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import { Wordmark } from "@/components/brand/Wordmark";
 import { cn } from "@/lib/utils";
 import { useT } from "@/lib/i18n";
+import { LangSwitcher } from "@/components/i18n/LangSwitcher";
 import { Home, PlusSquare, ListOrdered, Wallet, Settings, LogOut } from "lucide-react";
 import type { StringKey } from "@/lib/i18n";
 
@@ -43,7 +44,8 @@ export function MerchantSidebar() {
           );
         })}
       </nav>
-      <div className="p-3 border-t border-emerald-800">
+      <div className="p-3 border-t border-emerald-800 space-y-3">
+        <LangSwitcher variant="dark" />
         <form action="/api/auth/logout" method="POST">
           <button
             type="submit"

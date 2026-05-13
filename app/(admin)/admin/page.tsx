@@ -7,10 +7,13 @@ import { drivers } from "@/lib/mock-data/drivers";
 import { activeOrders } from "@/lib/mock-data/orders";
 import { landmarks } from "@/lib/mock-data/landmarks";
 import { useLiveKpis } from "@/lib/hooks/useLiveKpis";
+import { useT, useLang } from "@/lib/i18n";
 import { Sparkles, ChevronRight } from "lucide-react";
 
 export default function AdminHomePage() {
   const kpis = useLiveKpis(28000);
+  const t    = useT();
+  const lang = useLang(s => s.lang);
 
   const onlineDrivers = drivers.filter(d => d.online);
   const driverPins = onlineDrivers.slice(0, 15).map(d => ({ id: d.id, lat: d.lat, lng: d.lng, kind: "driver" as const }));
@@ -19,7 +22,7 @@ export default function AdminHomePage() {
     return { id: o.id, lat: lm.lat, lng: lm.lng, kind: "order" as const };
   });
 
-  const dateStr = new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
+  const dateStr = new Date().toLocaleDateString(lang === "en" ? "en-GB" : "fr-FR", { weekday: "long", day: "numeric", month: "long" });
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto animate-fade-in-up">
@@ -42,11 +45,11 @@ export default function AdminHomePage() {
           <div>
             <div className="flex items-center gap-2 text-emerald-300/70 text-xs font-medium uppercase tracking-widest mb-2">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-live-pulse shrink-0" />
-              En direct
+              {t("dashboardLive")}
             </div>
             <div className="text-2xl font-display font-bold text-white capitalize">{dateStr}</div>
             <div className="mt-1 text-emerald-200/60 text-sm">
-              {kpis.onlineDrivers} livreurs actifs · {kpis.orders} commandes aujourd&apos;hui
+              {kpis.onlineDrivers} {t("driversOnline").toLowerCase()} · {kpis.orders} {t("ordersCount").toLowerCase()}
             </div>
           </div>
 
@@ -55,7 +58,7 @@ export default function AdminHomePage() {
             className="flex items-center gap-2 bg-gold-500/20 hover:bg-gold-500/30 border border-gold-500/40 text-gold-300 hover:text-gold-200 rounded-lg px-4 py-2.5 text-sm font-medium transition-all shrink-0 w-fit"
           >
             <Sparkles className="w-4 h-4" />
-            Tabaski J-7 — Plan d&apos;action prêt
+            {t("tabaskiAlert").split("—")[0].trim()}
             <ChevronRight className="w-4 h-4" />
           </Link>
         </div>
@@ -65,17 +68,17 @@ export default function AdminHomePage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="stagger-1 animate-fade-in-up">
           <KpiCard
-            label="Revenus aujourd'hui"
+            label={t("revenusToday")}
             value={`${kpis.revenue.toLocaleString("fr-FR")} F`}
             delta={{ value: "23 %", direction: "up" }}
-            hint="vs hier"
+            hint={t("vsYesterday")}
             spark={kpis.sparkRevenue}
             accent="emerald"
           />
         </div>
         <div className="stagger-2 animate-fade-in-up">
           <KpiCard
-            label="Commandes"
+            label={t("ordersCount")}
             value={String(kpis.orders)}
             delta={{ value: "12 actives", direction: "up" }}
             spark={kpis.sparkOrders}
@@ -84,7 +87,7 @@ export default function AdminHomePage() {
         </div>
         <div className="stagger-3 animate-fade-in-up">
           <KpiCard
-            label="Livreurs en ligne"
+            label={t("driversOnline")}
             value={`${kpis.onlineDrivers} / 41`}
             hint="3 en pause prière"
             accent="ink"
@@ -92,7 +95,7 @@ export default function AdminHomePage() {
         </div>
         <div className="stagger-4 animate-fade-in-up">
           <KpiCard
-            label="Note moyenne"
+            label={t("avgRating")}
             value={`${kpis.rating.toFixed(1)} ★`}
             hint="89 avis aujourd'hui"
             accent="gold"

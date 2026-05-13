@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Wordmark } from "@/components/brand/Wordmark";
+import { LangSwitcher } from "@/components/i18n/LangSwitcher";
 import { cn } from "@/lib/utils";
 import { useT } from "@/lib/i18n";
 import type { StringKey } from "@/lib/i18n";
@@ -17,7 +18,7 @@ type NavItem = {
   badge?: string;
 } & ({ key: StringKey; label?: never } | { label: string; key?: never });
 
-type Section = { title?: string; items: NavItem[] };
+type Section = { titleKey?: StringKey; items: NavItem[] };
 
 const sections: Section[] = [
   {
@@ -33,36 +34,36 @@ const sections: Section[] = [
     ],
   },
   {
-    title: "Communications",
+    titleKey: "sectionComms",
     items: [
-      { href: "/admin/notifications", label: "Notifications",  icon: Bell },
-      { href: "/admin/sav",           label: "SAV & Incidents", icon: HeadphonesIcon },
-      { href: "/admin/bot",           label: "Bot WhatsApp",   icon: Bot },
+      { href: "/admin/notifications", key: "navNotifications", icon: Bell },
+      { href: "/admin/sav",           key: "navSav",           icon: HeadphonesIcon },
+      { href: "/admin/bot",           key: "navBot",           icon: Bot },
     ],
   },
   {
-    title: "Opérations",
+    titleKey: "sectionOps",
     items: [
-      { href: "/admin/groupage",   label: "Groupage",    icon: GitMerge },
-      { href: "/admin/landmarks",  label: "Landmarks",   icon: MapPin },
-      { href: "/admin/fidelite",   label: "Fidélité",    icon: Trophy },
-      { href: "/admin/parrainage", label: "Parrainage",  icon: Gift },
-      { href: "/admin/tontine",    label: "Tontine",     icon: PiggyBank },
+      { href: "/admin/groupage",   key: "navGroupage",   icon: GitMerge },
+      { href: "/admin/landmarks",  key: "navLandmarks",  icon: MapPin },
+      { href: "/admin/fidelite",   key: "navFidelite",   icon: Trophy },
+      { href: "/admin/parrainage", key: "navParrainage", icon: Gift },
+      { href: "/admin/tontine",    key: "navTontine",    icon: PiggyBank },
     ],
   },
   {
-    title: "Sénégal",
+    titleKey: "sectionSenegal",
     items: [
-      { href: "/admin/priere",   label: "Heures de prière", icon: Moon },
-      { href: "/admin/hivernage", label: "Hivernage",       icon: Umbrella },
-      { href: "/admin/carbone",  label: "Score CO₂",        icon: Leaf },
+      { href: "/admin/priere",   key: "navPriere",   icon: Moon },
+      { href: "/admin/hivernage", key: "navHivernage", icon: Umbrella },
+      { href: "/admin/carbone",  key: "navCarbone",  icon: Leaf },
     ],
   },
   {
-    title: "Système",
+    titleKey: "sectionSystem",
     items: [
-      { href: "/admin/api",      label: "API & Webhooks",   icon: Code2 },
-      { href: "/admin/settings", key: "navSettings",        icon: Settings },
+      { href: "/admin/api",      key: "navApi",      icon: Code2 },
+      { href: "/admin/settings", key: "navSettings", icon: Settings },
     ],
   },
 ];
@@ -80,9 +81,9 @@ export function AdminSidebar() {
       <nav className="flex-1 p-3 space-y-4">
         {sections.map((section, si) => (
           <div key={si}>
-            {section.title && (
+            {section.titleKey && (
               <div className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-widest text-emerald-600/70">
-                {section.title}
+                {t(section.titleKey)}
               </div>
             )}
             <div className="space-y-0.5">
@@ -113,7 +114,8 @@ export function AdminSidebar() {
         ))}
       </nav>
 
-      <div className="p-3 border-t border-emerald-800 shrink-0">
+      <div className="p-3 border-t border-emerald-800 shrink-0 space-y-3">
+        <LangSwitcher variant="dark" />
         <form action="/api/auth/logout" method="POST">
           <button
             type="submit"
