@@ -7,7 +7,7 @@ import type { OrderStatus } from "@/lib/mock-data/orders";
 import { drivers } from "@/lib/mock-data/drivers";
 import { landmarks } from "@/lib/mock-data/landmarks";
 import { GlovoTimeline } from "@/components/tracking/GlovoTimeline";
-import { ArrowLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, ChevronRight, Printer } from "lucide-react";
 
 const DakarMap = dynamic(() => import("@/components/map/DakarMap"), {
   ssr: false,
@@ -66,23 +66,27 @@ export default function CommandeDetailPage({ params }: { params: { id: string } 
             <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[order.status]}`}>{order.status}</span>
           </div>
         </div>
-        <>
+        <div className="flex items-center gap-2">
+          <button type="button" onClick={() => window.print()}
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-cream-200 text-sm text-ink-600 hover:bg-cream-50 transition-colors print:hidden">
+            <Printer className="w-4 h-4" /> Bon de livraison
+          </button>
           {next && (
             <button
               type="button"
               onClick={() => updateStatus(order.id, next)}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-display font-bold transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-display font-bold transition-colors print:hidden"
             >
               Passer à : <span className="capitalize">{next}</span>
               <ChevronRight className="w-4 h-4" />
             </button>
           )}
           {!next && order.status === "livrée" && (
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500/10 text-emerald-700 text-sm font-medium">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500/10 text-emerald-700 text-sm font-medium print:hidden">
               ✓ Commande livrée
             </div>
           )}
-        </>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -123,13 +127,68 @@ export default function CommandeDetailPage({ params }: { params: { id: string } 
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 print:hidden">
         <div className="md:col-span-2 bg-white rounded-lg overflow-hidden">
           <DakarMap pins={pins} center={center} zoom={14} height="300px" />
         </div>
         <div className="bg-white rounded-lg border border-cream-200 shadow-card p-5">
           <h2 className="font-semibold text-ink-900 mb-4">Suivi</h2>
           <GlovoTimeline activeStage={STATUS_STAGE[order.status]} />
+        </div>
+      </div>
+
+      {/* Bon de livraison — print only */}
+      <div className="hidden print:block border-2 border-ink-900 rounded-xl p-8 space-y-6 text-ink-900">
+        <div className="flex items-start justify-between border-b border-ink-200 pb-6">
+          <div>
+            <div className="text-2xl font-bold tracking-tight">YONNE</div>
+            <div className="text-xs text-ink-500 mt-1">Livraison intelligente · Dakar, Sénégal</div>
+          </div>
+          <div className="text-right">
+            <div className="text-xs text-ink-400 uppercase tracking-widest">Bon de livraison</div>
+            <div className="text-xl font-bold font-mono mt-1">{order.id}</div>
+            <div className="text-xs text-ink-500 mt-1">{new Date(order.createdAt).toLocaleString("fr-FR")}</div>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-8">
+          <div>
+            <div className="text-xs font-semibold uppercase tracking-wider text-ink-400 mb-2">Client</div>
+            <div className="font-semibold">{order.clientName}</div>
+            <div className="text-sm text-ink-600 mt-1">{order.clientPhone}</div>
+          </div>
+          <div>
+            <div className="text-xs font-semibold uppercase tracking-wider text-ink-400 mb-2">Livreur</div>
+            <div className="font-semibold">{driver?.name ?? "—"}</div>
+            <div className="text-sm text-ink-600 mt-1">{driver?.phone ?? ""}</div>
+          </div>
+          <div>
+            <div className="text-xs font-semibold uppercase tracking-wider text-ink-400 mb-2">Point de livraison</div>
+            <div className="font-semibold">{landmark?.name ?? "—"}</div>
+            <div className="text-sm text-ink-600 mt-1">{landmark?.quartier ?? ""}</div>
+          </div>
+          <div>
+            <div className="text-xs font-semibold uppercase tracking-wider text-ink-400 mb-2">Paiement</div>
+            <div className="font-semibold capitalize">{order.paymentMethod}</div>
+            <div className="text-sm text-ink-600 mt-1">{order.amount.toLocaleString("fr-FR")} F CFA</div>
+            {order.insurance && <div className="text-xs text-ink-500 mt-1">+ Assurance colis 200 F</div>}
+          </div>
+        </div>
+        <div className="border-t border-ink-200 pt-6 grid grid-cols-3 gap-6 text-center">
+          <div>
+            <div className="text-xs text-ink-400 mb-4">Signature client</div>
+            <div className="h-12 border-b border-ink-300" />
+          </div>
+          <div>
+            <div className="text-xs text-ink-400 mb-4">Signature livreur</div>
+            <div className="h-12 border-b border-ink-300" />
+          </div>
+          <div>
+            <div className="text-xs text-ink-400 mb-2">Statut</div>
+            <div className="text-sm font-bold capitalize">{order.status}</div>
+          </div>
+        </div>
+        <div className="text-[10px] text-ink-400 text-center">
+          YONNE · yonne.sn · contact@yonne.sn · +221 78 000 00 00 · Généré le {new Date().toLocaleString("fr-FR")}
         </div>
       </div>
     </div>
