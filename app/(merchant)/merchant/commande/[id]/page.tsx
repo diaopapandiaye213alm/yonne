@@ -62,7 +62,9 @@ export default function TrackingPage({ params }: { params: { id: string } }) {
     { id: "dst", lat: destination.lat, lng: destination.lng, kind: "dest" as const },
   ];
 
-  const waText = encodeURIComponent(`Suivi de ta commande YONNE 🛵 ${typeof window !== "undefined" ? window.location.href : ""}`);
+  const waText = encodeURIComponent(
+    `Suis ta livraison YONNE en temps réel 🛵 ${typeof window !== "undefined" ? `${window.location.origin}/suivi/${params.id}` : ""}`
+  );
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] h-full">
