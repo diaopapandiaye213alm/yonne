@@ -21,7 +21,7 @@ export function NotificationBell({ role }: { role: NotifRole }) {
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
+      if (ref.current && e.target instanceof Node && !ref.current.contains(e.target)) {
         setOpen(false);
       }
     }
@@ -64,10 +64,10 @@ export function NotificationBell({ role }: { role: NotifRole }) {
               {mine.map((n) => {
                 const Icon = ICON_MAP[n.icon];
                 return (
-                  <li
-                    key={n.id}
+                  <li key={n.id}>
+                  <button
                     onClick={() => markRead(n.id)}
-                    className={`flex gap-3 px-4 py-3 cursor-pointer hover:bg-cream-100 border-b border-cream-100 last:border-0 ${
+                    className={`flex gap-3 px-4 py-3 w-full text-left cursor-pointer hover:bg-cream-100 border-b border-cream-100 last:border-0 ${
                       n.read ? "bg-white" : "bg-cream-50"
                     }`}
                   >
@@ -84,6 +84,7 @@ export function NotificationBell({ role }: { role: NotifRole }) {
                     {!n.read && (
                       <div className="shrink-0 self-center w-2 h-2 rounded-full bg-gold-500" />
                     )}
+                  </button>
                   </li>
                 );
               })}
