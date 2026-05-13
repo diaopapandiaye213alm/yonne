@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -25,6 +25,8 @@ export function DataTable<T extends object>({
   const [page, setPage] = useState(0);
   const totalPages = Math.max(1, Math.ceil(data.length / pageSize));
   const slice = data.slice(page * pageSize, (page + 1) * pageSize);
+
+  useEffect(() => { setPage(0); }, [data]);
 
   return (
     <div className="bg-white rounded-lg border border-cream-200 shadow-card overflow-hidden">
@@ -53,7 +55,7 @@ export function DataTable<T extends object>({
                   {onReset && (
                     <button
                       onClick={onReset}
-                      className="mt-3 text-xs text-emerald-600 underline hover:text-emerald-700"
+                      className="mt-3 text-xs text-emerald-500 underline hover:text-emerald-600 transition-colors cursor-pointer"
                     >
                       Réinitialiser les filtres
                     </button>
