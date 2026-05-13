@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { toast } from "sonner";
-import { MessageSquare, CheckCircle2, XCircle, Clock, ToggleLeft, ToggleRight, Send } from "lucide-react";
+import { MessageSquare, CheckCircle2, XCircle, ToggleLeft, ToggleRight, Send } from "lucide-react";
 
 const TEMPLATES = [
   {

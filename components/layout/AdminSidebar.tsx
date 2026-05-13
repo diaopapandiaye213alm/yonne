@@ -7,7 +7,7 @@ import { useT } from "@/lib/i18n";
 import type { StringKey } from "@/lib/i18n";
 import {
   Home, Package, Bike, Store, Wallet, BarChart3, Zap, Sparkles, Settings, LogOut,
-  Bell, HeadphonesIcon, Trophy, MapPin, Umbrella, GitMerge, Users, Gift,
+  Bell, HeadphonesIcon, Trophy, MapPin, Umbrella, GitMerge, Gift,
   PiggyBank, Moon, Leaf, Code2, Bot
 } from "lucide-react";
 
