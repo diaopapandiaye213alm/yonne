@@ -8,6 +8,7 @@ import { activeOrders } from "@/lib/mock-data/orders";
 import { landmarks } from "@/lib/mock-data/landmarks";
 import { useLiveKpis } from "@/lib/hooks/useLiveKpis";
 import { useT, useLang } from "@/lib/i18n";
+import { LiveFeed } from "@/components/admin/LiveFeed";
 import { Sparkles, ChevronRight } from "lucide-react";
 
 export default function AdminHomePage() {
@@ -111,6 +112,9 @@ export default function AdminHomePage() {
         </div>
         <DriverLeaderboard />
       </div>
+
+      {/* ── Live feed ── */}
+      <LiveFeed />
     </div>
   );
 }

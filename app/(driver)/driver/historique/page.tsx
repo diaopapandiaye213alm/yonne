@@ -1,54 +1,120 @@
+"use client";
+
+import { useState, useMemo } from "react";
 import { drivers } from "@/lib/mock-data/drivers";
 import { orders } from "@/lib/mock-data/orders";
-import { History, TrendingUp, Package } from "lucide-react";
+import { History, TrendingUp, Package, Download, Filter } from "lucide-react";
+import { toast } from "sonner";
 
 const demo = drivers[0];
 
-const driverOrders = orders
-  .filter(o => o.status === "livrée")
-  .slice(0, 20);
-
-const totalEarnings = driverOrders.reduce((sum, o) => sum + Math.round(o.amount * 0.25), 0);
-const avgPerOrder   = driverOrders.length > 0 ? Math.round(totalEarnings / driverOrders.length) : 0;
+const MONTHS = ["Jan", "Fév", "Mar", "Avr", "Mai"] as const;
+type Month = typeof MONTHS[number];
+type PayFilter = "Tous" | "wave" | "orange" | "cash";
 
 const weeklyData = [
-  { day: "Lun", orders: 8,  earnings: 12000 },
-  { day: "Mar", orders: 11, earnings: 18500 },
-  { day: "Mer", orders: 14, earnings: 22000 },
-  { day: "Jeu", orders: 9,  earnings: 15000 },
-  { day: "Ven", orders: 17, earnings: 28000 },
-  { day: "Sam", orders: 20, earnings: 31000 },
-  { day: "Dim", orders: demo.ordersToday, earnings: demo.earningsToday },
+  { day: "Lun", earnings: 12000 },
+  { day: "Mar", earnings: 18500 },
+  { day: "Mer", earnings: 22000 },
+  { day: "Jeu", earnings: 15000 },
+  { day: "Ven", earnings: 28000 },
+  { day: "Sam", earnings: 31000 },
+  { day: "Dim", earnings: demo.earningsToday },
 ];
 const maxEarning = Math.max(...weeklyData.map(w => w.earnings));
 
+const PAY_COLORS: Record<string, string> = {
+  wave:   "bg-[#1B96D4]/10 text-[#1B96D4]",
+  orange: "bg-orange-100 text-orange-700",
+  cash:   "bg-cream-200 text-ink-700",
+};
+
+const PAY_LABELS: Record<string, string> = {
+  wave: "Wave", orange: "Orange", cash: "Cash",
+};
+
 export default function HistoriquePage() {
+  const [month,     setMonth]     = useState<Month>("Mai");
+  const [payFilter, setPayFilter] = useState<PayFilter>("Tous");
+
+  const allDeliveries = useMemo(() =>
+    orders
+      .filter(o => o.status === "livrée")
+      .slice(0, 30)
+      .map((o, i) => ({ ...o, gain: Math.round(o.amount * 0.25), month: MONTHS[i % MONTHS.length] })),
+    []
+  );
+
+  const filtered = useMemo(() =>
+    allDeliveries.filter(o =>
+      o.month === month &&
+      (payFilter === "Tous" || o.paymentMethod === payFilter)
+    ),
+    [allDeliveries, month, payFilter]
+  );
+
+  const totalEarnings = filtered.reduce((s, o) => s + o.gain, 0);
+  const avgPerOrder   = filtered.length > 0 ? Math.round(totalEarnings / filtered.length) : 0;
+
+  function exportCsv() {
+    const rows = [
+      ["ID", "Client", "Montant", "Gain", "Paiement", "Date"],
+      ...filtered.map(o => [
+        o.id, o.clientName, o.amount, o.gain, PAY_LABELS[o.paymentMethod] ?? o.paymentMethod,
+        new Date(o.createdAt).toLocaleDateString("fr-FR"),
+      ]),
+    ];
+    const csv  = rows.map(r => r.join(";")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement("a");
+    a.href = url; a.download = `historique-${month}.csv`; a.click();
+    URL.revokeObjectURL(url);
+    toast.success("Export téléchargé");
+  }
+
   return (
     <div className="pb-20 px-4 pt-6 space-y-5">
-      <div>
-        <h1 className="font-display font-bold text-2xl text-ink-900">Historique</h1>
-        <p className="text-xs text-ink-500 mt-0.5">Vos 20 dernières livraisons</p>
+
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="font-display font-bold text-2xl text-ink-900">Historique</h1>
+          <p className="text-xs text-ink-500 mt-0.5">Vos livraisons passées</p>
+        </div>
+        <button type="button" onClick={exportCsv}
+          className="flex items-center gap-1.5 text-xs border border-cream-200 text-ink-700 rounded-lg px-3 py-1.5 hover:bg-cream-100 transition-colors">
+          <Download className="w-3.5 h-3.5" /> Export
+        </button>
+      </div>
+
+      {/* Month tabs */}
+      <div className="flex gap-1.5 overflow-x-auto pb-1">
+        {MONTHS.map(m => (
+          <button key={m} type="button" onClick={() => setMonth(m)}
+            className={`shrink-0 text-xs px-3 py-1.5 rounded-full font-medium transition-colors ${
+              month === m ? "bg-emerald-500 text-white" : "bg-cream-100 text-ink-600 hover:bg-cream-200"
+            }`}>
+            {m}
+          </button>
+        ))}
       </div>
 
       {/* KPI résumé */}
       <div className="grid grid-cols-3 gap-3">
         <div className="bg-white rounded-lg border border-cream-200 p-3 text-center">
           <History className="w-4 h-4 text-ink-500 mx-auto mb-1" />
-          <div className="font-mono font-bold text-xl text-ink-900">{driverOrders.length}</div>
+          <div className="font-mono font-bold text-xl text-ink-900">{filtered.length}</div>
           <div className="text-xs text-ink-500">Livraisons</div>
         </div>
         <div className="bg-white rounded-lg border border-cream-200 p-3 text-center">
           <TrendingUp className="w-4 h-4 text-emerald-500 mx-auto mb-1" />
-          <div className="font-mono font-bold text-lg text-emerald-500">
-            {totalEarnings.toLocaleString("fr-FR")}
-          </div>
+          <div className="font-mono font-bold text-lg text-emerald-500">{totalEarnings.toLocaleString("fr-FR")}</div>
           <div className="text-xs text-ink-500">F total</div>
         </div>
         <div className="bg-white rounded-lg border border-cream-200 p-3 text-center">
           <Package className="w-4 h-4 text-gold-500 mx-auto mb-1" />
-          <div className="font-mono font-bold text-xl text-gold-500">
-            {avgPerOrder.toLocaleString("fr-FR")}
-          </div>
+          <div className="font-mono font-bold text-xl text-gold-500">{avgPerOrder.toLocaleString("fr-FR")}</div>
           <div className="text-xs text-ink-500">F / course</div>
         </div>
       </div>
@@ -69,41 +135,53 @@ export default function HistoriquePage() {
         </div>
       </div>
 
+      {/* Payment filter */}
+      <div className="flex items-center gap-2">
+        <Filter className="w-3.5 h-3.5 text-ink-400 shrink-0" />
+        {(["Tous", "wave", "orange", "cash"] as PayFilter[]).map(p => (
+          <button key={p} type="button" onClick={() => setPayFilter(p)}
+            className={`text-xs px-2.5 py-1 rounded-full font-medium transition-colors ${
+              payFilter === p ? "bg-emerald-500 text-white" : "bg-cream-100 text-ink-600 hover:bg-cream-200"
+            }`}>
+            {PAY_LABELS[p] ?? p}
+          </button>
+        ))}
+      </div>
+
       {/* Liste livraisons */}
       <div className="bg-white rounded-lg border border-cream-200 overflow-hidden">
         <div className="px-4 py-3 border-b border-cream-100 flex items-center justify-between">
-          <h2 className="font-semibold text-ink-900 text-sm">Dernières livraisons</h2>
-          <span className="text-xs text-ink-500">{driverOrders.length} commandes</span>
+          <h2 className="font-semibold text-ink-900 text-sm">Livraisons — {month}</h2>
+          <span className="text-xs text-ink-500">{filtered.length} commandes</span>
         </div>
-        {driverOrders.length === 0 ? (
-          <div className="py-10 text-center text-sm text-ink-500">
-            Aucune livraison enregistrée.
-          </div>
+        {filtered.length === 0 ? (
+          <div className="py-10 text-center text-sm text-ink-500">Aucune livraison pour ce filtre.</div>
         ) : (
           <div className="divide-y divide-cream-100">
-            {driverOrders.map(o => {
-              const gain = Math.round(o.amount * 0.25);
-              return (
-                <div key={o.id} className="px-4 py-3 flex items-center justify-between hover:bg-cream-50 transition-colors">
-                  <div>
-                    <div className="font-mono text-xs text-emerald-500">{o.id}</div>
-                    <div className="text-sm text-ink-700">{o.clientName}</div>
-                    <div className="text-xs text-ink-500">
-                      {new Date(o.createdAt).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="font-mono font-bold text-emerald-500 text-sm">
-                      +{gain.toLocaleString("fr-FR")} F
-                    </div>
-                    <div className="text-xs text-ink-500">{o.paymentMethod}</div>
+            {filtered.map(o => (
+              <div key={o.id} className="px-4 py-3 flex items-center justify-between hover:bg-cream-50 transition-colors">
+                <div>
+                  <div className="font-mono text-xs text-emerald-500">{o.id}</div>
+                  <div className="text-sm text-ink-700">{o.clientName}</div>
+                  <div className="text-xs text-ink-500">
+                    {new Date(o.createdAt).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}
                   </div>
                 </div>
-              );
-            })}
+                <div className="flex items-center gap-2">
+                  <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${PAY_COLORS[o.paymentMethod] ?? "bg-cream-100 text-ink-600"}`}>
+                    {PAY_LABELS[o.paymentMethod] ?? o.paymentMethod}
+                  </span>
+                  <div className="text-right">
+                    <div className="font-mono font-bold text-emerald-500 text-sm">+{o.gain.toLocaleString("fr-FR")} F</div>
+                    <div className="text-xs text-ink-500 tabular-nums">{o.amount.toLocaleString("fr-FR")} F</div>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
+
     </div>
   );
 }

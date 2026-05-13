@@ -1,0 +1,125 @@
+"use client";
+
+import { useState, useEffect, useRef } from "react";
+import { Radio } from "lucide-react";
+
+type EventKind = "assigned" | "picked_up" | "en_route" | "delivered" | "new_order";
+
+const KIND_CONFIG: Record<EventKind, { label: string; color: string; dot: string }> = {
+  new_order:  { label: "Nouvelle commande",  color: "text-emerald-600", dot: "bg-emerald-500" },
+  assigned:   { label: "Livreur assigné",    color: "text-blue-600",    dot: "bg-blue-400" },
+  picked_up:  { label: "Collecte effectuée", color: "text-amber-600",   dot: "bg-gold-500" },
+  en_route:   { label: "En route",           color: "text-ink-700",     dot: "bg-ink-400" },
+  delivered:  { label: "Livré ✓",            color: "text-emerald-700", dot: "bg-emerald-600" },
+};
+
+const PAYMENT_COLORS: Record<string, string> = {
+  Wave:   "bg-[#1B96D4]/10 text-[#1B96D4]",
+  Orange: "bg-orange-100 text-orange-700",
+  Cash:   "bg-cream-200 text-ink-600",
+};
+
+const CLIENTS = ["Fatou D.", "Ibrahima S.", "Awa B.", "Cheikh N.", "Mariama F.", "Ousmane K.", "Aïssatou T.", "Babacar D.", "Khady S.", "Moussa C."];
+const DRIVERS = ["Lamine B.", "Pape D.", "Ndèye S.", "Modou F.", "Saliou N."];
+const PAYMENTS: Array<"Wave" | "Orange" | "Cash"> = ["Wave", "Wave", "Orange", "Cash"];
+const KINDS: EventKind[] = ["new_order", "assigned", "picked_up", "en_route", "delivered"];
+
+let _seq = 10200;
+
+function pick<T>(arr: T[]): T { return arr[Math.floor(Math.random() * arr.length)]; }
+function randAmt() { return (Math.floor(Math.random() * 180 + 20) * 100); }
+function nextId() { return `YN-${++_seq}`; }
+function nowStr() {
+  const d = new Date();
+  return `${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}:${String(d.getSeconds()).padStart(2,"0")}`;
+}
+
+interface FeedEvent {
+  uid: string;
+  time: string;
+  id: string;
+  client: string;
+  driver: string;
+  amount: number;
+  payment: "Wave" | "Orange" | "Cash";
+  kind: EventKind;
+}
+
+function makeSeedEvents(): FeedEvent[] {
+  return Array.from({ length: 6 }, (_, i) => ({
+    uid: `seed-${i}`,
+    time: `${14 - i}:${String(Math.floor(Math.random() * 59)).padStart(2,"0")}`,
+    id: nextId(),
+    client: pick(CLIENTS),
+    driver: pick(DRIVERS),
+    amount: randAmt(),
+    payment: pick(PAYMENTS),
+    kind: pick(KINDS),
+  }));
+}
+
+export function LiveFeed() {
+  const [events, setEvents] = useState<FeedEvent[]>(makeSeedEvents);
+  const [flash,  setFlash]  = useState<string | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    function addEvent() {
+      const ev: FeedEvent = {
+        uid:     `live-${Date.now()}`,
+        time:    nowStr(),
+        id:      nextId(),
+        client:  pick(CLIENTS),
+        driver:  pick(DRIVERS),
+        amount:  randAmt(),
+        payment: pick(PAYMENTS),
+        kind:    pick(KINDS),
+      };
+      setEvents(prev => [ev, ...prev].slice(0, 12));
+      setFlash(ev.uid);
+      setTimeout(() => setFlash(null), 600);
+    }
+
+    const delay = 4000 + Math.random() * 6000;
+    intervalRef.current = setInterval(addEvent, delay);
+    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
+  }, []);
+
+  return (
+    <div className="bg-white rounded-lg border border-cream-200 shadow-card overflow-hidden">
+      <div className="px-4 py-3 border-b border-cream-100 flex items-center gap-2">
+        <Radio className="w-3.5 h-3.5 text-emerald-500 animate-live-pulse" />
+        <h2 className="font-semibold text-ink-900 text-sm">Flux en direct</h2>
+        <span className="ml-auto text-xs text-ink-400 tabular-nums">{events.length} événements</span>
+      </div>
+
+      <div className="divide-y divide-cream-50 max-h-72 overflow-y-auto">
+        {events.map(ev => {
+          const cfg = KIND_CONFIG[ev.kind];
+          return (
+            <div
+              key={ev.uid}
+              className={`flex items-center gap-3 px-4 py-2.5 transition-colors ${
+                flash === ev.uid ? "bg-emerald-50" : "hover:bg-cream-50"
+              }`}
+            >
+              <span className={`w-2 h-2 rounded-full shrink-0 ${cfg.dot}`} />
+              <span className="text-xs text-ink-400 tabular-nums shrink-0 w-16">{ev.time}</span>
+              <span className="font-mono text-xs text-emerald-500 shrink-0 w-20">{ev.id}</span>
+              <div className="flex-1 min-w-0">
+                <span className={`text-xs font-medium ${cfg.color}`}>{cfg.label}</span>
+                <span className="text-xs text-ink-500 ml-1">· {ev.client}</span>
+              </div>
+              <span className={`text-xs px-1.5 py-0.5 rounded font-medium shrink-0 ${PAYMENT_COLORS[ev.payment]}`}>
+                {ev.payment}
+              </span>
+              <span className="text-xs font-mono font-semibold text-ink-900 tabular-nums shrink-0 w-20 text-right">
+                {ev.amount.toLocaleString("fr-FR")} F
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
