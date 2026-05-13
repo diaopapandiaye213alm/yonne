@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { orders } from "@/lib/mock-data/orders";
 import { Search, Users, ShoppingBag, TrendingUp, Star } from "lucide-react";
 
@@ -56,6 +57,7 @@ function buildClients(): ClientSummary[] {
 const ALL_CLIENTS = buildClients();
 
 export default function ClientsPage() {
+  const router = useRouter();
   const [search, setSearch] = useState("");
   const [vipOnly, setVipOnly] = useState(false);
 
@@ -136,7 +138,7 @@ export default function ClientsPage() {
                 </tr>
               ) : (
                 filtered.map((c, i) => (
-                  <tr key={c.name} className={`border-t border-cream-100 hover:bg-cream-50 transition-colors ${i % 2 !== 0 ? "bg-cream-50/40" : ""}`}>
+                  <tr key={c.name} onClick={() => router.push(`/admin/clients/${encodeURIComponent(c.phone)}`)} className={`border-t border-cream-100 hover:bg-cream-50 transition-colors cursor-pointer ${i % 2 !== 0 ? "bg-cream-50/40" : ""}`}>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <div className="w-7 h-7 rounded-full bg-emerald-500/15 flex items-center justify-center text-xs font-bold text-emerald-700">

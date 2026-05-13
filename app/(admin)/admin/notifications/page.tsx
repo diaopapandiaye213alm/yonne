@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { toast } from "sonner";
-import { MessageSquare, CheckCircle2, XCircle, ToggleLeft, ToggleRight, Send } from "lucide-react";
+import { MessageSquare, CheckCircle2, XCircle, ToggleLeft, ToggleRight, Send, Plus, Users, Bike, Store, X } from "lucide-react";
 
 const TEMPLATES = [
   {
@@ -39,10 +39,38 @@ const LOGS = [
   { id: "L006", time: "13:45", ref: "YN-2026-10102", template: "🎉 Livré",      recipient: "+221 76 678 9012", status: "envoyé",  cost: 5 },
 ];
 
+type Audience = "drivers" | "merchants" | "clients" | "all";
+const AUDIENCE_OPTS: { value: Audience; label: string; icon: React.ElementType; count: number }[] = [
+  { value: "drivers",   label: "Livreurs",    icon: Bike,   count: 12 },
+  { value: "merchants", label: "Marchands",   icon: Store,  count: 8 },
+  { value: "clients",   label: "Clients",     icon: Users,  count: 43 },
+  { value: "all",       label: "Tous",        icon: Users,  count: 63 },
+];
+
 export default function NotificationsPage() {
   const [smsActive, setSmsActive] = useState(true);
+  const [showCampaign, setShowCampaign] = useState(false);
+  const [audience, setAudience] = useState<Audience>("drivers");
+  const [subject, setSubject] = useState("");
+  const [body, setBody] = useState("");
+  const [sending, setSending] = useState(false);
+
   const totalSent = TEMPLATES.reduce((s, t) => s + t.sent, 0);
   const totalCost = TEMPLATES.reduce((s, t) => s + t.cost, 0);
+  const selectedAudience = AUDIENCE_OPTS.find(a => a.value === audience)!;
+
+  function sendCampaign() {
+    if (!subject.trim() || !body.trim()) {
+      toast.error("Sujet et message requis");
+      return;
+    }
+    setSending(true);
+    setTimeout(() => {
+      toast.success(`Campagne envoyée à ${selectedAudience.count} destinataires`);
+      setShowCampaign(false);
+      setSubject(""); setBody(""); setSending(false);
+    }, 900);
+  }
 
   return (
     <div className="max-w-5xl mx-auto space-y-6 animate-fade-in-up">
@@ -51,21 +79,97 @@ export default function NotificationsPage() {
           <h1 className="text-2xl font-display font-bold text-ink-900">Notifications</h1>
           <p className="text-sm text-ink-500 mt-1">WhatsApp Business · SMS Orange</p>
         </div>
-        <div className="flex items-center gap-3 bg-white border border-cream-200 rounded-lg px-4 py-2.5 shadow-card">
-          <span className="text-sm text-ink-700 font-medium">SMS Orange</span>
-          <button
-            type="button"
-            onClick={() => {
-              setSmsActive(v => !v);
-              toast.success(smsActive ? "SMS Orange désactivé" : "SMS Orange activé");
-            }}
-          >
-            {smsActive
-              ? <ToggleRight className="w-8 h-8 text-emerald-500" />
-              : <ToggleLeft className="w-8 h-8 text-ink-400" />}
+        <div className="flex items-center gap-2">
+          <button type="button" onClick={() => setShowCampaign(v => !v)}
+            className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg px-4 py-2 text-sm font-medium transition-colors">
+            {showCampaign ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+            {showCampaign ? "Annuler" : "Nouvelle campagne"}
           </button>
+          <div className="flex items-center gap-3 bg-white border border-cream-200 rounded-lg px-4 py-2.5 shadow-card">
+            <span className="text-sm text-ink-700 font-medium">SMS Orange</span>
+            <button
+              type="button"
+              onClick={() => {
+                setSmsActive(v => !v);
+                toast.success(smsActive ? "SMS Orange désactivé" : "SMS Orange activé");
+              }}
+            >
+              {smsActive
+                ? <ToggleRight className="w-8 h-8 text-emerald-500" />
+                : <ToggleLeft className="w-8 h-8 text-ink-400" />}
+            </button>
+          </div>
         </div>
       </div>
+
+      {/* Campaign panel */}
+      {showCampaign && (
+        <div className="bg-white rounded-lg border border-emerald-200 shadow-card p-5 space-y-4 animate-fade-in-up">
+          <h2 className="font-semibold text-ink-900 flex items-center gap-2">
+            <Send className="w-4 h-4 text-emerald-500" /> Nouvelle campagne WhatsApp
+          </h2>
+
+          {/* Audience */}
+          <div>
+            <label className="text-xs text-ink-500 mb-2 block">Destinataires</label>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              {AUDIENCE_OPTS.map(opt => {
+                const Icon = opt.icon;
+                return (
+                  <button key={opt.value} type="button" onClick={() => setAudience(opt.value)}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm font-medium transition-colors ${
+                      audience === opt.value
+                        ? "border-emerald-400 bg-emerald-50 text-emerald-700"
+                        : "border-cream-200 text-ink-600 hover:border-emerald-300"
+                    }`}>
+                    <Icon className="w-3.5 h-3.5 shrink-0" />
+                    <span>{opt.label}</span>
+                    <span className="ml-auto text-xs opacity-60">{opt.count}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Subject */}
+          <div>
+            <label className="text-xs text-ink-500 mb-1 block">Sujet / Objet</label>
+            <input value={subject} onChange={e => setSubject(e.target.value)}
+              placeholder="Ex : Annonce Tabaski — prime livreur ×2"
+              className="w-full border border-cream-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-400" />
+          </div>
+
+          {/* Message */}
+          <div>
+            <label className="text-xs text-ink-500 mb-1 block">Message</label>
+            <textarea value={body} onChange={e => setBody(e.target.value)}
+              placeholder="Bonjour {nom}, …"
+              rows={4}
+              className="w-full border border-cream-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-400 resize-none" />
+          </div>
+
+          {/* WhatsApp preview */}
+          {body.trim() && (
+            <div className="bg-[#E5DDD5] rounded-xl p-4">
+              <div className="text-[10px] text-ink-400 mb-2 font-medium uppercase tracking-wider">Aperçu WhatsApp</div>
+              <div className="bg-[#DCF8C6] rounded-lg rounded-tl-none px-3 py-2 max-w-xs text-xs text-ink-800 shadow-sm font-sans leading-relaxed whitespace-pre-wrap">
+                {body}
+              </div>
+            </div>
+          )}
+
+          <div className="flex items-center justify-between pt-1 border-t border-cream-100">
+            <span className="text-xs text-ink-500">
+              ~{selectedAudience.count * 5} F CFA estimé · {selectedAudience.count} destinataires
+            </span>
+            <button type="button" onClick={sendCampaign} disabled={sending}
+              className="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white rounded-lg px-4 py-2 text-sm font-medium transition-colors">
+              <Send className="w-3.5 h-3.5" />
+              {sending ? "Envoi…" : "Envoyer la campagne"}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-4">
