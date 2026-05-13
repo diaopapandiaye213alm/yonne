@@ -1,8 +1,11 @@
+"use client";
+
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { merchants } from "@/lib/mock-data/merchants";
 import { orders } from "@/lib/mock-data/orders";
 import { ArrowLeft } from "lucide-react";
+import { toast } from "sonner";
 
 const PLAN_COLORS = { Standard: "bg-cream-200 text-ink-700", Premium: "bg-gold-500/20 text-ink-900" } as const;
 
@@ -54,7 +57,7 @@ export default function MarchandDetailPage({ params }: { params: { id: string } 
             <span className="ml-1">({merchant.plan === "Premium" ? "12%" : "15%"})</span>
           </div>
           {merchant.plan === "Standard" && (
-            <button className="w-full mt-2 bg-gold-500 text-white rounded-lg py-2 text-sm font-medium hover:bg-gold-600 transition-colors">
+            <button type="button" onClick={() => toast.success("Demande de passage Premium enregistrée — l'équipe YONNE va contacter ce commerçant")} className="w-full mt-2 bg-gold-500 text-white rounded-lg py-2 text-sm font-medium hover:bg-gold-600 transition-colors">
               Passer en Premium (15 000 F/mois)
             </button>
           )}
@@ -73,7 +76,7 @@ export default function MarchandDetailPage({ params }: { params: { id: string } 
           </svg>
           <div>
             <p className="text-sm text-ink-700">Les clients scannent ce QR pour commander directement depuis WhatsApp.</p>
-            <button className="mt-3 text-sm text-emerald-500 hover:underline">↓ Télécharger (PNG)</button>
+            <button type="button" onClick={() => toast.success("QR code téléchargé")} className="mt-3 text-sm text-emerald-500 hover:underline">↓ Télécharger (PNG)</button>
           </div>
         </div>
       </div>
