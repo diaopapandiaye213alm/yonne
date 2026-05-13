@@ -1,5 +1,6 @@
 "use client";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine, Cell } from "recharts";
+import { toast } from "sonner";
 import { useSurgeStore } from "@/lib/store/surge";
 import { surgeHistory } from "@/lib/mock-data/surge";
 import { Switch } from "@/components/ui/switch";
@@ -64,7 +65,13 @@ export default function SurgePage() {
         </div>
 
         {!autoMode && (
-          <Button className="bg-emerald-500 hover:bg-emerald-600 text-white">
+          <Button
+            type="button"
+            className="bg-emerald-500 hover:bg-emerald-600 text-white"
+            onClick={() =>
+              toast.success(`Surge ×${multiplier.toFixed(1)} appliqué — toutes les nouvelles courses utilisent ce multiplicateur`)
+            }
+          >
             Appliquer ×{multiplier.toFixed(1)}
           </Button>
         )}
