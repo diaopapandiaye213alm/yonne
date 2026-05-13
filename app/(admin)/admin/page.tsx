@@ -1,3 +1,4 @@
+"use client";
 import Link from "next/link";
 import { KpiCard } from "@/components/kpi/KpiCard";
 import { DriverLeaderboard } from "@/components/kpi/DriverLeaderboard";
@@ -5,12 +6,12 @@ import DakarMap from "@/components/map/DakarMapClient";
 import { drivers } from "@/lib/mock-data/drivers";
 import { activeOrders } from "@/lib/mock-data/orders";
 import { landmarks } from "@/lib/mock-data/landmarks";
+import { useLiveKpis } from "@/lib/hooks/useLiveKpis";
 import { Sparkles, ChevronRight } from "lucide-react";
 
-const sparkRevenue = [620, 705, 690, 760, 810, 805, 847];
-const sparkOrders  = [110, 122, 118, 129, 138, 141, 147];
-
 export default function AdminHomePage() {
+  const kpis = useLiveKpis(28000);
+
   const onlineDrivers = drivers.filter(d => d.online);
   const driverPins = onlineDrivers.slice(0, 15).map(d => ({ id: d.id, lat: d.lat, lng: d.lng, kind: "driver" as const }));
   const orderPins = activeOrders.map(o => {
@@ -45,7 +46,7 @@ export default function AdminHomePage() {
             </div>
             <div className="text-2xl font-display font-bold text-white capitalize">{dateStr}</div>
             <div className="mt-1 text-emerald-200/60 text-sm">
-              {onlineDrivers.length} livreurs actifs · {activeOrders.length} commandes en cours
+              {kpis.onlineDrivers} livreurs actifs · {kpis.orders} commandes aujourd&apos;hui
             </div>
           </div>
 
@@ -63,16 +64,40 @@ export default function AdminHomePage() {
       {/* ── KPI cards ── */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="stagger-1 animate-fade-in-up">
-          <KpiCard label="Revenus aujourd'hui" value="847 200 F" delta={{ value: "23 %", direction: "up" }} hint="vs hier" spark={sparkRevenue} accent="emerald" />
+          <KpiCard
+            label="Revenus aujourd'hui"
+            value={`${kpis.revenue.toLocaleString("fr-FR")} F`}
+            delta={{ value: "23 %", direction: "up" }}
+            hint="vs hier"
+            spark={kpis.sparkRevenue}
+            accent="emerald"
+          />
         </div>
         <div className="stagger-2 animate-fade-in-up">
-          <KpiCard label="Commandes" value="147" delta={{ value: "12 actives", direction: "up" }} spark={sparkOrders} accent="gold" />
+          <KpiCard
+            label="Commandes"
+            value={String(kpis.orders)}
+            delta={{ value: "12 actives", direction: "up" }}
+            spark={kpis.sparkOrders}
+            accent="gold"
+          />
         </div>
         <div className="stagger-3 animate-fade-in-up">
-          <KpiCard label="Livreurs en ligne" value="28 / 41" hint="3 en pause prière" accent="ink" />
+          <KpiCard
+            label="Livreurs en ligne"
+            value={`${kpis.onlineDrivers} / 41`}
+            hint="3 en pause prière"
+            accent="ink"
+          />
         </div>
         <div className="stagger-4 animate-fade-in-up">
-          <KpiCard label="Note moyenne" value="4,7 ★" hint="89 avis aujourd'hui" accent="gold" highlight />
+          <KpiCard
+            label="Note moyenne"
+            value={`${kpis.rating.toFixed(1)} ★`}
+            hint="89 avis aujourd'hui"
+            accent="gold"
+            highlight
+          />
         </div>
       </div>
 
