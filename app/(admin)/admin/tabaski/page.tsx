@@ -1,9 +1,12 @@
+"use client";
+
 import { J7Countdown } from "@/components/tabaski/J7Countdown";
 import { DemandCurve } from "@/components/tabaski/DemandCurve";
 import { ActionPlanCard } from "@/components/tabaski/ActionPlanCard";
 import { actionPlan, tabaski2025Stats } from "@/lib/mock-data/tabaski";
 import { Button } from "@/components/ui/button";
 import { Sparkles } from "lucide-react";
+import { toast } from "sonner";
 
 export default function TabaskiPage() {
   return (
@@ -42,7 +45,7 @@ export default function TabaskiPage() {
         </div>
       </section>
 
-      <Button size="lg" className="w-full bg-gold-500 hover:bg-gold-600 text-ink-900 font-display font-bold text-base shadow-glow">
+      <Button type="button" size="lg" className="w-full bg-gold-500 hover:bg-gold-600 text-ink-900 font-display font-bold text-base shadow-glow" onClick={() => toast.success("Plan d'action Tabaski activé — notifications envoyées aux livreurs et commerçants")}>
         Activer le plan d'action complet
       </Button>
     </div>
