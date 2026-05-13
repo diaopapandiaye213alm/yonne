@@ -8,9 +8,10 @@ import { incomingOrders } from "@/lib/mock-data/incoming-orders";
 import { useDriverStore } from "@/lib/store/driver";
 import { DeliveryStepperCard } from "@/components/driver/DeliveryStepperCard";
 import { Button } from "@/components/ui/button";
-import { Phone } from "lucide-react";
+import { Phone, QrCode } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Pin } from "@/components/map/DakarMap";
+import { QrScannerModal } from "@/components/driver/QrScannerModal";
 
 const DakarMap = dynamic(() => import("@/components/map/DakarMap"), {
   ssr: false,
@@ -45,7 +46,8 @@ export default function LivraisonPage({ params }: { params: { id: string } }) {
 
   const target = deliveryStep <= 1 ? pickup : dest;
 
-  const [pos, setPos] = useState<[number, number]>([demo.lat, demo.lng]);
+  const [pos, setPos]         = useState<[number, number]>([demo.lat, demo.lng]);
+  const [showQr, setShowQr]   = useState(false);
 
   useEffect(() => {
     const total = 30;
@@ -79,6 +81,11 @@ export default function LivraisonPage({ params }: { params: { id: string } }) {
 
   const complete = deliveryStep === 3;
 
+  function handleQrConfirm() {
+    setShowQr(false);
+    handleAdvance();
+  }
+
   return (
     <div className="relative" style={{ height: "calc(100dvh - 56px)" }}>
       <DakarMap
@@ -104,7 +111,20 @@ export default function LivraisonPage({ params }: { params: { id: string } }) {
         </div>
       </div>
 
+      {showQr && (
+        <QrScannerModal orderId={order.id} onConfirm={handleQrConfirm} onClose={() => setShowQr(false)} />
+      )}
+
       <div className="fixed bottom-14 left-0 right-0 z-[1001] max-w-sm mx-auto">
+        {/* QR collect button at step 1 */}
+        {deliveryStep === 1 && !complete && !showQr && (
+          <div className="px-4 pb-2">
+            <button type="button" onClick={() => setShowQr(true)}
+              className="w-full flex items-center justify-center gap-2 bg-white border border-emerald-500 text-emerald-600 font-semibold text-sm py-3 rounded-xl shadow-card hover:bg-emerald-50 transition-colors">
+              <QrCode className="w-4 h-4" /> Scanner QR du colis
+            </button>
+          </div>
+        )}
         {complete ? (
           <div className={cn(
             "bg-white rounded-t-xl p-6 text-center space-y-3",

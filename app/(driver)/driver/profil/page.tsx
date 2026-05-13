@@ -6,6 +6,7 @@ import { Switch } from "@/components/ui/switch";
 import { LogOut, Moon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useT } from "@/lib/i18n";
+import { PushNotifBanner } from "@/components/driver/PushNotifBanner";
 
 const demo = drivers[0];
 
@@ -21,6 +22,7 @@ export default function ProfilPage() {
 
   return (
     <div className="pb-20 px-4 pt-6 space-y-5">
+      <PushNotifBanner />
       {inPrayer && (
         <div className="bg-gold-500/15 border-b border-gold-500 text-center text-sm font-medium text-ink-900 py-2 -mx-4 -mt-6 px-4">
           🕌 Mode prière actif — vous apparaissez hors ligne
