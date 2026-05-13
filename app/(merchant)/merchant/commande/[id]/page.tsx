@@ -4,6 +4,8 @@ import dynamic from "next/dynamic";
 import { drivers } from "@/lib/mock-data/drivers";
 import { landmarks } from "@/lib/mock-data/landmarks";
 import { trackingChat } from "@/lib/mock-data/chat";
+import { useOrdersStore } from "@/lib/store/orders";
+import type { OrderStatus } from "@/lib/mock-data/orders";
 import { GlovoTimeline } from "@/components/tracking/GlovoTimeline";
 import { ChatBubble } from "@/components/tracking/ChatBubble";
 import { EtaBadge } from "@/components/tracking/EtaBadge";
@@ -11,9 +13,29 @@ import { DriverCard } from "@/components/tracking/DriverCard";
 import { Button } from "@/components/ui/button";
 import { Share2 } from "lucide-react";
 
+const STATUS_STAGE: Record<OrderStatus, "created" | "assigned" | "enroute" | "delivered"> = {
+  "créée":    "created",
+  "assignée": "assigned",
+  "collecte": "assigned",
+  "en route": "enroute",
+  "livrée":   "delivered",
+};
+
+const STATUS_COLORS: Record<OrderStatus, string> = {
+  "créée":    "bg-gray-100 text-gray-700",
+  "assignée": "bg-blue-100 text-blue-700",
+  "collecte": "bg-amber-100 text-amber-700",
+  "en route": "bg-gold-500 text-ink-900",
+  "livrée":   "bg-emerald-500/20 text-emerald-700",
+};
+
 const DakarMap = dynamic(() => import("@/components/map/DakarMap"), { ssr: false });
 
 export default function TrackingPage({ params }: { params: { id: string } }) {
+  const { orders } = useOrdersStore();
+  const order = orders.find(o => o.id === params.id);
+  const status: OrderStatus = order?.status ?? "en route";
+
   const seed = params.id.charCodeAt(params.id.length - 1);
   const onlineDrivers = useMemo(() => drivers.filter(d => d.online && !d.inPrayer), []);
   const driver = useMemo(() => onlineDrivers[seed % onlineDrivers.length], [seed, onlineDrivers]);
@@ -51,13 +73,13 @@ export default function TrackingPage({ params }: { params: { id: string } }) {
         <div>
           <div className="text-xs text-ink-500">Commande</div>
           <div className="font-mono text-sm text-ink-900">{params.id}</div>
-          <span className="inline-block mt-2 text-xs bg-gold-500 text-ink-900 px-2 py-0.5 rounded-sm font-bold">En route</span>
+          <span className={`inline-block mt-2 text-xs px-2 py-0.5 rounded-sm font-bold ${STATUS_COLORS[status]}`}>{status}</span>
         </div>
         <DriverCard driver={driver} />
         <EtaBadge initialMinutes={18} />
         <div>
           <h3 className="font-display font-semibold text-ink-900 mb-3">Suivi</h3>
-          <GlovoTimeline activeStage="enroute" />
+          <GlovoTimeline activeStage={STATUS_STAGE[status]} />
         </div>
         <div>
           <h3 className="font-display font-semibold text-ink-900 mb-3">Discussion</h3>
