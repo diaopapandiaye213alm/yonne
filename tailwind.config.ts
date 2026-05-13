@@ -52,9 +52,24 @@ const config: Config = {
           "0%, 100%": { boxShadow: "0 0 0 0 rgba(212,165,116,0.5)" },
           "50%": { boxShadow: "0 0 0 8px rgba(212,165,116,0)" },
         },
+        fadeInUp: {
+          "0%": { opacity: "0", transform: "translateY(12px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+        shimmer: {
+          "0%": { backgroundPosition: "-200% 0" },
+          "100%": { backgroundPosition: "200% 0" },
+        },
+        livePulse: {
+          "0%, 100%": { opacity: "1" },
+          "50%": { opacity: "0.3" },
+        },
       },
       animation: {
-        "pulse-gold": "pulseGold 2s ease-in-out infinite",
+        "pulse-gold":  "pulseGold 2s ease-in-out infinite",
+        "fade-in-up":  "fadeInUp 0.4s ease-out both",
+        shimmer:       "shimmer 1.8s linear infinite",
+        "live-pulse":  "livePulse 1.4s ease-in-out infinite",
       },
     },
   },

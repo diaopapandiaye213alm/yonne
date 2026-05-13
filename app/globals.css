@@ -59,3 +59,17 @@
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-thumb { background: #E8DFD0; border-radius: 5px; }
 ::-webkit-scrollbar-thumb:hover { background: #D4A574; }
+
+/* Skeleton shimmer */
+.skeleton {
+  background: linear-gradient(90deg, #E8DFD0 25%, #F5EFE0 50%, #E8DFD0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.8s linear infinite;
+  border-radius: 6px;
+}
+
+/* Staggered card entrance */
+.stagger-1 { animation-delay: 0ms; }
+.stagger-2 { animation-delay: 60ms; }
+.stagger-3 { animation-delay: 120ms; }
+.stagger-4 { animation-delay: 180ms; }
