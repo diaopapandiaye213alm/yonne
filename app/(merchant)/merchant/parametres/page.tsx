@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { toast } from "sonner";
 import { merchants } from "@/lib/mock-data/merchants";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -46,7 +47,8 @@ export default function ParametresPage() {
           </div>
         </div>
         <Button
-          onClick={() => alert("Paramètres enregistrés")}
+          type="button"
+          onClick={() => toast.success("Profil enregistré")}
           className="bg-emerald-500 hover:bg-emerald-600 text-white"
         >
           Enregistrer
@@ -84,8 +86,8 @@ export default function ParametresPage() {
       </div>
 
       {/* Notifications */}
-      <div className="bg-white rounded-lg border border-cream-200 shadow-card p-5">
-        <h2 className="font-semibold text-ink-900 mb-4">Notifications</h2>
+      <div className="bg-white rounded-lg border border-cream-200 shadow-card p-5 space-y-4">
+        <h2 className="font-semibold text-ink-900">Notifications</h2>
         <div className="space-y-4">
           {[
             { id: "wa",    label: "WhatsApp", checked: whatsapp,   onCheckedChange: setWhatsapp },
@@ -98,6 +100,13 @@ export default function ParametresPage() {
             </div>
           ))}
         </div>
+        <Button
+          type="button"
+          onClick={() => toast.success("Notifications enregistrées")}
+          className="bg-emerald-500 hover:bg-emerald-600 text-white"
+        >
+          Enregistrer
+        </Button>
       </div>
     </div>
   );
