@@ -6,6 +6,7 @@ import { DataTable, Column } from "@/components/admin/DataTable";
 import { FilterBar, FilterDef } from "@/components/admin/FilterBar";
 import { downloadCsv } from "@/lib/utils/csv";
 import type { Order, OrderStatus } from "@/lib/mock-data/orders";
+import { Package, Truck, CheckCircle2, Banknote } from "lucide-react";
 
 const STATUS_COLORS: Record<OrderStatus, string> = {
   "créée":    "bg-gray-100 text-gray-700",
@@ -26,20 +27,51 @@ const FILTERS: FilterDef[] = [
   ]},
 ];
 
+const STATUS_QUICK: { label: string; value: OrderStatus | ""; color: string }[] = [
+  { label: "Tous",      value: "",          color: "bg-cream-100 text-ink-600" },
+  { label: "En route",  value: "en route",  color: "bg-gold-500/20 text-ink-900" },
+  { label: "Livrée",    value: "livrée",    color: "bg-emerald-500/20 text-emerald-700" },
+  { label: "Créée",     value: "créée",     color: "bg-gray-100 text-gray-700" },
+  { label: "Collecte",  value: "collecte",  color: "bg-amber-100 text-amber-700" },
+  { label: "Assignée",  value: "assignée",  color: "bg-blue-100 text-blue-700" },
+];
+
 export default function MesCommandesPage() {
   const { orders } = useOrdersStore();
   const router = useRouter();
-  const [search,  setSearch]  = useState("");
-  const [filters, setFilters] = useState<Record<string, string>>({});
+  const [search,      setSearch]      = useState("");
+  const [filters,     setFilters]     = useState<Record<string, string>>({});
+  const [quickStatus, setQuickStatus] = useState<string>("");
+
+  const today = useMemo(() => {
+    const d = new Date(); d.setHours(0, 0, 0, 0); return d;
+  }, []);
+
+  const kpis = useMemo(() => {
+    const todayOrders = orders.filter(o => new Date(o.createdAt) >= today);
+    return {
+      total:    orders.length,
+      enRoute:  orders.filter(o => o.status === "en route").length,
+      livrees:  orders.filter(o => o.status === "livrée").length,
+      revToday: todayOrders.reduce((s, o) => s + o.amount, 0),
+    };
+  }, [orders, today]);
+
+  const statusCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const o of orders) counts[o.status] = (counts[o.status] ?? 0) + 1;
+    return counts;
+  }, [orders]);
 
   const filtered = useMemo(() => {
+    const activeStatus = quickStatus || filters.status || "";
     return orders.filter(o => {
       const q           = search.toLowerCase();
       const matchSearch = !q || o.id.toLowerCase().includes(q) || o.clientName.toLowerCase().includes(q);
-      const matchStatus = !filters.status || o.status === filters.status;
+      const matchStatus = !activeStatus || o.status === activeStatus;
       return matchSearch && matchStatus;
     });
-  }, [orders, search, filters]);
+  }, [orders, search, filters, quickStatus]);
 
   const columns: Column<Order>[] = [
     { key: "id",            label: "ID",       render: o => <span className="font-mono text-xs text-emerald-500">{o.id}</span> },
@@ -63,20 +95,82 @@ export default function MesCommandesPage() {
   function handleReset() {
     setSearch("");
     setFilters({});
+    setQuickStatus("");
   }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      <div className="mb-6">
+    <div className="p-6 max-w-7xl mx-auto space-y-6">
+      <div>
         <h1 className="text-2xl font-display font-bold text-ink-900">Mes commandes</h1>
-        <p className="text-sm text-ink-500 mt-1">{filtered.length} commande{filtered.length > 1 ? "s" : ""}</p>
+        <p className="text-sm text-ink-500 mt-1">{orders.length} commande{orders.length > 1 ? "s" : ""} au total</p>
       </div>
-      <FilterBar
-        search={search} onSearch={setSearch}
-        filters={FILTERS} values={filters}
-        onFilter={(k, v) => setFilters(prev => ({ ...prev, [k]: v }))}
-        onExport={handleExport}
-      />
+
+      {/* KPI cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="bg-white rounded-lg border border-cream-200 shadow-card p-4 flex items-start gap-3">
+          <Package className="w-5 h-5 text-ink-400 mt-0.5 shrink-0" />
+          <div>
+            <div className="text-2xl font-display font-bold text-ink-900 tabular-nums">{kpis.total}</div>
+            <div className="text-xs text-ink-500 mt-0.5">Total commandes</div>
+          </div>
+        </div>
+        <div className="bg-white rounded-lg border border-gold-500/30 shadow-card p-4 flex items-start gap-3">
+          <Truck className="w-5 h-5 text-gold-500 mt-0.5 shrink-0" />
+          <div>
+            <div className="text-2xl font-display font-bold text-ink-900 tabular-nums">{kpis.enRoute}</div>
+            <div className="text-xs text-ink-500 mt-0.5">En route</div>
+          </div>
+        </div>
+        <div className="bg-white rounded-lg border border-emerald-200 shadow-card p-4 flex items-start gap-3">
+          <CheckCircle2 className="w-5 h-5 text-emerald-500 mt-0.5 shrink-0" />
+          <div>
+            <div className="text-2xl font-display font-bold text-emerald-600 tabular-nums">{kpis.livrees}</div>
+            <div className="text-xs text-ink-500 mt-0.5">Livrées</div>
+          </div>
+        </div>
+        <div className="bg-white rounded-lg border border-cream-200 shadow-card p-4 flex items-start gap-3">
+          <Banknote className="w-5 h-5 text-gold-500 mt-0.5 shrink-0" />
+          <div>
+            <div className="text-2xl font-display font-bold text-ink-900 tabular-nums">
+              {kpis.revToday.toLocaleString("fr-FR")}
+            </div>
+            <div className="text-xs text-ink-500 mt-0.5">F aujourd'hui</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Quick-filter status bubbles */}
+      <div className="flex items-center gap-2 flex-wrap">
+        {STATUS_QUICK.map(s => {
+          const count = s.value === "" ? orders.length : (statusCounts[s.value] ?? 0);
+          const active = quickStatus === s.value;
+          return (
+            <button
+              key={s.value}
+              type="button"
+              onClick={() => { setQuickStatus(s.value); setFilters({}); }}
+              className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full font-medium transition-all ${
+                active
+                  ? `${s.color} ring-2 ring-offset-1 ring-current`
+                  : `${s.color} opacity-70 hover:opacity-100`
+              }`}
+            >
+              {s.label}
+              <span className="bg-white/60 rounded-full px-1.5 py-0.5 text-[10px] font-bold tabular-nums">{count}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      <div>
+        <FilterBar
+          search={search} onSearch={setSearch}
+          filters={FILTERS} values={filters}
+          onFilter={(k, v) => { setFilters(prev => ({ ...prev, [k]: v })); setQuickStatus(""); }}
+          onExport={handleExport}
+        />
+        <p className="text-xs text-ink-400 mt-2">{filtered.length} résultat{filtered.length > 1 ? "s" : ""}</p>
+      </div>
       <DataTable<Order>
         columns={columns}
         data={filtered}

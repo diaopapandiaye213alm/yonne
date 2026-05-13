@@ -9,7 +9,8 @@ import type { OrderStatus } from "@/lib/mock-data/orders";
 import { GlovoTimeline } from "@/components/tracking/GlovoTimeline";
 import { EtaBadge } from "@/components/tracking/EtaBadge";
 import { Wordmark } from "@/components/brand/Wordmark";
-import { Share2 } from "lucide-react";
+import { Share2, Phone, MessageCircle, Star, CheckCircle2 } from "lucide-react";
+import { toast } from "sonner";
 
 const DakarMap = dynamic(() => import("@/components/map/DakarMap"), { ssr: false });
 
@@ -29,10 +30,64 @@ const STATUS_COLORS: Record<OrderStatus, string> = {
   "livrée":   "bg-emerald-500/20 text-emerald-700",
 };
 
+const STATUS_LABELS: Record<OrderStatus, string> = {
+  "créée":    "Commande reçue",
+  "assignée": "Livreur assigné",
+  "collecte": "Collecte en cours",
+  "en route": "En route vers vous",
+  "livrée":   "Livrée avec succès 🎉",
+};
+
+function StarRating({ onRate }: { onRate: (n: number) => void }) {
+  const [hovered, setHovered] = useState(0);
+  const [selected, setSelected] = useState(0);
+  const [submitted, setSubmitted] = useState(false);
+
+  if (submitted) {
+    return (
+      <div className="flex flex-col items-center gap-2 py-4">
+        <CheckCircle2 className="w-8 h-8 text-emerald-500" />
+        <p className="text-sm font-medium text-ink-900">Merci pour votre note !</p>
+        <p className="text-xs text-ink-500">Votre avis aide YONNE à s'améliorer.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col items-center gap-3 py-2">
+      <p className="text-sm text-ink-700 font-medium">Comment s'est passée votre livraison ?</p>
+      <div className="flex gap-2">
+        {[1, 2, 3, 4, 5].map(n => (
+          <button
+            key={n}
+            type="button"
+            onMouseEnter={() => setHovered(n)}
+            onMouseLeave={() => setHovered(0)}
+            onClick={() => {
+              setSelected(n);
+              setSubmitted(true);
+              onRate(n);
+            }}
+            className="transition-transform hover:scale-110 active:scale-95"
+          >
+            <Star className={`w-9 h-9 transition-colors ${
+              n <= (hovered || selected) ? "text-gold-500 fill-gold-500" : "text-cream-300"
+            }`} />
+          </button>
+        ))}
+      </div>
+      <p className="text-xs text-ink-400">
+        {hovered === 1 ? "Très mauvais" : hovered === 2 ? "Mauvais" : hovered === 3 ? "Correct" : hovered === 4 ? "Bien" : hovered === 5 ? "Excellent !" : "Touchez une étoile"}
+      </p>
+    </div>
+  );
+}
+
 export default function PublicTrackingPage({ params }: { params: { id: string } }) {
   const { orders } = useOrdersStore();
   const order = orders.find(o => o.id === params.id);
   const status: OrderStatus = order?.status ?? "en route";
+  const isDelivered = status === "livrée";
 
   const seed = params.id.charCodeAt(params.id.length - 1);
   const onlineDrivers = useMemo(() => drivers.filter(d => d.online && !d.inPrayer), []);
@@ -42,6 +97,7 @@ export default function PublicTrackingPage({ params }: { params: { id: string } 
   const [pos, setPos] = useState<[number, number]>([driver.lat, driver.lng]);
 
   useEffect(() => {
+    if (isDelivered) return;
     const total = 30;
     let i = 0;
     const id = setInterval(() => {
@@ -54,16 +110,19 @@ export default function PublicTrackingPage({ params }: { params: { id: string } 
       if (t >= 1) clearInterval(id);
     }, 3000);
     return () => clearInterval(id);
-  }, [driver, destination]);
+  }, [driver, destination, isDelivered]);
 
-  const pins = [
+  const pins = isDelivered ? [
+    { id: "dst", lat: destination.lat, lng: destination.lng, kind: "dest" as const },
+  ] : [
     { id: "drv", lat: pos[0], lng: pos[1], kind: "driver" as const },
     { id: "dst", lat: destination.lat, lng: destination.lng, kind: "dest" as const },
   ];
 
-  const waText = encodeURIComponent(
+  const waShareText = encodeURIComponent(
     `Suis ta livraison YONNE en temps réel 🛵 ${typeof window !== "undefined" ? window.location.href : ""}`
   );
+  const waDriverText = encodeURIComponent(`Bonjour, je suis le client de la commande ${params.id}. Où en êtes-vous ?`);
 
   return (
     <div className="min-h-screen bg-cream-50 flex flex-col">
@@ -75,31 +134,81 @@ export default function PublicTrackingPage({ params }: { params: { id: string } 
         </div>
       </header>
 
-      <div className="w-full" style={{ height: 300 }}>
+      {/* Status banner */}
+      <div className={`px-4 py-2 text-center text-sm font-medium ${STATUS_COLORS[status]}`}>
+        {STATUS_LABELS[status]}
+      </div>
+
+      <div className="w-full" style={{ height: 260 }}>
         <DakarMap
           pins={pins}
-          trail={{ from: pos, to: [destination.lat, destination.lng] }}
-          center={pos}
+          trail={isDelivered ? undefined : { from: pos, to: [destination.lat, destination.lng] }}
+          center={isDelivered ? [destination.lat, destination.lng] : pos}
           zoom={14}
-          height="300px"
+          height="260px"
         />
       </div>
 
       <div className="flex-1 p-4 space-y-4">
         <div className="flex items-center justify-between">
-          <span className={`text-sm px-3 py-1 rounded-full font-medium ${STATUS_COLORS[status]}`}>
+          <span className={`text-xs px-3 py-1 rounded-full font-medium ${STATUS_COLORS[status]}`}>
             {status}
           </span>
-          <EtaBadge initialMinutes={18} />
+          {!isDelivered && <EtaBadge initialMinutes={18} />}
         </div>
 
+        {/* Driver card */}
+        <div className="bg-white rounded-lg border border-cream-200 shadow-card p-4">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-full bg-emerald-500/15 flex items-center justify-center text-emerald-700 font-bold text-sm shrink-0">
+              {driver.name.split(" ").map(n => n[0]).join("").slice(0, 2)}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="font-semibold text-ink-900">{driver.name}</div>
+              <div className="flex items-center gap-2 text-xs text-ink-500 mt-0.5">
+                <span className="flex items-center gap-0.5">
+                  {[1,2,3,4,5].map(n => (
+                    <Star key={n} className={`w-3 h-3 ${n <= Math.round(driver.rating) ? "text-gold-500 fill-gold-500" : "text-cream-300"}`} />
+                  ))}
+                </span>
+                <span>{driver.rating.toFixed(1)}</span>
+                <span>·</span>
+                <span className="capitalize">{driver.vehicle}</span>
+              </div>
+            </div>
+            {!isDelivered && (
+              <div className="flex gap-2 shrink-0">
+                <a href={`tel:${driver.phone}`}
+                  className="w-9 h-9 rounded-full bg-emerald-500 flex items-center justify-center text-white hover:bg-emerald-600 transition-colors">
+                  <Phone className="w-4 h-4" />
+                </a>
+                <a
+                  href={`https://wa.me/${driver.phone.replace(/\s+/g, "").replace("+", "")}?text=${waDriverText}`}
+                  target="_blank" rel="noopener noreferrer"
+                  className="w-9 h-9 rounded-full bg-[#25D366] flex items-center justify-center text-white hover:bg-[#1ebe5d] transition-colors">
+                  <MessageCircle className="w-4 h-4" />
+                </a>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Timeline */}
         <div className="bg-white rounded-lg border border-cream-200 shadow-card p-4">
           <h2 className="font-display font-semibold text-ink-900 mb-3 text-sm">Progression</h2>
           <GlovoTimeline activeStage={STATUS_STAGE[status]} />
         </div>
 
+        {/* Rating — shown when delivered */}
+        {isDelivered && (
+          <div className="bg-white rounded-lg border border-emerald-200 shadow-card p-4 animate-fade-in-up">
+            <StarRating onRate={n => toast.success(`Note ${n}★ envoyée — merci !`)} />
+          </div>
+        )}
+
+        {/* Share */}
         <a
-          href={`https://wa.me/?text=${waText}`}
+          href={`https://wa.me/?text=${waShareText}`}
           target="_blank"
           rel="noopener noreferrer"
           className="flex items-center justify-center gap-2 w-full bg-gold-500 hover:bg-gold-600 text-ink-900 font-display font-bold py-3 rounded-lg shadow-glow transition-colors"
