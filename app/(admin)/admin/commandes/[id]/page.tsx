@@ -66,9 +66,10 @@ export default function CommandeDetailPage({ params }: { params: { id: string } 
             <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[order.status]}`}>{order.status}</span>
           </div>
         </div>
-        <div>
+        <>
           {next && (
             <button
+              type="button"
               onClick={() => updateStatus(order.id, next)}
               className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-display font-bold transition-colors"
             >
@@ -81,7 +82,7 @@ export default function CommandeDetailPage({ params }: { params: { id: string } 
               ✓ Commande livrée
             </div>
           )}
-        </div>
+        </>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
