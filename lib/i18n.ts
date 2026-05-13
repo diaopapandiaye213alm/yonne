@@ -60,6 +60,8 @@ const dict = {
   navMyOrders:      { fr: "Mes commandes",     en: "My orders",     wo: "Sam komaand yi" },
   navFinances:      { fr: "Finances",          en: "Finances",      wo: "Xaalis yi" },
   navParams:        { fr: "Paramètres",        en: "Settings",      wo: "Setal yi" },
+  navCatalogue:     { fr: "Catalogue",         en: "Catalogue",     wo: "Liste yi" },
+  navClients:       { fr: "Clients",           en: "Clients",       wo: "Jëkkër yi" },
 
   // ── Admin dashboard ──
   dashboardLive:    { fr: "En direct",                         en: "Live",                       wo: "Yoon wii" },
