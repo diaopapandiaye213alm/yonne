@@ -8,7 +8,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     <div className="flex h-screen bg-cream-50">
       <AdminSidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
-        <Topbar breadcrumb="Admin" userName={session?.displayName ?? "Admin"} notifications={3} />
+        <Topbar breadcrumb="Admin" userName={session?.displayName ?? "Admin"} role="admin" />
         <main className="flex-1 overflow-y-auto p-6">{children}</main>
       </div>
     </div>
