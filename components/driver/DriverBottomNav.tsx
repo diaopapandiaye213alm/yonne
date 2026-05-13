@@ -1,14 +1,15 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Map, Package, Wallet, User } from "lucide-react";
+import { Map, Package, Wallet, User, History } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useDriverStore } from "@/lib/store/driver";
 
 const tabs = [
-  { href: "/driver/carte",  label: "Carte",     icon: Map     },
-  { href: "/driver/gains",  label: "Gains",     icon: Wallet  },
-  { href: "/driver/profil", label: "Profil",    icon: User    },
+  { href: "/driver/carte",       label: "Carte",       icon: Map     },
+  { href: "/driver/gains",       label: "Gains",       icon: Wallet  },
+  { href: "/driver/historique",  label: "Historique",  icon: History },
+  { href: "/driver/profil",      label: "Profil",      icon: User    },
 ] as const;
 
 export function DriverBottomNav() {
