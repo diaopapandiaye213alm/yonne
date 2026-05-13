@@ -18,26 +18,65 @@ export default function AdminHomePage() {
     return { id: o.id, lat: lm.lat, lng: lm.lng, kind: "order" as const };
   });
 
-  return (
-    <div className="space-y-6 max-w-7xl mx-auto">
-      <Link
-        href="/admin/tabaski"
-        className="block rounded-lg bg-emerald-500 text-white p-5 shadow-card hover:shadow-glow-emerald transition-shadow"
-      >
-        <div className="flex items-center gap-3">
-          <Sparkles className="w-5 h-5 text-gold-400" />
-          <span className="font-medium">Tabaski dans 7 jours — pic de demande prévu × 3.2. Plan d'action prêt.</span>
-          <ChevronRight className="ml-auto w-5 h-5" />
-        </div>
-      </Link>
+  const dateStr = new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KpiCard label="Revenus aujourd'hui" value="847 200 F" delta={{ value: "23 %", direction: "up" }} hint="vs hier" spark={sparkRevenue} />
-        <KpiCard label="Commandes" value="147" delta={{ value: "12 actives", direction: "up" }} spark={sparkOrders} />
-        <KpiCard label="Livreurs en ligne" value="28 / 41" hint="3 en pause prière" />
-        <KpiCard label="Note moyenne" value="4,7 ★" hint="89 avis aujourd'hui" />
+  return (
+    <div className="space-y-6 max-w-7xl mx-auto animate-fade-in-up">
+
+      {/* ── Hero gradient ── */}
+      <div className="relative rounded-xl overflow-hidden bg-gradient-to-br from-emerald-800 via-emerald-700 to-emerald-600 p-6 shadow-glow-emerald">
+        <div className="absolute inset-0 opacity-[0.07] pointer-events-none">
+          <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <pattern id="hero-dots" x="0" y="0" width="24" height="24" patternUnits="userSpaceOnUse">
+                <circle cx="12" cy="12" r="1" fill="white" />
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#hero-dots)" />
+          </svg>
+        </div>
+        <div className="absolute -bottom-8 -right-8 w-48 h-48 bg-gold-500/20 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2 text-emerald-300/70 text-xs font-medium uppercase tracking-widest mb-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-live-pulse shrink-0" />
+              En direct
+            </div>
+            <div className="text-2xl font-display font-bold text-white capitalize">{dateStr}</div>
+            <div className="mt-1 text-emerald-200/60 text-sm">
+              {onlineDrivers.length} livreurs actifs · {activeOrders.length} commandes en cours
+            </div>
+          </div>
+
+          <Link
+            href="/admin/tabaski"
+            className="flex items-center gap-2 bg-gold-500/20 hover:bg-gold-500/30 border border-gold-500/40 text-gold-300 hover:text-gold-200 rounded-lg px-4 py-2.5 text-sm font-medium transition-all shrink-0 w-fit"
+          >
+            <Sparkles className="w-4 h-4" />
+            Tabaski J-7 — Plan d&apos;action prêt
+            <ChevronRight className="w-4 h-4" />
+          </Link>
+        </div>
       </div>
 
+      {/* ── KPI cards ── */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="stagger-1 animate-fade-in-up">
+          <KpiCard label="Revenus aujourd'hui" value="847 200 F" delta={{ value: "23 %", direction: "up" }} hint="vs hier" spark={sparkRevenue} accent="emerald" />
+        </div>
+        <div className="stagger-2 animate-fade-in-up">
+          <KpiCard label="Commandes" value="147" delta={{ value: "12 actives", direction: "up" }} spark={sparkOrders} accent="gold" />
+        </div>
+        <div className="stagger-3 animate-fade-in-up">
+          <KpiCard label="Livreurs en ligne" value="28 / 41" hint="3 en pause prière" accent="ink" />
+        </div>
+        <div className="stagger-4 animate-fade-in-up">
+          <KpiCard label="Note moyenne" value="4,7 ★" hint="89 avis aujourd'hui" accent="gold" highlight />
+        </div>
+      </div>
+
+      {/* ── Map + Leaderboard ── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
           <DakarMap pins={[...driverPins, ...orderPins]} />

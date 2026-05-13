@@ -34,12 +34,28 @@ export default function MerchantAccueilPage() {
   const deltaTaux = tauxLivre - tauxLivreLastMonth;
 
   return (
-    <div className="p-6 max-w-4xl mx-auto space-y-6">
-      <div>
-        <h1 className="text-2xl font-display font-bold text-ink-900">Bonjour, {merchant.name}</h1>
-        <p className="text-sm text-ink-500 mt-1">
-          {new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" })}
-        </p>
+    <div className="p-6 max-w-4xl mx-auto space-y-6 animate-fade-in-up">
+
+      {/* ── Greeting header ── */}
+      <div className="relative rounded-xl overflow-hidden bg-gradient-to-br from-emerald-800 to-emerald-600 p-5 shadow-glow-emerald">
+        <div className="absolute inset-0 opacity-[0.07] pointer-events-none">
+          <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <pattern id="merchant-dots" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
+                <circle cx="10" cy="10" r="1" fill="white" />
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#merchant-dots)" />
+          </svg>
+        </div>
+        <div className="relative">
+          <div className="flex items-center gap-2 text-emerald-300/60 text-xs font-medium uppercase tracking-widest mb-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-live-pulse" />
+            {new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" })}
+          </div>
+          <h1 className="text-2xl font-display font-bold text-white">Bonjour, {merchant.name} 👋</h1>
+          <p className="text-emerald-200/60 text-sm mt-0.5">Plan {merchant.plan} · Commission {merchant.plan === "Premium" ? "12%" : "15%"}</p>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
