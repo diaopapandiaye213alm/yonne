@@ -7,7 +7,7 @@ import type { OrderStatus } from "@/lib/mock-data/orders";
 import { drivers } from "@/lib/mock-data/drivers";
 import { landmarks } from "@/lib/mock-data/landmarks";
 import { GlovoTimeline } from "@/components/tracking/GlovoTimeline";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ChevronRight } from "lucide-react";
 
 const DakarMap = dynamic(() => import("@/components/map/DakarMap"), {
   ssr: false,
@@ -56,13 +56,31 @@ export default function CommandeDetailPage({ params }: { params: { id: string } 
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      <div className="flex items-center gap-3">
-        <Link href="/admin/commandes" className="p-2 rounded-lg hover:bg-cream-100 text-ink-500 hover:text-ink-900 transition-colors">
-          <ArrowLeft className="w-5 h-5" />
-        </Link>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Link href="/admin/commandes" className="p-2 rounded-lg hover:bg-cream-100 text-ink-500 hover:text-ink-900 transition-colors">
+            <ArrowLeft className="w-5 h-5" />
+          </Link>
+          <div>
+            <h1 className="text-xl font-display font-bold text-ink-900">{order.id}</h1>
+            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[order.status]}`}>{order.status}</span>
+          </div>
+        </div>
         <div>
-          <h1 className="text-xl font-display font-bold text-ink-900">{order.id}</h1>
-          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[order.status]}`}>{order.status}</span>
+          {next && (
+            <button
+              onClick={() => updateStatus(order.id, next)}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-display font-bold transition-colors"
+            >
+              Passer à : <span className="capitalize">{next}</span>
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          )}
+          {!next && order.status === "livrée" && (
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500/10 text-emerald-700 text-sm font-medium">
+              ✓ Commande livrée
+            </div>
+          )}
         </div>
       </div>
 
@@ -112,22 +130,6 @@ export default function CommandeDetailPage({ params }: { params: { id: string } 
           <h2 className="font-semibold text-ink-900 mb-4">Suivi</h2>
           <GlovoTimeline activeStage={STATUS_STAGE[order.status]} />
         </div>
-      </div>
-
-      <div className="flex items-center gap-3">
-        {next && (
-          <button
-            onClick={() => updateStatus(order.id, next)}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-display font-bold transition-colors"
-          >
-            Passer à : <span className="capitalize">{next}</span>
-          </button>
-        )}
-        {!next && order.status === "livrée" && (
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500/10 text-emerald-700 text-sm font-medium">
-            ✓ Commande livrée
-          </div>
-        )}
       </div>
     </div>
   );
