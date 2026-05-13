@@ -7,18 +7,36 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useT } from "@/lib/i18n";
-import { Smartphone, Banknote, ChevronRight } from "lucide-react";
+import { Smartphone, Banknote, ChevronRight, Star, MapPin } from "lucide-react";
 
 const demo = drivers[0];
 const ADVANCE_MAX = Math.floor(demo.earningsToday * 0.8);
 
+type Delivery = {
+  id: string; time: string; client: string; zone: string;
+  amount: number; rating: number; tip: number;
+};
+
+const TODAY_DELIVERIES: Delivery[] = [
+  { id: "YN-2026-10128", time: "08:14", client: "Fatou Diallo",   zone: "Médina → Plateau",     amount: 1500, rating: 5, tip: 0 },
+  { id: "YN-2026-10125", time: "09:02", client: "Ibou Mbaye",     zone: "Ouakam → Almadies",    amount: 2000, rating: 5, tip: 200 },
+  { id: "YN-2026-10122", time: "09:51", client: "Aminata Sow",    zone: "Grand Yoff → Mermoz",  amount: 1200, rating: 4, tip: 0 },
+  { id: "YN-2026-10119", time: "10:30", client: "Cheikh Ba",      zone: "Liberté → Fann",       amount: 1800, rating: 5, tip: 300 },
+  { id: "YN-2026-10115", time: "11:45", client: "Rokhaya Gaye",   zone: "Sacré-Cœur → Médina",  amount: 1000, rating: 4, tip: 0 },
+  { id: "YN-2026-10112", time: "13:22", client: "Omar Thiam",     zone: "Plateau → Grand Yoff", amount: 2500, rating: 5, tip: 500 },
+  { id: "YN-2026-10108", time: "14:55", client: "Mariama Ndiaye", zone: "Parcelles → Ouakam",   amount: 1800, rating: 5, tip: 0 },
+  { id: "YN-2026-10104", time: "16:10", client: "Seydou Sarr",    zone: "Almadies → Ngor",      amount: 1200, rating: 4, tip: 100 },
+];
+
+const totalTips = TODAY_DELIVERIES.reduce((s, d) => s + d.tip, 0);
+const avgRating = (TODAY_DELIVERIES.reduce((s, d) => s + d.rating, 0) / TODAY_DELIVERIES.length).toFixed(1);
+
 export default function GainsPage() {
   const t = useT();
   const [avanceAmount, setAvanceAmount] = useState(Math.floor(ADVANCE_MAX / 2));
+  const [showDeliveries, setShowDeliveries] = useState(false);
   const dateStr = new Date("2026-05-20").toLocaleDateString("fr-FR", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
+    weekday: "long", day: "numeric", month: "long",
   });
 
   return (
@@ -28,6 +46,7 @@ export default function GainsPage() {
         <p className="text-xs text-ink-500 capitalize">{dateStr}</p>
       </div>
 
+      {/* KPIs */}
       <div className="grid grid-cols-3 gap-3">
         <div className="bg-white rounded-lg border border-cream-200 p-3 text-center">
           <div className="font-mono font-bold text-xl text-ink-900">{demo.ordersToday}</div>
@@ -40,16 +59,78 @@ export default function GainsPage() {
           <div className="text-xs text-ink-500">F CFA</div>
         </div>
         <div className="bg-white rounded-lg border border-cream-200 p-3 text-center">
-          <div className="font-mono font-bold text-xl text-gold-500">{demo.rating.toFixed(1)}</div>
+          <div className="font-mono font-bold text-xl text-gold-500">{avgRating}</div>
           <div className="text-xs text-ink-500">Note ★</div>
         </div>
       </div>
 
+      {/* Today's deliveries */}
+      <div className="bg-white rounded-lg border border-cream-200 shadow-card overflow-hidden">
+        <button
+          type="button"
+          onClick={() => setShowDeliveries(v => !v)}
+          className="w-full flex items-center justify-between px-4 py-3 hover:bg-cream-50 transition-colors"
+        >
+          <div className="flex items-center gap-2">
+            <MapPin className="w-4 h-4 text-emerald-500" />
+            <span className="font-display font-semibold text-ink-900 text-sm">Livraisons du jour</span>
+            <span className="text-xs bg-emerald-500/10 text-emerald-700 px-2 py-0.5 rounded-full font-medium">
+              {TODAY_DELIVERIES.length} courses
+            </span>
+          </div>
+          <div className="flex items-center gap-3">
+            {totalTips > 0 && (
+              <span className="text-xs text-gold-500 font-medium">+{totalTips.toLocaleString("fr-FR")} F tips</span>
+            )}
+            <ChevronRight className={`w-4 h-4 text-ink-400 transition-transform ${showDeliveries ? "rotate-90" : ""}`} />
+          </div>
+        </button>
+
+        {showDeliveries && (
+          <div className="border-t border-cream-100 divide-y divide-cream-50">
+            {TODAY_DELIVERIES.map(d => (
+              <div key={d.id} className="flex items-center gap-3 px-4 py-3">
+                <div className="shrink-0 text-center">
+                  <div className="text-xs font-mono text-ink-400">{d.time}</div>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium text-sm text-ink-900 truncate">{d.client}</div>
+                  <div className="flex items-center gap-1 text-xs text-ink-400 mt-0.5">
+                    <MapPin className="w-3 h-3 shrink-0" />
+                    <span className="truncate">{d.zone}</span>
+                  </div>
+                </div>
+                <div className="shrink-0 text-right">
+                  <div className="font-mono font-semibold text-sm text-emerald-600">
+                    {d.amount.toLocaleString("fr-FR")} F
+                    {d.tip > 0 && <span className="text-gold-500 ml-1">+{d.tip}</span>}
+                  </div>
+                  <div className="flex items-center gap-0.5 justify-end mt-0.5">
+                    {[1,2,3,4,5].map(n => (
+                      <Star key={n} className={`w-3 h-3 ${n <= d.rating ? "text-gold-500 fill-gold-500" : "text-cream-300"}`} />
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ))}
+            {/* Summary row */}
+            <div className="flex items-center justify-between px-4 py-3 bg-emerald-500/5">
+              <span className="text-xs font-semibold text-ink-700">Total du jour</span>
+              <span className="font-mono font-bold text-emerald-600">
+                {(demo.earningsToday + totalTips).toLocaleString("fr-FR")} F
+              </span>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Weekly chart */}
       <div className="bg-white rounded-lg border border-cream-200 p-4">
         <h2 className="font-display font-semibold text-ink-900 mb-3">{t("thisWeek")}</h2>
         <WeeklyEarningsChart />
       </div>
 
+      {/* Badge */}
       <div className="bg-white rounded-lg border border-gold-500 p-4 flex items-center gap-3">
         <div className="text-2xl">🏆</div>
         <div>
@@ -103,11 +184,9 @@ export default function GainsPage() {
         </Button>
       </div>
 
-      <Button
-        type="button"
+      <Button type="button"
         onClick={() => toast.success("Demande de virement envoyée — vous recevrez un paiement Wave d'ici 24h")}
-        className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-display font-bold shadow-glow-emerald"
-      >
+        className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-display font-bold shadow-glow-emerald">
         {t("requestWave")}
       </Button>
     </div>
