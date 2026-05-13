@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export interface Column<T> {
@@ -14,9 +14,14 @@ interface Props<T> {
   data: T[];
   onRowClick?: (row: T) => void;
   pageSize?: number;
+  emptyTitle?: string;
+  emptyBody?: string;
+  onReset?: () => void;
 }
 
-export function DataTable<T extends object>({ columns, data, onRowClick, pageSize = 20 }: Props<T>) {
+export function DataTable<T extends object>({
+  columns, data, onRowClick, pageSize = 20, emptyTitle, emptyBody, onReset,
+}: Props<T>) {
   const [page, setPage] = useState(0);
   const totalPages = Math.max(1, Math.ceil(data.length / pageSize));
   const slice = data.slice(page * pageSize, (page + 1) * pageSize);
@@ -36,22 +41,40 @@ export function DataTable<T extends object>({ columns, data, onRowClick, pageSiz
           </thead>
           <tbody>
             {slice.length === 0 && (
-              <tr><td colSpan={columns.length} className="text-center py-10 text-ink-500 text-sm">Aucun résultat</td></tr>
+              <tr>
+                <td colSpan={columns.length} className="py-14 text-center">
+                  <Search className="w-8 h-8 text-ink-300 mx-auto mb-3" />
+                  <p className="text-sm font-semibold text-ink-900">
+                    {emptyTitle ?? "Aucun résultat"}
+                  </p>
+                  {emptyBody && (
+                    <p className="text-xs text-ink-500 mt-1">{emptyBody}</p>
+                  )}
+                  {onReset && (
+                    <button
+                      onClick={onReset}
+                      className="mt-3 text-xs text-emerald-600 underline hover:text-emerald-700"
+                    >
+                      Réinitialiser les filtres
+                    </button>
+                  )}
+                </td>
+              </tr>
             )}
             {slice.map((row, i) => {
               const r = row as Record<string, unknown>;
               return (
-              <tr
-                key={String(r.id ?? i)}
-                className={cn("border-t border-cream-100 text-ink-900", onRowClick && "cursor-pointer hover:bg-cream-50 transition-colors")}
-                onClick={() => onRowClick?.(row)}
-              >
-                {columns.map(col => (
-                  <td key={col.key} className="px-4 py-3 whitespace-nowrap">
-                    {col.render ? col.render(row) : String(r[col.key] ?? "")}
-                  </td>
-                ))}
-              </tr>
+                <tr
+                  key={String(r.id ?? i)}
+                  className={cn("border-t border-cream-100 text-ink-900", onRowClick && "cursor-pointer hover:bg-cream-50 transition-colors")}
+                  onClick={() => onRowClick?.(row)}
+                >
+                  {columns.map(col => (
+                    <td key={col.key} className="px-4 py-3 whitespace-nowrap">
+                      {col.render ? col.render(row) : String(r[col.key] ?? "")}
+                    </td>
+                  ))}
+                </tr>
               );
             })}
           </tbody>
