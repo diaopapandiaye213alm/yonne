@@ -1,7 +1,10 @@
+"use client";
+
 import { drivers } from "@/lib/mock-data/drivers";
 import { WeeklyEarningsChart } from "@/components/driver/WeeklyEarningsChart";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
 
 const demo = drivers[0];
 
@@ -51,7 +54,11 @@ export default function GainsPage() {
         </div>
       </div>
 
-      <Button className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-display font-bold shadow-glow-emerald">
+      <Button
+        type="button"
+        onClick={() => toast.success("Demande de virement envoyée — vous recevrez un paiement Wave d'ici 24h")}
+        className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-display font-bold shadow-glow-emerald"
+      >
         Demander un virement Wave
       </Button>
     </div>
