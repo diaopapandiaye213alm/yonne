@@ -70,6 +70,11 @@ export default function CommandesPage() {
     })));
   }
 
+  function handleReset() {
+    setSearch("");
+    setFilters({});
+  }
+
   return (
     <div className="max-w-7xl mx-auto">
       <div className="mb-6">
@@ -87,6 +92,9 @@ export default function CommandesPage() {
         data={filtered}
         onRowClick={o => router.push(`/admin/commandes/${o.id}`)}
         pageSize={20}
+        emptyTitle="Aucune commande trouvée"
+        emptyBody="Essayez de modifier le statut, le paiement ou la recherche."
+        onReset={handleReset}
       />
     </div>
   );

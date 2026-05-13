@@ -45,6 +45,11 @@ export default function MarchandsPage() {
     { key: "status", label: "Statut", render: m => <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[m.status]}`}>{m.status}</span> },
   ];
 
+  function handleReset() {
+    setSearch("");
+    setFilters({});
+  }
+
   return (
     <div className="max-w-7xl mx-auto">
       <div className="mb-6">
@@ -61,6 +66,9 @@ export default function MarchandsPage() {
         data={filtered}
         onRowClick={m => router.push(`/admin/marchands/${m.id}`)}
         pageSize={20}
+        emptyTitle="Aucun commerçant trouvé"
+        emptyBody="Essayez de modifier le plan, la ville ou le statut."
+        onReset={handleReset}
       />
     </div>
   );

@@ -60,6 +60,11 @@ export default function MesCommandesPage() {
     })));
   }
 
+  function handleReset() {
+    setSearch("");
+    setFilters({});
+  }
+
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <div className="mb-6">
@@ -77,6 +82,9 @@ export default function MesCommandesPage() {
         data={filtered}
         onRowClick={o => router.push(`/merchant/commande/${o.id}`)}
         pageSize={20}
+        emptyTitle="Aucune commande trouvée"
+        emptyBody="Essayez de modifier le statut ou la recherche."
+        onReset={handleReset}
       />
     </div>
   );

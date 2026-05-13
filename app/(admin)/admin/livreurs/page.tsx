@@ -68,6 +68,11 @@ export default function LivreursPage() {
     )},
   ];
 
+  function handleReset() {
+    setSearch("");
+    setFilters({});
+  }
+
   return (
     <div className="max-w-7xl mx-auto">
       <div className="mb-6">
@@ -84,6 +89,9 @@ export default function LivreursPage() {
         data={filtered}
         onRowClick={d => router.push(`/admin/livreurs/${d.id}`)}
         pageSize={20}
+        emptyTitle="Aucun livreur trouvé"
+        emptyBody="Essayez de modifier le statut ou le badge."
+        onReset={handleReset}
       />
     </div>
   );
