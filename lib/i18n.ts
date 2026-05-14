@@ -176,6 +176,7 @@ const dict = {
 
   // ── Onboarding marchand ──
   navOnboarding:    { fr: "Démarrage",         en: "Get started",       wo: "Tànneef" },
+  navSinistre:      { fr: "Litiges",           en: "Claims",            wo: "Litiges" },
   onboardingTitle:  { fr: "Bienvenue sur YONNE !", en: "Welcome to YONNE!", wo: "Dalal YONNE !" },
 } as const;
 

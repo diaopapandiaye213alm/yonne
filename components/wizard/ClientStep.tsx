@@ -1,21 +1,86 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useWizard } from "@/lib/store/wizard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { searchLandmarks, landmarks } from "@/lib/mock-data/landmarks";
-import { MapPin } from "lucide-react";
+import { MapPin, User } from "lucide-react";
+
+type RecentClient = {
+  name: string;
+  phone: string;
+  landmarkId: string;
+  landmarkName: string;
+};
 
 export function ClientStep() {
   const w = useWizard();
   const [query, setQuery] = useState("");
+  const [recentClients, setRecentClients] = useState<RecentClient[]>([]);
   const selected = landmarks.find(l => l.id === w.landmarkId) ?? null;
   const suggestions = searchLandmarks(query);
   const canNext = w.clientName.trim() && w.clientPhone.trim() && w.landmarkId;
 
+  // Read recent clients from localStorage
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("yonne_recent_clients");
+      if (raw) {
+        const parsed: RecentClient[] = JSON.parse(raw);
+        setRecentClients(parsed.slice(0, 5));
+      }
+    } catch {
+      // ignore parse errors
+    }
+  }, []);
+
+  // Read prefill from "Re-commander" action
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("yonne_prefill_order");
+      if (raw) {
+        const prefill = JSON.parse(raw);
+        if (prefill.clientName) w.set("clientName", prefill.clientName);
+        if (prefill.clientPhone) w.set("clientPhone", prefill.clientPhone);
+        if (prefill.landmarkId) w.set("landmarkId", prefill.landmarkId);
+        if (prefill.amount) w.set("amount", prefill.amount);
+        localStorage.removeItem("yonne_prefill_order");
+      }
+    } catch {
+      // ignore parse errors
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function applyRecentClient(c: RecentClient) {
+    w.set("clientName", c.name);
+    w.set("clientPhone", c.phone);
+    w.set("landmarkId", c.landmarkId);
+    setQuery("");
+  }
+
   return (
     <div className="space-y-5 max-w-xl">
+      {/* Recent clients */}
+      {recentClients.length > 0 && (
+        <div className="space-y-2">
+          <Label className="text-xs text-ink-500 uppercase tracking-wide">Clients récents</Label>
+          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+            {recentClients.map((c, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => applyRecentClient(c)}
+                className="flex items-center gap-1.5 bg-cream-100 hover:bg-cream-200 border border-cream-200 rounded-full px-3 py-1.5 shrink-0 transition-colors"
+              >
+                <User className="w-3 h-3 text-ink-400 shrink-0" />
+                <span className="text-xs font-medium text-ink-700 truncate max-w-[120px]">{c.name}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="cn">Nom client</Label>

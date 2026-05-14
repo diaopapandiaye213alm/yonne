@@ -54,6 +54,26 @@ export function DispatchStep() {
       createdAt: new Date().toISOString(),
       active: true,
     });
+
+    // Save client to recent clients (LIFO, max 5)
+    try {
+      const landmarkObj = w.landmarkId
+        ? (() => { try { const { landmarks } = require("@/lib/mock-data/landmarks"); return landmarks.find((l: { id: string; name: string }) => l.id === w.landmarkId); } catch { return null; } })()
+        : null;
+      const newEntry = {
+        name: w.clientName,
+        phone: w.clientPhone,
+        landmarkId: w.landmarkId ?? "",
+        landmarkName: landmarkObj?.name ?? "",
+      };
+      const raw = localStorage.getItem("yonne_recent_clients");
+      const existing: typeof newEntry[] = raw ? JSON.parse(raw) : [];
+      const deduped = existing.filter(c => c.phone !== newEntry.phone);
+      localStorage.setItem("yonne_recent_clients", JSON.stringify([newEntry, ...deduped].slice(0, 5)));
+    } catch {
+      // ignore storage errors
+    }
+
     w.reset();
     router.push(`/merchant/commande/${orderId}`);
   }

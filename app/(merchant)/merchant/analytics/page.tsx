@@ -7,11 +7,7 @@ import { useSession } from "@/lib/hooks/useSession";
 import { useT } from "@/lib/i18n";
 import { TrendingUp, TrendingDown, Package, Wallet, Users, Star } from "lucide-react";
 
-const PAYMENTS = [
-  { label: "Wave",   pct: 52, color: "bg-[#1B96D4]",  textColor: "text-[#1B96D4]" },
-  { label: "Orange", pct: 31, color: "bg-orange-400",  textColor: "text-orange-600" },
-  { label: "Cash",   pct: 17, color: "bg-cream-300",   textColor: "text-ink-600" },
-];
+const MONTH_NAMES = ["Jan", "Fév", "Mar", "Avr", "Mai", "Jun", "Jul", "Aoû", "Sep", "Oct", "Nov", "Déc"];
 
 export default function MerchantAnalyticsPage() {
   const t             = useT();
@@ -20,32 +16,85 @@ export default function MerchantAnalyticsPage() {
   const { orders }    = useOrdersStore();
   const merchant = useMemo(() => {
     const byEmail = session?.email ? merchants.find(m => m.email === session.email) : null;
-    return byEmail ?? merchants[0] ?? { name: "—", plan: "Standard", revenueThisMonth: 310000, ordersThisMonth: 91 };
+    return byEmail ?? merchants[0] ?? { name: "—", plan: "Standard", revenueThisMonth: 310000, ordersThisMonth: 91, id: "" };
   }, [merchants, session?.email]);
 
-  const MONTHLY = [
-    { month: "Jan", revenue: 820000,  orderCount: 68 },
-    { month: "Fév", revenue: 940000,  orderCount: 79 },
-    { month: "Mar", revenue: 875000,  orderCount: 73 },
-    { month: "Avr", revenue: 1080000, orderCount: 91 },
-    { month: "Mai", revenue: merchant.revenueThisMonth, orderCount: merchant.ordersThisMonth },
-  ];
-  const maxRevenue   = Math.max(...MONTHLY.map(m => m.revenue));
-  const DAILY_ORDERS = [4,6,3,8,5,7,9,4,6,8,11,7,5,9,12,8,6,10,13,9,7,11,14,10,8,12,15,11,9,13,merchant.ordersThisMonth % 18 + 5];
-  const maxDay       = Math.max(...DAILY_ORDERS);
+  // Filter orders for this merchant
+  const myOrders = useMemo(() => {
+    if ((merchant as { id?: string }).id) {
+      return orders.filter(o => (o as { merchantId?: string }).merchantId === (merchant as { id: string }).id);
+    }
+    return orders;
+  }, [orders, merchant]);
 
-  const clientMap = new Map<string, { count: number; total: number }>();
-  for (const o of orders.slice(0, 40)) {
-    const existing = clientMap.get(o.clientName);
-    if (existing) { existing.count++; existing.total += o.amount; }
-    else clientMap.set(o.clientName, { count: 1, total: o.amount });
-  }
-  const topClients = Array.from(clientMap.entries())
+  // Last 5 months dynamic
+  const MONTHLY = useMemo(() => {
+    const last5 = [];
+    for (let i = 4; i >= 0; i--) {
+      const d = new Date(); d.setMonth(d.getMonth() - i);
+      const m = MONTH_NAMES[d.getMonth()];
+      const y = d.getFullYear();
+      const monthOrders = myOrders.filter(o => {
+        const od = new Date(o.createdAt);
+        return od.getMonth() === d.getMonth() && od.getFullYear() === y;
+      });
+      last5.push({ month: m, revenue: monthOrders.reduce((s, o) => s + o.amount, 0), orderCount: monthOrders.length });
+    }
+    return last5;
+  }, [myOrders]);
+
+  // Daily orders — last 31 days
+  const DAILY_ORDERS = useMemo(() => {
+    const days: number[] = [];
+    const now = new Date();
+    for (let i = 30; i >= 0; i--) {
+      const day = new Date(now);
+      day.setDate(now.getDate() - i);
+      day.setHours(0, 0, 0, 0);
+      const next = new Date(day); next.setDate(day.getDate() + 1);
+      days.push(myOrders.filter(o => {
+        const od = new Date(o.createdAt);
+        return od >= day && od < next;
+      }).length);
+    }
+    return days;
+  }, [myOrders]);
+
+  const maxRevenue   = Math.max(...MONTHLY.map(m => m.revenue), 1);
+  const maxDay       = Math.max(...DAILY_ORDERS, 1);
+
+  const clientMap = useMemo(() => {
+    const map = new Map<string, { count: number; total: number }>();
+    for (const o of myOrders) {
+      const existing = map.get(o.clientName);
+      if (existing) { existing.count++; existing.total += o.amount; }
+      else map.set(o.clientName, { count: 1, total: o.amount });
+    }
+    return map;
+  }, [myOrders]);
+
+  const topClients = useMemo(() => Array.from(clientMap.entries())
     .map(([name, { count, total }]) => ({ name, count, total }))
     .sort((a, b) => b.total - a.total)
-    .slice(0, 5);
+    .slice(0, 5), [clientMap]);
 
-  const deliveryRate = Math.round((orders.filter(o => o.status === "livrée").length / Math.max(1, orders.length)) * 100);
+  const deliveryRate = Math.round((myOrders.filter(o => o.status === "livrée").length / Math.max(1, myOrders.length)) * 100);
+
+  // Payment breakdown from real orders
+  const PAYMENTS = useMemo(() => {
+    const total = myOrders.length || 1;
+    const wave   = myOrders.filter(o => o.paymentMethod === "wave").length;
+    const orange = myOrders.filter(o => o.paymentMethod === "orange").length;
+    const cash   = myOrders.filter(o => o.paymentMethod === "cash").length;
+    const wavePct   = Math.round((wave / total) * 100);
+    const orangePct = Math.round((orange / total) * 100);
+    const cashPct   = 100 - wavePct - orangePct;
+    return [
+      { label: "Wave",   pct: wavePct,   color: "bg-[#1B96D4]",  textColor: "text-[#1B96D4]" },
+      { label: "Orange", pct: orangePct, color: "bg-orange-400",  textColor: "text-orange-600" },
+      { label: "Cash",   pct: cashPct,   color: "bg-cream-300",   textColor: "text-ink-600" },
+    ];
+  }, [myOrders]);
 
   const [period, setPeriod] = useState<"month" | "week">("month");
 
@@ -138,7 +187,7 @@ export default function MerchantAnalyticsPage() {
       {/* Daily orders + Payment breakdown */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="bg-white rounded-lg border border-cream-200 shadow-card p-5">
-          <h2 className="font-semibold text-ink-900 mb-4">Commandes / jour — Mai</h2>
+          <h2 className="font-semibold text-ink-900 mb-4">Commandes / jour — {MONTH_NAMES[new Date().getMonth()]}</h2>
           <div className="flex items-end gap-0.5 h-20">
             {DAILY_ORDERS.map((v, i) => (
               <div key={i} className="flex-1">
@@ -204,7 +253,7 @@ export default function MerchantAnalyticsPage() {
 
       {/* Commission summary */}
       <div className="bg-white rounded-lg border border-cream-200 shadow-card p-5">
-        <h2 className="font-semibold text-ink-900 mb-3">{t("yonneCommission")} — Mai</h2>
+        <h2 className="font-semibold text-ink-900 mb-3">{t("yonneCommission")} — {MONTH_NAMES[new Date().getMonth()]}</h2>
         <div className="flex items-center justify-between text-sm py-2 border-b border-cream-100">
           <span className="text-ink-500">{t("grossRevenue")}</span>
           <span className="font-semibold tabular-nums">{currentMonth.revenue.toLocaleString("fr-FR")} F</span>

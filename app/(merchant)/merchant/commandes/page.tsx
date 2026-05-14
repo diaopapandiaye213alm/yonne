@@ -7,7 +7,7 @@ import { DataTable, Column } from "@/components/admin/DataTable";
 import { FilterBar, FilterDef } from "@/components/admin/FilterBar";
 import { downloadCsv } from "@/lib/utils/csv";
 import type { Order, OrderStatus } from "@/lib/mock-data/orders";
-import { Package, Truck, CheckCircle2, Banknote, MapPin, Share2 } from "lucide-react";
+import { Package, Truck, CheckCircle2, Banknote, MapPin, Share2, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 
 const STATUS_COLORS: Record<OrderStatus, string> = {
@@ -117,6 +117,34 @@ export default function MesCommandesPage() {
           </div>
         );
       },
+    },
+    {
+      key: "id" as keyof Order,
+      label: "Actions",
+      render: o => (
+        <div onClick={e => e.stopPropagation()}>
+          <button
+            type="button"
+            title="Re-commander"
+            onClick={e => {
+              e.stopPropagation();
+              try {
+                localStorage.setItem("yonne_prefill_order", JSON.stringify({
+                  clientName: o.clientName,
+                  clientPhone: o.clientPhone,
+                  landmarkId: (o as { landmarkId?: string }).landmarkId ?? "",
+                  amount: o.amount,
+                }));
+              } catch { /* ignore */ }
+              router.push("/merchant/nouvelle-commande");
+            }}
+            className="flex items-center gap-1 text-xs px-2 py-1 rounded border border-cream-200 text-ink-500 hover:text-emerald-600 hover:border-emerald-300 hover:bg-emerald-50 transition-colors"
+          >
+            <RotateCcw className="w-3 h-3" />
+            Re-commander
+          </button>
+        </div>
+      ),
     },
   ];
 

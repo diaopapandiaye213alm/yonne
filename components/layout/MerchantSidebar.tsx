@@ -5,7 +5,7 @@ import { Wordmark } from "@/components/brand/Wordmark";
 import { cn } from "@/lib/utils";
 import { useT } from "@/lib/i18n";
 import { LangSwitcher } from "@/components/i18n/LangSwitcher";
-import { Home, PlusSquare, ListOrdered, Wallet, Settings, LogOut, BookOpen, BarChart3, Rocket } from "lucide-react";
+import { Home, PlusSquare, ListOrdered, Wallet, Settings, LogOut, BookOpen, BarChart3, Rocket, ShieldAlert } from "lucide-react";
 import type { StringKey } from "@/lib/i18n";
 
 const items: { href: string; key: StringKey; icon: React.ElementType }[] = [
@@ -15,6 +15,7 @@ const items: { href: string; key: StringKey; icon: React.ElementType }[] = [
   { href: "/merchant/analytics",           key: "navAnalytics",  icon: BarChart3 },
   { href: "/merchant/catalogue",           key: "navCatalogue", icon: BookOpen },
   { href: "/merchant/finances",           key: "navFinances", icon: Wallet },
+  { href: "/merchant/sinistre",            key: "navSinistre", icon: ShieldAlert },
   { href: "/merchant/parametres",         key: "navParams",   icon: Settings },
   { href: "/merchant/onboarding",         key: "navOnboarding", icon: Rocket },
 ];
