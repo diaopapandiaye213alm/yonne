@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
-import { drivers } from "@/lib/mock-data/drivers";
+import { useDriversStore } from "@/lib/store/drivers";
 import { landmarks } from "@/lib/mock-data/landmarks";
 import { incomingOrders } from "@/lib/mock-data/incoming-orders";
 import { useDriverStore } from "@/lib/store/driver";
@@ -19,15 +19,17 @@ const DakarMap = dynamic(() => import("@/components/map/DakarMap"), {
   ),
 });
 
-const demo = drivers[0];
-
 export default function CartePage() {
   const router = useRouter();
+  const { drivers } = useDriversStore();
   const { online, activeOrderId, setOnline, acceptOrder } = useDriverStore();
+
+  const demo = drivers[0];
+  const defaultPos: [number, number] = [demo?.lat ?? 14.6928, demo?.lng ?? -17.4467];
 
   const [orderIndex, setOrderIndex]   = useState(0);
   const [secondsLeft, setSecondsLeft] = useState(30);
-  const [gpsPos, setGpsPos]           = useState<[number, number]>([demo.lat, demo.lng]);
+  const [gpsPos, setGpsPos]           = useState<[number, number]>(defaultPos);
   const [gpsActive, setGpsActive]     = useState(false);
   const watchIdRef = useRef<number | null>(null);
 
@@ -69,7 +71,7 @@ export default function CartePage() {
 
   const currentOrder = incomingOrders[orderIndex];
 
-  const driverPos: [number, number] = gpsActive ? gpsPos : [demo.lat, demo.lng];
+  const driverPos: [number, number] = gpsActive ? gpsPos : defaultPos;
 
   const pins: Pin[] = [
     { id: "driver", lat: driverPos[0], lng: driverPos[1], kind: "driver" },

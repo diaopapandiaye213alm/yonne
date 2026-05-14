@@ -1,5 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
+import { useOrdersStore } from "@/lib/store/orders";
+import { useDriversStore } from "@/lib/store/drivers";
 
 interface LiveKpis {
   revenue: number;
@@ -10,39 +12,60 @@ interface LiveKpis {
   sparkOrders: number[];
 }
 
-const BASE: LiveKpis = {
-  revenue:       847200,
-  orders:        147,
-  onlineDrivers: 28,
-  rating:        4.7,
-  sparkRevenue: [620, 705, 690, 760, 810, 805, 847],
-  sparkOrders:  [110, 122, 118, 129, 138, 141, 147],
-};
-
 function randInt(min: number, max: number) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
 export function useLiveKpis(intervalMs = 28000): LiveKpis {
-  const [kpis, setKpis] = useState<LiveKpis>(BASE);
+  const { orders }  = useOrdersStore();
+  const { drivers } = useDriversStore();
+
+  const realOrders      = orders.length || 147;
+  const realOnline      = drivers.filter(d => d.online).length || 28;
+  const realRevenue     = orders.reduce((s, o) => s + o.amount, 0) || 847200;
+  const realRating      = drivers.length > 0
+    ? Math.round((drivers.reduce((s, d) => s + d.rating, 0) / drivers.length) * 10) / 10
+    : 4.7;
+
+  const [kpis, setKpis] = useState<LiveKpis>(() => ({
+    revenue:      realRevenue,
+    orders:       realOrders,
+    onlineDrivers: realOnline,
+    rating:       realRating,
+    sparkRevenue: [620, 705, 690, 760, 810, 805, Math.round(realRevenue / 1000)],
+    sparkOrders:  [110, 122, 118, 129, 138, 141, realOrders],
+  }));
+
+  // Re-seed when store loads
+  useEffect(() => {
+    if (orders.length > 0 || drivers.length > 0) {
+      setKpis(prev => ({
+        ...prev,
+        revenue:       realRevenue,
+        orders:        realOrders,
+        onlineDrivers: realOnline,
+        rating:        realRating,
+        sparkOrders:   [...prev.sparkOrders.slice(0, 6), realOrders],
+        sparkRevenue:  [...prev.sparkRevenue.slice(0, 6), Math.round(realRevenue / 1000)],
+      }));
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orders.length, drivers.length]);
 
   useEffect(() => {
     const id = setInterval(() => {
       setKpis(prev => {
-        const newOrders  = prev.orders + randInt(1, 3);
-        const newRevenue = prev.revenue + randInt(3000, 12000);
-        const newOnline  = Math.max(20, Math.min(41, prev.onlineDrivers + randInt(-1, 2)));
-
-        const newSparkOrders  = [...prev.sparkOrders.slice(1), newOrders];
-        const newSparkRevenue = [...prev.sparkRevenue.slice(1), Math.round(newRevenue / 1000)];
+        const newOrders  = prev.orders + randInt(0, 2);
+        const newRevenue = prev.revenue + randInt(2000, 10000);
+        const newOnline  = Math.max(0, Math.min(41, prev.onlineDrivers + randInt(-1, 2)));
 
         return {
           revenue:       newRevenue,
           orders:        newOrders,
           onlineDrivers: newOnline,
           rating:        prev.rating,
-          sparkRevenue:  newSparkRevenue,
-          sparkOrders:   newSparkOrders,
+          sparkRevenue:  [...prev.sparkRevenue.slice(1), Math.round(newRevenue / 1000)],
+          sparkOrders:   [...prev.sparkOrders.slice(1), newOrders],
         };
       });
     }, intervalMs);

@@ -34,6 +34,8 @@ function rowToDriver(row: Record<string, unknown>): Driver {
   };
 }
 
+let driversRealtimeSubscribed = false;
+
 export const useDriversStore = create<DriversState>((set, get) => ({
   drivers: [],
   loading: false,
@@ -47,6 +49,17 @@ export const useDriversStore = create<DriversState>((set, get) => ({
       .order("score_ia", { ascending: false });
     if (!error && data) set({ drivers: data.map(rowToDriver) });
     set({ loading: false });
+
+    if (!driversRealtimeSubscribed) {
+      driversRealtimeSubscribed = true;
+      supabase
+        .channel("drivers-rt")
+        .on("postgres_changes", { event: "UPDATE", schema: "public", table: "drivers" }, (payload) => {
+          const updated = rowToDriver(payload.new as Record<string, unknown>);
+          set(s => ({ drivers: s.drivers.map(d => d.id === updated.id ? updated : d) }));
+        })
+        .subscribe();
+    }
   },
 
   setOnline: async (id, online) => {

@@ -1,6 +1,6 @@
 import Image from "next/image";
 import type { Driver } from "@/lib/mock-data/drivers";
-import { avatarUrl } from "@/lib/mock-data/drivers";
+import { avatarUrl } from "@/lib/store/drivers";
 import { Phone, Star } from "lucide-react";
 
 export function DriverCard({ driver }: { driver: Driver }) {

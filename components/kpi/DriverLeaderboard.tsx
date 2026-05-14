@@ -1,5 +1,7 @@
+"use client";
 import Image from "next/image";
-import { topDriversToday, avatarUrl } from "@/lib/mock-data/drivers";
+import { useMemo } from "react";
+import { useDriversStore, avatarUrl } from "@/lib/store/drivers";
 import { Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -18,7 +20,11 @@ const rankNumStyle = [
 ] as const;
 
 export function DriverLeaderboard() {
-  const top = topDriversToday(5);
+  const { drivers } = useDriversStore();
+  const top = useMemo(() =>
+    [...drivers].sort((a, b) => b.earningsToday - a.earningsToday).slice(0, 5),
+    [drivers]
+  );
   return (
     <div className="bg-white rounded-lg shadow-card border border-cream-200 p-5">
       <div className="flex items-center justify-between mb-5">

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Radio } from "lucide-react";
+import { useOrdersStore } from "@/lib/store/orders";
 
 type EventKind = "assigned" | "picked_up" | "en_route" | "delivered" | "new_order";
 
@@ -58,10 +59,53 @@ function makeSeedEvents(): FeedEvent[] {
   }));
 }
 
+const STATUS_KIND: Record<string, EventKind> = {
+  "créée":    "new_order",
+  "assignée": "assigned",
+  "collecte": "picked_up",
+  "en route": "en_route",
+  "livrée":   "delivered",
+};
+
+const PAY_MAP: Record<string, "Wave" | "Orange" | "Cash"> = {
+  wave: "Wave", orange: "Orange", cash: "Cash",
+};
+
 export function LiveFeed() {
+  const { orders } = useOrdersStore();
   const [events, setEvents] = useState<FeedEvent[]>(makeSeedEvents);
   const [flash,  setFlash]  = useState<string | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const prevOrdersRef = useRef<typeof orders>([]);
+
+  // Inject real events when order list changes
+  useEffect(() => {
+    const prev = prevOrdersRef.current;
+    if (prev.length === 0) { prevOrdersRef.current = orders; return; }
+
+    const changed = orders.filter(o => {
+      const old = prev.find(p => p.id === o.id);
+      return !old || old.status !== o.status;
+    });
+
+    for (const o of changed.slice(0, 3)) {
+      const ev: FeedEvent = {
+        uid:     `real-${o.id}-${o.status}`,
+        time:    nowStr(),
+        id:      o.id,
+        client:  o.clientName,
+        driver:  pick(DRIVERS),
+        amount:  o.amount,
+        payment: PAY_MAP[o.paymentMethod] ?? "Cash",
+        kind:    STATUS_KIND[o.status] ?? "new_order",
+      };
+      setEvents(prev => [ev, ...prev].slice(0, 12));
+      setFlash(ev.uid);
+      setTimeout(() => setFlash(null), 600);
+    }
+    prevOrdersRef.current = orders;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orders]);
 
   useEffect(() => {
     function addEvent() {

@@ -2,8 +2,12 @@
 import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from "recharts";
-import { hourlyRevenue, zoneActivity, weeklyMerchants, ordersToday, breakEvenTarget, profitableTarget } from "@/lib/mock-data/analytics";
+import { hourlyRevenue, zoneActivity, weeklyMerchants } from "@/lib/mock-data/analytics";
+import { useOrdersStore } from "@/lib/store/orders";
 import { Activity, Zap } from "lucide-react";
+
+const BREAKEVEN_TARGET  = 24;
+const PROFITABLE_TARGET = 300;
 
 const LeafletMap = dynamic(() => import("@/components/map/DakarMap"), {
   ssr: false,
@@ -46,9 +50,18 @@ const PREDICTIONS = [
 ];
 
 export default function AnalyticsPage() {
-  const breakEvenPct  = Math.min(100, Math.round((ordersToday / breakEvenTarget)  * 100));
-  const profitablePct = Math.min(100, Math.round((ordersToday / profitableTarget) * 100));
+  const { orders } = useOrdersStore();
+  const ordersToday = orders.filter(o => {
+    const d = new Date(o.createdAt);
+    const now = new Date();
+    return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate();
+  }).length || orders.length; // fallback: total if no today orders (demo data has fixed dates)
+
+  const breakEvenPct  = Math.min(100, Math.round((ordersToday / BREAKEVEN_TARGET)  * 100));
+  const profitablePct = Math.min(100, Math.round((ordersToday / PROFITABLE_TARGET) * 100));
   const [liveCount, setLiveCount] = useState(ordersToday);
+
+  useEffect(() => { setLiveCount(ordersToday); }, [ordersToday]);
 
   useEffect(() => {
     const t = setInterval(() => setLiveCount(c => c + (Math.random() < 0.3 ? 1 : 0)), 4000);
@@ -146,8 +159,8 @@ export default function AnalyticsPage() {
           <div className="text-sm text-ink-500 mb-6">commandes aujourd'hui</div>
           <div className="space-y-4">
             {[
-              { label: `Point mort (${breakEvenTarget}/jour)`,     pct: breakEvenPct,  color: "bg-emerald-500" },
-              { label: `Rentable (${profitableTarget}/jour)`,      pct: profitablePct, color: "bg-gold-500" },
+              { label: `Point mort (${BREAKEVEN_TARGET}/jour)`,     pct: breakEvenPct,  color: "bg-emerald-500" },
+              { label: `Rentable (${PROFITABLE_TARGET}/jour)`,      pct: profitablePct, color: "bg-gold-500" },
             ].map(({ label, pct, color }) => (
               <div key={label}>
                 <div className="flex justify-between text-sm mb-1">
