@@ -1,7 +1,7 @@
 "use client";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { toast } from "sonner";
-import { merchants } from "@/lib/mock-data/merchants";
+import { useMerchantsStore } from "@/lib/store/merchants";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -9,7 +9,8 @@ import { Button } from "@/components/ui/button";
 import { QrCode, Download, Copy } from "lucide-react";
 
 export default function ParametresPage() {
-  const merchant = merchants[0];
+  const { merchants } = useMerchantsStore();
+  const merchant = useMemo(() => merchants[0] ?? { id: "", name: "—", email: "", phone: "", city: "", plan: "Standard" as const }, [merchants]);
 
   const [email, setEmail] = useState(merchant.email);
   const [phone, setPhone] = useState(merchant.phone);

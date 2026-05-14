@@ -26,6 +26,8 @@ function rowToOrder(row: Record<string, unknown>): Order {
   };
 }
 
+let realtimeSubscribed = false;
+
 export const useOrdersStore = create<OrdersState>((set, get) => ({
   orders: [],
   loading: false,
@@ -39,6 +41,16 @@ export const useOrdersStore = create<OrdersState>((set, get) => ({
       .order("created_at", { ascending: false });
     if (!error && data) set({ orders: data.map(rowToOrder) });
     set({ loading: false });
+
+    if (!realtimeSubscribed) {
+      realtimeSubscribed = true;
+      supabase
+        .channel("orders-rt")
+        .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => {
+          get().fetchOrders();
+        })
+        .subscribe();
+    }
   },
 
   addOrder: async (order) => {

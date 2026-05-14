@@ -1,7 +1,8 @@
 "use client";
+import { useMemo } from "react";
 import { toast } from "sonner";
 import { Trophy, Star, Gift } from "lucide-react";
-import { drivers } from "@/lib/mock-data/drivers";
+import { useDriversStore } from "@/lib/store/drivers";
 
 const BADGES = [
   { tier: "Bronze", min: 0,   max: 50,  color: "bg-amber-700/20 text-amber-700 border-amber-700/30",  emoji: "🥉", points: 2 },
@@ -13,13 +14,15 @@ function getBadge(points: number) {
   return BADGES.find(b => points >= b.min && points <= b.max) ?? BADGES[0];
 }
 
-// Compute mock points from drivers
-const leaderboard = drivers.slice(0, 10).map((d, i) => ({
-  ...d,
-  points: Math.round(d.ordersToday * 2.5 + d.rating * 8 + (10 - i) * 5),
-})).sort((a, b) => b.points - a.points);
-
 export default function FidelitePage() {
+  const { drivers } = useDriversStore();
+  const leaderboard = useMemo(() =>
+    drivers.slice(0, 10).map((d, i) => ({
+      ...d,
+      points: Math.round(d.ordersToday * 2.5 + d.rating * 8 + (10 - i) * 5),
+    })).sort((a, b) => b.points - a.points),
+    [drivers]
+  );
   const totalPoints = leaderboard.reduce((s, d) => s + d.points, 0);
 
   return (

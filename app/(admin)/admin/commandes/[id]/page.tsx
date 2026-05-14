@@ -4,8 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useOrdersStore } from "@/lib/store/orders";
+import { useDriversStore } from "@/lib/store/drivers";
 import type { OrderStatus } from "@/lib/mock-data/orders";
-import { drivers } from "@/lib/mock-data/drivers";
 import { landmarks } from "@/lib/mock-data/landmarks";
 import { GlovoTimeline } from "@/components/tracking/GlovoTimeline";
 import { Progress } from "@/components/ui/progress";
@@ -41,12 +41,11 @@ const NEXT_STATUS: Record<OrderStatus, OrderStatus | null> = {
   "livrée":   null,
 };
 
-const onlineDrivers = drivers.filter(d => d.online && !d.inPrayer)
-  .sort((a, b) => b.scoreIA - a.scoreIA);
-
 export default function CommandeDetailPage({ params }: { params: { id: string } }) {
   const { orders, updateStatus } = useOrdersStore();
+  const { drivers } = useDriversStore();
   const order = orders.find(o => o.id === params.id);
+  const onlineDrivers = drivers.filter(d => d.online && !d.inPrayer).sort((a, b) => b.scoreIA - a.scoreIA);
 
   const [showDispatch,    setShowDispatch]    = useState(false);
   const [driverSearch,    setDriverSearch]    = useState("");
@@ -61,12 +60,12 @@ export default function CommandeDetailPage({ params }: { params: { id: string } 
   function confirmDispatch() {
     if (!selectedDriver) return;
     const d = drivers.find(dr => dr.id === selectedDriver);
-    toast.success(`Livreur ${d?.name} assigné à ${order!.id}`);
+    toast.success(`Livreur ${d?.name ?? selectedDriver} assigné à ${order!.id}`);
     setShowDispatch(false);
     setSelectedDriver(null);
   }
 
-  const driver   = drivers.find(d => d.id === order.driverId);
+  const driver   = order ? drivers.find(d => d.id === order.driverId) : undefined;
   const landmark = landmarks.find(l => l.id === order.landmarkId);
   const DAKAR: [number, number] = [14.6928, -17.4467];
   const center: [number, number] = landmark ? [landmark.lat, landmark.lng] : DAKAR;

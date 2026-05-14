@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { drivers, Tier } from "@/lib/mock-data/drivers";
-import { orders } from "@/lib/mock-data/orders";
+import { useDriversStore } from "@/lib/store/drivers";
+import { useOrdersStore } from "@/lib/store/orders";
+import type { Tier } from "@/lib/mock-data/drivers";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import {
@@ -48,15 +49,28 @@ function ScoreGauge({ value }: { value: number }) {
 }
 
 export default function LivreurDetailPage({ params }: { params: { id: string } }) {
+  const { drivers } = useDriversStore();
+  const { orders }  = useOrdersStore();
   const driver = drivers.find(d => d.id === params.id);
-  if (!driver) notFound();
-
   const [editing,     setEditing]     = useState(false);
-  const [editName,    setEditName]    = useState(driver.name);
-  const [editPhone,   setEditPhone]   = useState(driver.phone);
-  const [editVehicle, setEditVehicle] = useState(driver.vehicle);
+  const [editName,    setEditName]    = useState("");
+  const [editPhone,   setEditPhone]   = useState("");
+  const [editVehicle, setEditVehicle] = useState<"Moto Yamaha" | "Moto TVS" | "Vélo électrique" | "Tricycle">("Moto Yamaha");
+
+  useEffect(() => {
+    if (driver) {
+      setEditName(driver.name);
+      setEditPhone(driver.phone);
+      setEditVehicle(driver.vehicle);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [driver?.id]); // intentionally keyed on id to avoid re-running on unrelated re-renders
+
   const [chatMsg, setChatMsg] = useState("");
   const [chat,    setChat]    = useState(INIT_CHAT);
+
+  if (drivers.length > 0 && !driver) notFound();
+  if (!driver) return <div className="p-6 text-ink-500">Chargement…</div>;
 
   const driverOrders  = orders.filter(o => o.driverId === driver.id).slice(0, 10);
   const weekEarnings  = [12000, 18500, 22000, 15000, 28000, 31000, driver.earningsToday];
@@ -157,7 +171,7 @@ export default function LivreurDetailPage({ params }: { params: { id: string } }
       {/* KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { label: "Livraisons totales", value: String(orders.filter(o => o.driverId === driver.id).length), icon: Package },
+          { label: "Livraisons totales", value: String(driverOrders.length), icon: Package },
           { label: "Note moyenne",       value: `${driver.rating} ★`,                                        icon: Star },
           { label: "Véhicule",           value: editVehicle,                                                  icon: Bike },
           { label: "Téléphone",          value: editPhone,                                                    icon: Phone },

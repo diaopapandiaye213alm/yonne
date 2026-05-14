@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
-import { drivers } from "@/lib/mock-data/drivers";
+import { useDriversStore } from "@/lib/store/drivers";
 import { landmarks } from "@/lib/mock-data/landmarks";
 import { incomingOrders } from "@/lib/mock-data/incoming-orders";
 import { useDriverStore } from "@/lib/store/driver";
@@ -20,11 +20,11 @@ const DakarMap = dynamic(() => import("@/components/map/DakarMap"), {
   ),
 });
 
-const demo = drivers[0];
-
 export default function LivraisonPage({ params }: { params: { id: string } }) {
   const router = useRouter();
+  const { drivers } = useDriversStore();
   const { activeOrderId, deliveryStep, advanceStep, completeDelivery } = useDriverStore();
+  const demo = useMemo(() => drivers[0] ?? { lat: 14.6928, lng: -17.4467 }, [drivers]);
 
   useEffect(() => {
     if (activeOrderId === null) router.replace("/driver/carte");
@@ -63,7 +63,8 @@ export default function LivraisonPage({ params }: { params: { id: string } }) {
       if (t >= 1) clearInterval(id);
     }, 2000);
     return () => clearInterval(id);
-  }, [target.lat, target.lng]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [target.lat, target.lng, demo.lat, demo.lng]);
 
   const pins: Pin[] = [
     { id: "driver", lat: pos[0], lng: pos[1], kind: "driver" },

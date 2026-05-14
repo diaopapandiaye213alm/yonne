@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { merchants } from "@/lib/mock-data/merchants";
-import { orders } from "@/lib/mock-data/orders";
+import { useMerchantsStore } from "@/lib/store/merchants";
+import { useOrdersStore } from "@/lib/store/orders";
 import { ArrowLeft, FileText, TrendingUp, TrendingDown, MessageSquare, Send, Download } from "lucide-react";
 import { toast } from "sonner";
 
@@ -25,11 +25,14 @@ const INIT_CHAT = [
 ];
 
 export default function MarchandDetailPage({ params }: { params: { id: string } }) {
+  const { merchants } = useMerchantsStore();
+  const { orders }    = useOrdersStore();
   const merchant = merchants.find(m => m.id === params.id);
-  if (!merchant) notFound();
-
   const [chatMsg, setChatMsg] = useState("");
   const [chat,    setChat]    = useState(INIT_CHAT);
+
+  if (merchants.length > 0 && !merchant) notFound();
+  if (!merchant) return <div className="p-6 text-ink-500">Chargement…</div>;
 
   const recentOrders = orders.slice(0, 5);
   const commission   = merchant.plan === "Premium" ? 0.12 : 0.15;

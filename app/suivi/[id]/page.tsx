@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { drivers } from "@/lib/mock-data/drivers";
+import { useDriversStore } from "@/lib/store/drivers";
 import { landmarks } from "@/lib/mock-data/landmarks";
 import { useOrdersStore } from "@/lib/store/orders";
 import type { OrderStatus } from "@/lib/mock-data/orders";
@@ -89,12 +89,13 @@ export default function PublicTrackingPage({ params }: { params: { id: string } 
   const status: OrderStatus = order?.status ?? "en route";
   const isDelivered = status === "livrée";
 
+  const { drivers } = useDriversStore();
   const seed = params.id.charCodeAt(params.id.length - 1);
-  const onlineDrivers = useMemo(() => drivers.filter(d => d.online && !d.inPrayer), []);
-  const driver = useMemo(() => onlineDrivers[seed % onlineDrivers.length], [seed, onlineDrivers]);
+  const onlineDrivers = useMemo(() => drivers.filter(d => d.online && !d.inPrayer), [drivers]);
+  const driver = useMemo(() => onlineDrivers[seed % Math.max(1, onlineDrivers.length)] ?? drivers[seed % Math.max(1, drivers.length)], [seed, onlineDrivers, drivers]);
   const destination = useMemo(() => landmarks[seed % landmarks.length], [seed]);
 
-  const [pos, setPos] = useState<[number, number]>([driver.lat, driver.lng]);
+  const [pos, setPos] = useState<[number, number]>([14.6928, -17.4467]);
 
   useEffect(() => {
     if (isDelivered) return;

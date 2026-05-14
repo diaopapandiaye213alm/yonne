@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { drivers } from "@/lib/mock-data/drivers";
+import { useState, useMemo, useEffect } from "react";
+import { useDriversStore } from "@/lib/store/drivers";
 import { WeeklyEarningsChart } from "@/components/driver/WeeklyEarningsChart";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -9,8 +9,6 @@ import { toast } from "sonner";
 import { useT } from "@/lib/i18n";
 import { Smartphone, Banknote, ChevronRight, Star, MapPin } from "lucide-react";
 
-const demo = drivers[0];
-const ADVANCE_MAX = Math.floor(demo.earningsToday * 0.8);
 
 type Delivery = {
   id: string; time: string; client: string; zone: string;
@@ -33,7 +31,11 @@ const avgRating = (TODAY_DELIVERIES.reduce((s, d) => s + d.rating, 0) / TODAY_DE
 
 export default function GainsPage() {
   const t = useT();
-  const [avanceAmount, setAvanceAmount] = useState(Math.floor(ADVANCE_MAX / 2));
+  const { drivers } = useDriversStore();
+  const demo = useMemo(() => drivers[0] ?? { ordersToday: 8, earningsToday: 14200, badges: ["Rapide"], rating: 4.8 }, [drivers]);
+  const ADVANCE_MAX = Math.floor(demo.earningsToday * 0.8);
+  const [avanceAmount, setAvanceAmount] = useState(0);
+  useEffect(() => { setAvanceAmount(Math.floor(ADVANCE_MAX / 2)); }, [ADVANCE_MAX]);
   const [showDeliveries, setShowDeliveries] = useState(false);
   const dateStr = new Date("2026-05-20").toLocaleDateString("fr-FR", {
     weekday: "long", day: "numeric", month: "long",

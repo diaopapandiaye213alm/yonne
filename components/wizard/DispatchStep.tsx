@@ -4,7 +4,8 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useWizard } from "@/lib/store/wizard";
 import { useOrdersStore } from "@/lib/store/orders";
-import { drivers, avatarUrl, type Driver } from "@/lib/mock-data/drivers";
+import { useDriversStore, avatarUrl } from "@/lib/store/drivers";
+import type { Driver } from "@/lib/mock-data/drivers";
 import { Button } from "@/components/ui/button";
 import { Loader2, Star } from "lucide-react";
 
@@ -12,6 +13,7 @@ export function DispatchStep() {
   const w = useWizard();
   const router = useRouter();
   const { addOrder } = useOrdersStore();
+  const { drivers } = useDriversStore();
   const [phase, setPhase] = useState<"dispatching" | "assigned">("dispatching");
   const [assignedDriver, setAssignedDriver] = useState<Driver | null>(null);
   const [orderId] = useState(
@@ -19,13 +21,14 @@ export function DispatchStep() {
   );
 
   useEffect(() => {
+    if (drivers.length === 0) return;
     const timer = setTimeout(() => {
-      const candidate = [...drivers].filter(d => d.online && !d.inPrayer).sort((a, b) => b.scoreIA - a.scoreIA)[0];
+      const candidate = [...drivers].filter(d => d.online && !d.inPrayer).sort((a, b) => b.scoreIA - a.scoreIA)[0] ?? drivers[0];
       setAssignedDriver(candidate);
       setPhase("assigned");
     }, 1500);
     return () => clearTimeout(timer);
-  }, []);
+  }, [drivers]);
 
   if (phase === "dispatching" || !assignedDriver) {
     return (
