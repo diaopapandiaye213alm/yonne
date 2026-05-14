@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
+import { supabase } from "@/lib/supabase";
 import { ShieldAlert, AlertCircle, CheckCircle2, Clock } from "lucide-react";
+import type { SavTicketRow } from "@/lib/database.types";
 
 const INCIDENT_TYPES = [
   "Colis endommagé",
@@ -14,38 +16,6 @@ const INCIDENT_TYPES = [
 ];
 
 type TicketStatus = "ouvert" | "en cours" | "résolu";
-
-interface Ticket {
-  id: string;
-  date: string;
-  type: string;
-  orderId: string;
-  status: TicketStatus;
-}
-
-const MOCK_TICKETS: Ticket[] = [
-  {
-    id: "TK-2026-001",
-    date: "10/05/2026",
-    type: "Colis endommagé",
-    orderId: "YN-2026-18432",
-    status: "résolu",
-  },
-  {
-    id: "TK-2026-002",
-    date: "08/05/2026",
-    type: "Livreur non présenté",
-    orderId: "YN-2026-17851",
-    status: "en cours",
-  },
-  {
-    id: "TK-2026-003",
-    date: "03/05/2026",
-    type: "Retard excessif (>2h)",
-    orderId: "YN-2026-16990",
-    status: "ouvert",
-  },
-];
 
 const STATUS_CONFIG: Record<TicketStatus, { label: string; className: string; icon: React.ElementType }> = {
   ouvert:    { label: "Ouvert",    className: "bg-red-100 text-red-700",     icon: AlertCircle },
@@ -59,22 +29,42 @@ export default function SinistrePage() {
   const [description, setDescription] = useState("");
   const [askRefund, setAskRefund] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [tickets, setTickets] = useState<SavTicketRow[]>([]);
 
-  function handleSubmit(e: React.FormEvent) {
+  async function fetchTickets() {
+    const { data } = await supabase
+      .from("sav_tickets")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(10);
+    if (data) setTickets(data);
+  }
+
+  useEffect(() => { fetchTickets(); }, []);
+
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!incidentType || !description.trim()) {
       toast.error("Veuillez remplir les champs obligatoires.");
       return;
     }
     setSubmitting(true);
-    setTimeout(() => {
-      toast.success("Signalement soumis avec succès. Notre équipe vous contactera sous 24h.");
-      setIncidentType("");
-      setOrderId("");
-      setDescription("");
-      setAskRefund(false);
-      setSubmitting(false);
-    }, 800);
+    const { error } = await supabase.from("sav_tickets").insert({
+      order_ref:   orderId || null,
+      type:        incidentType,
+      description: description.trim() + (askRefund ? " [Remboursement demandé]" : ""),
+      status:      "ouvert" as const,
+      responsable: "—",
+      delay:       "—",
+    });
+    setSubmitting(false);
+    if (error) {
+      toast.error("Erreur lors de l'envoi. Réessayez.");
+    } else {
+      toast.success("Signalement soumis. Notre équipe vous contactera sous 24h.");
+      setIncidentType(""); setOrderId(""); setDescription(""); setAskRefund(false);
+      fetchTickets();
+    }
   }
 
   return (
@@ -192,9 +182,16 @@ export default function SinistrePage() {
         </h2>
 
         <div className="space-y-3">
-          {MOCK_TICKETS.map(ticket => {
-            const config = STATUS_CONFIG[ticket.status];
+          {tickets.length === 0 && (
+            <p className="text-sm text-ink-400 text-center py-4">Aucun incident signalé.</p>
+          )}
+          {tickets.map(ticket => {
+            const status = ticket.status as TicketStatus;
+            const config = STATUS_CONFIG[status] ?? STATUS_CONFIG["ouvert"];
             const StatusIcon = config.icon;
+            const dateFormatted = ticket.created_at
+              ? new Date(ticket.created_at).toLocaleDateString("fr-FR")
+              : "—";
             return (
               <div
                 key={ticket.id}
@@ -203,11 +200,11 @@ export default function SinistrePage() {
                 <StatusIcon className={`w-5 h-5 shrink-0 ${config.className.split(" ")[1]}`} />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-mono text-xs text-ink-400">{ticket.id}</span>
+                    <span className="font-mono text-xs text-ink-400">{ticket.id.slice(0, 8)}</span>
                     <span className="text-sm font-medium text-ink-900 truncate">{ticket.type}</span>
                   </div>
                   <div className="text-xs text-ink-500 mt-0.5">
-                    Commande {ticket.orderId} · {ticket.date}
+                    {ticket.order_ref ? `Commande ${ticket.order_ref} · ` : ""}{dateFormatted}
                   </div>
                 </div>
                 <span className={`text-xs font-medium px-2.5 py-1 rounded-full shrink-0 ${config.className}`}>

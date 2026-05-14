@@ -100,10 +100,60 @@ export default function MerchantAnalyticsPage() {
 
   const [period, setPeriod] = useState<"month" | "week">("month");
 
-  const currentMonth = MONTHLY[MONTHLY.length - 1];
-  const prevMonth    = MONTHLY[MONTHLY.length - 2];
-  const revenueGrowth = Math.round(((currentMonth.revenue - prevMonth.revenue) / prevMonth.revenue) * 100);
-  const ordersGrowth  = Math.round(((currentMonth.orderCount - prevMonth.orderCount) / prevMonth.orderCount) * 100);
+  // Données "cette semaine"
+  const weekOrders = useMemo(() => {
+    const now = new Date();
+    const monday = new Date(now);
+    const day = now.getDay();
+    monday.setDate(now.getDate() - (day === 0 ? 6 : day - 1));
+    monday.setHours(0, 0, 0, 0);
+    return myOrders.filter(o => new Date(o.createdAt) >= monday);
+  }, [myOrders]);
+
+  // Semaine précédente (pour comparaison)
+  const prevWeekOrders = useMemo(() => {
+    const now = new Date();
+    const day = now.getDay();
+    const monday = new Date(now);
+    monday.setDate(now.getDate() - (day === 0 ? 6 : day - 1));
+    monday.setHours(0, 0, 0, 0);
+    const prevMonday = new Date(monday); prevMonday.setDate(monday.getDate() - 7);
+    return myOrders.filter(o => {
+      const od = new Date(o.createdAt);
+      return od >= prevMonday && od < monday;
+    });
+  }, [myOrders]);
+
+  // Graphe 7 jours de la semaine courante
+  const WEEKLY_DAYS = useMemo(() => {
+    const DAY_LABELS = ["Lun","Mar","Mer","Jeu","Ven","Sam","Dim"];
+    const now = new Date();
+    const day = now.getDay();
+    const monday = new Date(now);
+    monday.setDate(now.getDate() - (day === 0 ? 6 : day - 1));
+    monday.setHours(0, 0, 0, 0);
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(monday); d.setDate(monday.getDate() + i);
+      const next = new Date(d); next.setDate(d.getDate() + 1);
+      return {
+        label: DAY_LABELS[i],
+        count: myOrders.filter(o => { const od = new Date(o.createdAt); return od >= d && od < next; }).length,
+        isToday: d.toDateString() === now.toDateString(),
+      };
+    });
+  }, [myOrders]);
+
+  const maxWeekDay = Math.max(...WEEKLY_DAYS.map(d => d.count), 1);
+
+  // KPIs selon period
+  const currentMonth = period === "week"
+    ? { revenue: weekOrders.reduce((s, o) => s + o.amount, 0), orderCount: weekOrders.length }
+    : MONTHLY[MONTHLY.length - 1];
+  const prevMonth = period === "week"
+    ? { revenue: prevWeekOrders.reduce((s, o) => s + o.amount, 0), orderCount: prevWeekOrders.length }
+    : MONTHLY[MONTHLY.length - 2];
+  const revenueGrowth = prevMonth.revenue === 0 ? 0 : Math.round(((currentMonth.revenue - prevMonth.revenue) / prevMonth.revenue) * 100);
+  const ordersGrowth  = prevMonth.orderCount === 0 ? 0 : Math.round(((currentMonth.orderCount - prevMonth.orderCount) / prevMonth.orderCount) * 100);
 
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-6 animate-fade-in-up">
@@ -169,43 +219,67 @@ export default function MerchantAnalyticsPage() {
         ))}
       </div>
 
-      {/* Monthly revenue bars */}
-      <div className="bg-white rounded-lg border border-cream-200 shadow-card p-5">
-        <h2 className="font-semibold text-ink-900 mb-4">{t("monthlyRevenue")}</h2>
-        <div className="flex items-end gap-3 h-32">
-          {MONTHLY.map(({ month, revenue }, i) => (
-            <div key={month} className="flex-1 flex flex-col items-center gap-1.5">
-              <span className="text-xs font-mono text-ink-500 tabular-nums">
-                {(revenue / 1000).toFixed(0)}k
-              </span>
-              <div className={`w-full rounded-t transition-all ${i === MONTHLY.length - 1 ? "bg-emerald-500" : "bg-cream-200 hover:bg-gold-400/50"}`}
-                style={{ height: `${Math.round((revenue / maxRevenue) * 80)}px` }} />
-              <span className="text-xs text-ink-500">{month}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Daily orders + Payment breakdown */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {/* Monthly revenue bars — visible seulement en mode "month" */}
+      {period === "month" && (
         <div className="bg-white rounded-lg border border-cream-200 shadow-card p-5">
-          <h2 className="font-semibold text-ink-900 mb-4">Commandes / jour — {MONTH_NAMES[new Date().getMonth()]}</h2>
-          <div className="flex items-end gap-0.5 h-20">
-            {DAILY_ORDERS.map((v, i) => (
-              <div key={i} className="flex-1">
-                <div className={`w-full rounded-t transition-all ${i === DAILY_ORDERS.length - 1 ? "bg-emerald-500" : "bg-cream-200 hover:bg-gold-400/50"}`}
-                  style={{ height: `${Math.round((v / maxDay) * 72)}px` }} />
+          <h2 className="font-semibold text-ink-900 mb-4">{t("monthlyRevenue")}</h2>
+          <div className="flex items-end gap-3 h-32">
+            {MONTHLY.map(({ month, revenue }, i) => (
+              <div key={month} className="flex-1 flex flex-col items-center gap-1.5">
+                <span className="text-xs font-mono text-ink-500 tabular-nums">
+                  {(revenue / 1000).toFixed(0)}k
+                </span>
+                <div className={`w-full rounded-t transition-all ${i === MONTHLY.length - 1 ? "bg-emerald-500" : "bg-cream-200 hover:bg-gold-400/50"}`}
+                  style={{ height: `${Math.round((revenue / maxRevenue) * 80)}px` }} />
+                <span className="text-xs text-ink-500">{month}</span>
               </div>
             ))}
           </div>
-          <div className="flex justify-between text-xs text-ink-400 mt-2">
-            <span>1 {currentMonthName}</span>
-            <span className="font-medium text-ink-700 tabular-nums">
-              Moy : {Math.round(DAILY_ORDERS.reduce((a, b) => a + b, 0) / DAILY_ORDERS.length)} / jour
-            </span>
-            <span>{daysInMonth} {currentMonthName}</span>
-          </div>
         </div>
+      )}
+
+      {/* Daily orders + Payment breakdown */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {period === "month" ? (
+          <div className="bg-white rounded-lg border border-cream-200 shadow-card p-5">
+            <h2 className="font-semibold text-ink-900 mb-4">Commandes / jour — {MONTH_NAMES[new Date().getMonth()]}</h2>
+            <div className="flex items-end gap-0.5 h-20">
+              {DAILY_ORDERS.map((v, i) => (
+                <div key={i} className="flex-1">
+                  <div className={`w-full rounded-t transition-all ${i === DAILY_ORDERS.length - 1 ? "bg-emerald-500" : "bg-cream-200 hover:bg-gold-400/50"}`}
+                    style={{ height: `${Math.round((v / maxDay) * 72)}px` }} />
+                </div>
+              ))}
+            </div>
+            <div className="flex justify-between text-xs text-ink-400 mt-2">
+              <span>1 {currentMonthName}</span>
+              <span className="font-medium text-ink-700 tabular-nums">
+                Moy : {Math.round(DAILY_ORDERS.reduce((a, b) => a + b, 0) / DAILY_ORDERS.length)} / jour
+              </span>
+              <span>{daysInMonth} {currentMonthName}</span>
+            </div>
+          </div>
+        ) : (
+          <div className="bg-white rounded-lg border border-cream-200 shadow-card p-5">
+            <h2 className="font-semibold text-ink-900 mb-4">Commandes — Cette semaine</h2>
+            <div className="flex items-end gap-2 h-20">
+              {WEEKLY_DAYS.map(({ label, count, isToday }) => (
+                <div key={label} className="flex-1 flex flex-col items-center gap-1">
+                  <div className={`w-full rounded-t transition-all ${isToday ? "bg-emerald-500" : "bg-cream-200 hover:bg-gold-400/50"}`}
+                    style={{ height: `${Math.round((count / maxWeekDay) * 72)}px` }} />
+                  <span className={`text-xs ${isToday ? "font-bold text-emerald-600" : "text-ink-400"}`}>{label}</span>
+                </div>
+              ))}
+            </div>
+            <div className="flex justify-between text-xs text-ink-400 mt-2">
+              <span>Lun</span>
+              <span className="font-medium text-ink-700 tabular-nums">
+                Total : {WEEKLY_DAYS.reduce((a, d) => a + d.count, 0)} commandes
+              </span>
+              <span>Dim</span>
+            </div>
+          </div>
+        )}
 
         <div className="bg-white rounded-lg border border-cream-200 shadow-card p-5">
           <h2 className="font-semibold text-ink-900 mb-4">Répartition paiements</h2>

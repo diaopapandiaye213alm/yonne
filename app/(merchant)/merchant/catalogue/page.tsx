@@ -66,11 +66,15 @@ export default function CataloguePage() {
     : articles.filter(a => a.category === catFilter);
 
   function toggleAvailable(id: string) {
-    setArticles(prev => prev.map(a => a.id === id ? { ...a, available: !a.available } : a));
+    const next = articles.map(a => a.id === id ? { ...a, available: !a.available } : a);
+    setArticles(next);
+    saveCatalogue(next);
   }
 
   function deleteArticle(id: string) {
-    setArticles(prev => prev.filter(a => a.id !== id));
+    const next = articles.filter(a => a.id !== id);
+    setArticles(next);
+    saveCatalogue(next);
     toast.success("Article supprimé");
   }
 
@@ -80,11 +84,13 @@ export default function CataloguePage() {
 
   function saveEdit() {
     if (!editState) return;
-    setArticles(prev => prev.map(a =>
+    const next = articles.map(a =>
       a.id === editState.id
         ? { ...a, name: editState.name, price: Number(editState.price), category: editState.category, stock: Number(editState.stock) }
         : a
-    ));
+    );
+    setArticles(next);
+    saveCatalogue(next);
     setEditState(null);
     toast.success("Article mis à jour");
   }
@@ -99,7 +105,9 @@ export default function CataloguePage() {
       available: true,
       stock:     Number(newStock) || 0,
     };
-    setArticles(prev => [article, ...prev]);
+    const next = [article, ...articles];
+    setArticles(next);
+    saveCatalogue(next);
     setShowAddForm(false);
     setNewName(""); setNewPrice(""); setNewStock("");
     toast.success("Article ajouté au catalogue");

@@ -13,7 +13,7 @@ import { useT } from "@/lib/i18n";
 import { PushNotifBanner } from "@/components/driver/PushNotifBanner";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
-import { LogOut, Moon, Pencil, Check, X, Star, Award, History } from "lucide-react";
+import { LogOut, Moon, Pencil, Check, X, Star, Award, History, ShieldAlert } from "lucide-react";
 
 // demo resolved in component from store
 
@@ -251,6 +251,12 @@ export default function ProfilPage() {
       <Link href="/driver/historique"
         className="flex items-center gap-2 text-sm text-ink-500 hover:text-ink-900 transition-colors">
         <History className="w-4 h-4" /> Historique de livraisons
+      </Link>
+
+      {/* Signalements */}
+      <Link href="/driver/tickets"
+        className="flex items-center gap-2 text-sm text-ink-500 hover:text-ink-900 transition-colors">
+        <ShieldAlert className="w-4 h-4" /> Mes signalements
       </Link>
 
       {/* Logout */}
