@@ -1,54 +1,48 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Shield, AlertTriangle, TrendingUp, Banknote, ExternalLink, CheckCircle2, Clock } from "lucide-react";
 import { useOrdersStore } from "@/lib/store/orders";
 import { useT } from "@/lib/i18n";
+import { supabase } from "@/lib/supabase";
+import type { SavTicketRow } from "@/lib/database.types";
 
 const INSURANCE_RATE = 0.005;
 const INSURANCE_MIN  = 200;
 const PAYOUT_RATE    = 0.18; // 18% sinistres → revenu net 82%
 
-type Sinistre = {
-  id: string;
-  orderId: string;
-  montant: number;
-  prime: number;
-  statut: "ouvert" | "résolu" | "refusé";
-  date: string;
-  motif: string;
-};
-
-const MOCK_SINISTRES: Sinistre[] = [
-  { id: "SIN-001", orderId: "ORD-0047", montant: 45000, prime: 225,  statut: "résolu",  date: "2026-05-10", motif: "Colis endommagé" },
-  { id: "SIN-002", orderId: "ORD-0093", montant: 120000, prime: 600, statut: "ouvert",  date: "2026-05-12", motif: "Colis perdu" },
-  { id: "SIN-003", orderId: "ORD-0021", montant: 18000,  prime: 200, statut: "refusé",  date: "2026-05-08", motif: "Dommage partiel < 30%" },
-  { id: "SIN-004", orderId: "ORD-0118", montant: 85000,  prime: 425, statut: "résolu",  date: "2026-05-05", motif: "Mauvaise adresse livrée" },
-  { id: "SIN-005", orderId: "ORD-0062", montant: 200000, prime: 1000,statut: "ouvert",  date: "2026-05-13", motif: "Vol présumé" },
-];
-
-const STATUT_STYLE: Record<Sinistre["statut"], string> = {
-  ouvert:  "bg-amber-100 text-amber-700",
-  résolu:  "bg-emerald-100 text-emerald-700",
-  refusé:  "bg-red-100 text-red-600",
+const STATUT_STYLE: Record<"ouvert" | "en cours" | "résolu", string> = {
+  "ouvert":   "bg-amber-100 text-amber-700",
+  "en cours": "bg-blue-100 text-blue-700",
+  "résolu":   "bg-emerald-100 text-emerald-700",
 };
 
 export default function AssurancePage() {
   const t = useT();
   const { orders } = useOrdersStore();
   const [activeTab, setActiveTab] = useState<"stats" | "sinistres" | "info">("stats");
+  const [sinistres, setSinistres] = useState<SavTicketRow[]>([]);
+
+  useEffect(() => {
+    supabase
+      .from("sav_tickets")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(20)
+      .then(({ data }) => { if (data) setSinistres(data); });
+  }, []);
 
   const stats = useMemo(() => {
     const assuredOrders = orders.filter(o => o.insurance);
     const primes = assuredOrders.reduce((s, o) => {
       return s + Math.max(Math.round(o.amount * INSURANCE_RATE), INSURANCE_MIN);
     }, 0);
-    const sinistresResolus = MOCK_SINISTRES.filter(s => s.statut === "résolu");
-    const montantRembourse = sinistresResolus.reduce((s, s2) => s + s2.montant * 0.8, 0);
+    const sinistresResolus = sinistres.filter(s => s.status === "résolu");
+    const montantRembourse = sinistresResolus.length * 50000 * 0.8;
     const revenuNet = primes - montantRembourse;
     const tauxCouverture = assuredOrders.length / Math.max(orders.length, 1);
     return { assuredOrders: assuredOrders.length, primes, montantRembourse, revenuNet, tauxCouverture };
-  }, [orders]);
+  }, [orders, sinistres]);
 
   return (
     <div className="max-w-5xl mx-auto space-y-6 animate-fade-in-up">
@@ -84,8 +78,8 @@ export default function AssurancePage() {
           },
           {
             label: "Sinistres déclarés",
-            value: MOCK_SINISTRES.length,
-            sub: `${MOCK_SINISTRES.filter(s => s.statut === "ouvert").length} en cours`,
+            value: sinistres.length,
+            sub: `${sinistres.filter(s => s.status === "ouvert").length} en cours`,
             icon: AlertTriangle,
             color: "text-amber-500",
             border: "border-amber-200",
@@ -189,24 +183,29 @@ export default function AssurancePage() {
               </Link>
             </div>
             <div className="divide-y divide-cream-100">
-              {MOCK_SINISTRES.map(s => (
+              {sinistres.length === 0 && (
+                <div className="p-8 text-center text-sm text-ink-400">
+                  Aucun sinistre déclaré.
+                </div>
+              )}
+              {sinistres.map(s => (
                 <div key={s.id} className="flex items-center justify-between px-4 py-3 hover:bg-cream-50/50 transition-colors">
                   <div className="flex items-center gap-3">
                     <AlertTriangle className={`w-4 h-4 shrink-0 ${
-                      s.statut === "ouvert" ? "text-amber-500" :
-                      s.statut === "résolu" ? "text-emerald-500" : "text-red-400"
+                      s.status === "ouvert"   ? "text-amber-500" :
+                      s.status === "en cours" ? "text-blue-500"  : "text-emerald-500"
                     }`} />
                     <div>
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-medium text-ink-900 font-mono">{s.id}</span>
-                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${STATUT_STYLE[s.statut]}`}>{s.statut}</span>
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${STATUT_STYLE[s.status]}`}>{s.status}</span>
                       </div>
-                      <div className="text-xs text-ink-500">{s.motif} · {s.orderId}</div>
+                      <div className="text-xs text-ink-500">{s.type ?? "—"} · {s.order_ref ?? "—"}</div>
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-sm font-semibold text-ink-900">{s.montant.toLocaleString("fr-FR")} F</div>
-                    <div className="text-xs text-ink-400">{s.date}</div>
+                    <div className="text-sm font-semibold text-ink-900">—</div>
+                    <div className="text-xs text-ink-400">{new Date(s.created_at).toLocaleDateString("fr-FR")}</div>
                   </div>
                 </div>
               ))}
