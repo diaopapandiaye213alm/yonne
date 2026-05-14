@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ArrowLeft, Phone, ShoppingBag, TrendingUp, Star, CreditCard, Calendar, Package } from "lucide-react";
-import { orders } from "@/lib/mock-data/orders";
+import { useOrdersStore } from "@/lib/store/orders";
 import type { OrderStatus } from "@/lib/mock-data/orders";
 
 const STATUS_COLORS: Record<OrderStatus, string> = {
@@ -21,6 +21,7 @@ const PAY_COLORS: Record<string, string> = {
 const PAY_LABELS: Record<string, string> = { wave: "Wave", orange: "Orange", cash: "Cash" };
 
 export default function ClientDetailPage({ params }: { params: { id: string } }) {
+  const { orders } = useOrdersStore();
   const phone = decodeURIComponent(params.id);
   const clientOrders = orders
     .filter(o => o.clientPhone === phone)

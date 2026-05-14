@@ -3,7 +3,8 @@ import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { UserPlus } from "lucide-react";
-import { drivers, Driver, Tier } from "@/lib/mock-data/drivers";
+import { useDriversStore } from "@/lib/store/drivers";
+import type { Driver, Tier } from "@/lib/mock-data/drivers";
 import { DataTable, Column } from "@/components/admin/DataTable";
 import { FilterBar, FilterDef } from "@/components/admin/FilterBar";
 import { Progress } from "@/components/ui/progress";
@@ -30,6 +31,7 @@ const FILTERS: FilterDef[] = [
 
 export default function LivreursPage() {
   const router = useRouter();
+  const { drivers } = useDriversStore();
   const [search, setSearch]   = useState("");
   const [filters, setFilters] = useState<Record<string, string>>({});
 
@@ -41,7 +43,7 @@ export default function LivreursPage() {
       const matchTier    = !filters.tier   || d.tier === filters.tier;
       return matchSearch && matchStatus && matchTier;
     });
-  }, [search, filters]);
+  }, [search, filters, drivers]);
 
   const columns: Column<Driver>[] = [
     { key: "name", label: "Nom", render: d => (

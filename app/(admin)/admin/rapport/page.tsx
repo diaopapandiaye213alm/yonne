@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { drivers } from "@/lib/mock-data/drivers";
-import { merchants } from "@/lib/mock-data/merchants";
+import { useDriversStore } from "@/lib/store/drivers";
+import { useMerchantsStore } from "@/lib/store/merchants";
 import { Printer, Download, TrendingUp, TrendingDown, Package, Wallet, Star, Bike } from "lucide-react";
 
 const MONTHS = ["Janvier", "Février", "Mars", "Avril", "Mai"] as const;
@@ -20,18 +20,20 @@ const MONTHLY_DATA: Record<Month, { orders: number; revenue: number; avgRating: 
 const DAILY = [142, 158, 147, 163, 155, 178, 192, 168, 145, 171, 183, 197, 152, 166, 188, 201, 175, 160, 195, 210, 188, 172, 205, 218, 195, 180, 225, 198, 212, 230, 248];
 const maxDay = Math.max(...DAILY);
 
-const topDrivers = drivers
-  .slice(0, 5)
-  .map(d => ({ name: d.name, earnings: d.earningsToday * 22, orders: d.ordersToday * 22, rating: d.rating }))
-  .sort((a, b) => b.earnings - a.earnings);
-
-const topMerchants = merchants
-  .slice(0, 5)
-  .map(m => ({ name: m.name, revenue: m.revenueThisMonth, orders: m.ordersThisMonth, plan: m.plan }))
-  .sort((a, b) => b.revenue - a.revenue);
-
 export default function RapportPage() {
+  const { drivers }   = useDriversStore();
+  const { merchants } = useMerchantsStore();
   const [month, setMonth] = useState<Month>("Mai");
+
+  const topDrivers = drivers
+    .slice(0, 5)
+    .map(d => ({ name: d.name, earnings: d.earningsToday * 22, orders: d.ordersToday * 22, rating: d.rating }))
+    .sort((a, b) => b.earnings - a.earnings);
+
+  const topMerchants = merchants
+    .slice(0, 5)
+    .map(m => ({ name: m.name, revenue: m.revenueThisMonth, orders: m.ordersThisMonth, plan: m.plan }))
+    .sort((a, b) => b.revenue - a.revenue);
 
   const cur  = MONTHLY_DATA[month];
   const prevIdx = MONTHS.indexOf(month) - 1;
@@ -226,7 +228,7 @@ export default function RapportPage() {
         <h2 className="font-semibold text-ink-900 mb-4">Résumé masse salariale</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
           {[
-            { label: "Livreurs actifs",      value: String(drivers.filter(d => d.online).length) },
+            { label: "Livreurs actifs",      value: String(drivers.filter((d: { online: boolean }) => d.online).length) },
             { label: "Nouveaux livreurs",     value: String(cur.newDrivers) },
             { label: "Masse salariale",       value: `${(topDrivers.reduce((s, d) => s + d.earnings, 0) * 8).toLocaleString("fr-FR")} F` },
             { label: "Prime performance",    value: `50 000 F` },

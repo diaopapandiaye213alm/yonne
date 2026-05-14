@@ -2,6 +2,10 @@ import { create } from "zustand";
 import { supabase } from "@/lib/supabase";
 import type { Driver } from "@/lib/mock-data/drivers";
 
+export function avatarUrl(driver: { avatarSeed: string }) {
+  return `https://api.dicebear.com/7.x/avataaars-neutral/svg?seed=${encodeURIComponent(driver.avatarSeed)}`;
+}
+
 interface DriversState {
   drivers: Driver[];
   loading: boolean;

@@ -1,8 +1,8 @@
 "use client";
 import { useState } from "react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
-import { merchants } from "@/lib/mock-data/merchants";
-import { orders } from "@/lib/mock-data/orders";
+import { useMerchantsStore } from "@/lib/store/merchants";
+import { useOrdersStore } from "@/lib/store/orders";
 import { TrendingUp, Percent, Wallet, Download } from "lucide-react";
 import { downloadCsv } from "@/lib/utils/csv";
 import type { PaymentMethod } from "@/lib/mock-data/orders";
@@ -19,7 +19,9 @@ const MONTHLY = [
 function fmt(n: number) { return `${(n / 1000).toFixed(0)}k`; }
 
 export default function FinancesPage() {
-  const merchant       = merchants[0];
+  const { merchants } = useMerchantsStore();
+  const { orders }    = useOrdersStore();
+  const merchant       = merchants[0] ?? { plan: "Standard", revenueThisMonth: 0 };
   const commissionRate = merchant.plan === "Premium" ? 0.12 : 0.15;
   const commissionPct  = Math.round(commissionRate * 100);
   const revenuBrut     = merchant.revenueThisMonth;

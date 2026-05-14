@@ -1,49 +1,45 @@
 "use client";
 
 import { useState } from "react";
-import { merchants } from "@/lib/mock-data/merchants";
-import { orders } from "@/lib/mock-data/orders";
+import { useMerchantsStore } from "@/lib/store/merchants";
+import { useOrdersStore } from "@/lib/store/orders";
 import { TrendingUp, TrendingDown, Package, Wallet, Users, Star } from "lucide-react";
 
-const merchant = merchants[0];
-
-// ── Monthly revenue ──
-const MONTHLY = [
-  { month: "Jan", revenue: 820000,  orderCount: 68 },
-  { month: "Fév", revenue: 940000,  orderCount: 79 },
-  { month: "Mar", revenue: 875000,  orderCount: 73 },
-  { month: "Avr", revenue: 1080000, orderCount: 91 },
-  { month: "Mai", revenue: merchant.revenueThisMonth, orderCount: merchant.ordersThisMonth },
-];
-const maxRevenue = Math.max(...MONTHLY.map(m => m.revenue));
-
-// ── Daily orders (May) ──
-const DAILY_ORDERS = [4,6,3,8,5,7,9,4,6,8,11,7,5,9,12,8,6,10,13,9,7,11,14,10,8,12,15,11,9,13,merchant.ordersThisMonth % 18 + 5];
-const maxDay = Math.max(...DAILY_ORDERS);
-
-// ── Payment breakdown ──
 const PAYMENTS = [
   { label: "Wave",   pct: 52, color: "bg-[#1B96D4]",  textColor: "text-[#1B96D4]" },
   { label: "Orange", pct: 31, color: "bg-orange-400",  textColor: "text-orange-600" },
   { label: "Cash",   pct: 17, color: "bg-cream-300",   textColor: "text-ink-600" },
 ];
 
-// ── Top clients (derived from orders) ──
-const clientMap = new Map<string, { count: number; total: number }>();
-for (const o of orders.slice(0, 40)) {
-  const existing = clientMap.get(o.clientName);
-  if (existing) { existing.count++; existing.total += o.amount; }
-  else clientMap.set(o.clientName, { count: 1, total: o.amount });
-}
-const topClients = Array.from(clientMap.entries())
-  .map(([name, { count, total }]) => ({ name, count, total }))
-  .sort((a, b) => b.total - a.total)
-  .slice(0, 5);
-
-// ── Delivery performance ──
-const deliveryRate = Math.round((orders.filter(o => o.status === "livrée").length / Math.max(1, orders.length)) * 100);
-
 export default function MerchantAnalyticsPage() {
+  const { merchants } = useMerchantsStore();
+  const { orders }    = useOrdersStore();
+  const merchant = merchants[0] ?? { revenueThisMonth: 310000, ordersThisMonth: 91 };
+
+  const MONTHLY = [
+    { month: "Jan", revenue: 820000,  orderCount: 68 },
+    { month: "Fév", revenue: 940000,  orderCount: 79 },
+    { month: "Mar", revenue: 875000,  orderCount: 73 },
+    { month: "Avr", revenue: 1080000, orderCount: 91 },
+    { month: "Mai", revenue: merchant.revenueThisMonth, orderCount: merchant.ordersThisMonth },
+  ];
+  const maxRevenue   = Math.max(...MONTHLY.map(m => m.revenue));
+  const DAILY_ORDERS = [4,6,3,8,5,7,9,4,6,8,11,7,5,9,12,8,6,10,13,9,7,11,14,10,8,12,15,11,9,13,merchant.ordersThisMonth % 18 + 5];
+  const maxDay       = Math.max(...DAILY_ORDERS);
+
+  const clientMap = new Map<string, { count: number; total: number }>();
+  for (const o of orders.slice(0, 40)) {
+    const existing = clientMap.get(o.clientName);
+    if (existing) { existing.count++; existing.total += o.amount; }
+    else clientMap.set(o.clientName, { count: 1, total: o.amount });
+  }
+  const topClients = Array.from(clientMap.entries())
+    .map(([name, { count, total }]) => ({ name, count, total }))
+    .sort((a, b) => b.total - a.total)
+    .slice(0, 5);
+
+  const deliveryRate = Math.round((orders.filter(o => o.status === "livrée").length / Math.max(1, orders.length)) * 100);
+
   const [period, setPeriod] = useState<"month" | "week">("month");
 
   const currentMonth = MONTHLY[MONTHLY.length - 1];

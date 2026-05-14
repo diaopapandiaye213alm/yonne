@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { orders } from "@/lib/mock-data/orders";
+import { useOrdersStore } from "@/lib/store/orders";
 import { Search, Users, ShoppingBag, TrendingUp, Star } from "lucide-react";
 
 interface ClientSummary {
@@ -22,7 +22,7 @@ const PAY_COLORS: Record<string, string> = {
 };
 const PAY_LABELS: Record<string, string> = { wave: "Wave", orange: "Orange", cash: "Cash" };
 
-function buildClients(): ClientSummary[] {
+function buildClients(orders: ReturnType<typeof useOrdersStore.getState>["orders"]): ClientSummary[] {
   const map = new Map<string, { orders: typeof orders; phone: string }>();
   for (const o of orders) {
     const existing = map.get(o.clientName);
@@ -54,12 +54,13 @@ function buildClients(): ClientSummary[] {
   }).sort((a, b) => b.totalSpent - a.totalSpent);
 }
 
-const ALL_CLIENTS = buildClients();
-
 export default function ClientsPage() {
   const router = useRouter();
+  const { orders } = useOrdersStore();
   const [search, setSearch] = useState("");
   const [vipOnly, setVipOnly] = useState(false);
+
+  const ALL_CLIENTS = useMemo(() => buildClients(orders), [orders]);
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
@@ -67,7 +68,7 @@ export default function ClientsPage() {
       (!vipOnly || c.isVip) &&
       (!q || c.name.toLowerCase().includes(q) || c.phone.includes(q))
     );
-  }, [search, vipOnly]);
+  }, [search, vipOnly, ALL_CLIENTS]);
 
   const totalRevenue = ALL_CLIENTS.reduce((s, c) => s + c.totalSpent, 0);
   const vipCount     = ALL_CLIENTS.filter(c => c.isVip).length;
@@ -78,7 +79,7 @@ export default function ClientsPage() {
 
       <div>
         <h1 className="text-2xl font-display font-bold text-ink-900">Clients</h1>
-        <p className="text-sm text-ink-500 mt-1">{ALL_CLIENTS.length} clients uniques</p>
+        <p className="text-sm text-ink-500 mt-1">{ALL_CLIENTS.length} client{ALL_CLIENTS.length > 1 ? "s" : ""} uniques</p>
       </div>
 
       {/* KPIs */}

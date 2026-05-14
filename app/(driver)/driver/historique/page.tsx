@@ -1,12 +1,9 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { drivers } from "@/lib/mock-data/drivers";
-import { orders } from "@/lib/mock-data/orders";
+import { useOrdersStore } from "@/lib/store/orders";
 import { History, TrendingUp, Package, Download, Filter } from "lucide-react";
 import { toast } from "sonner";
-
-const demo = drivers[0];
 
 const MONTHS = ["Jan", "Fév", "Mar", "Avr", "Mai"] as const;
 type Month = typeof MONTHS[number];
@@ -19,7 +16,7 @@ const weeklyData = [
   { day: "Jeu", earnings: 15000 },
   { day: "Ven", earnings: 28000 },
   { day: "Sam", earnings: 31000 },
-  { day: "Dim", earnings: demo.earningsToday },
+  { day: "Dim", earnings: 19500 },
 ];
 const maxEarning = Math.max(...weeklyData.map(w => w.earnings));
 
@@ -34,6 +31,8 @@ const PAY_LABELS: Record<string, string> = {
 };
 
 export default function HistoriquePage() {
+  const { orders } = useOrdersStore();
+
   const [month,     setMonth]     = useState<Month>("Mai");
   const [payFilter, setPayFilter] = useState<PayFilter>("Tous");
 
@@ -42,7 +41,7 @@ export default function HistoriquePage() {
       .filter(o => o.status === "livrée")
       .slice(0, 30)
       .map((o, i) => ({ ...o, gain: Math.round(o.amount * 0.25), month: MONTHS[i % MONTHS.length] })),
-    []
+    [orders]
   );
 
   const filtered = useMemo(() =>

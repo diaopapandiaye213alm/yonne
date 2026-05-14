@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
-import { merchants } from "@/lib/mock-data/merchants";
-import { orders } from "@/lib/mock-data/orders";
+import { useMerchantsStore } from "@/lib/store/merchants";
+import { useOrdersStore } from "@/lib/store/orders";
 import { Package, TrendingUp, CheckCircle2, PlusSquare } from "lucide-react";
 import { useT, useLang } from "@/lib/i18n";
 
@@ -16,8 +16,10 @@ const STATUS_COLORS: Record<string, string> = {
 export default function MerchantAccueilPage() {
   const t    = useT();
   const lang = useLang(s => s.lang);
+  const { merchants } = useMerchantsStore();
+  const { orders }    = useOrdersStore();
 
-  const merchant  = merchants[0];
+  const merchant  = merchants[0] ?? { name: "—", plan: "Standard", ordersThisMonth: 0, revenueThisMonth: 0, ordersLastMonth: 1, revenueLastMonth: 1 };
   const delivered = orders.filter(o => o.status === "livrée").length;
   const tauxLivre = Math.round(delivered / orders.length * 100);
   const recent    = [...orders].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5);

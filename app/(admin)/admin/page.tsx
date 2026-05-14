@@ -3,8 +3,8 @@ import Link from "next/link";
 import { KpiCard } from "@/components/kpi/KpiCard";
 import { DriverLeaderboard } from "@/components/kpi/DriverLeaderboard";
 import DakarMap from "@/components/map/DakarMapClient";
-import { drivers } from "@/lib/mock-data/drivers";
-import { activeOrders } from "@/lib/mock-data/orders";
+import { useDriversStore } from "@/lib/store/drivers";
+import { useOrdersStore } from "@/lib/store/orders";
 import { landmarks } from "@/lib/mock-data/landmarks";
 import { useLiveKpis } from "@/lib/hooks/useLiveKpis";
 import { useT, useLang } from "@/lib/i18n";
@@ -15,12 +15,15 @@ export default function AdminHomePage() {
   const kpis = useLiveKpis(28000);
   const t    = useT();
   const lang = useLang(s => s.lang);
+  const { drivers } = useDriversStore();
+  const { orders }  = useOrdersStore();
 
   const onlineDrivers = drivers.filter(d => d.online);
+  const activeOrders  = orders.filter(o => o.active);
   const driverPins = onlineDrivers.slice(0, 15).map(d => ({ id: d.id, lat: d.lat, lng: d.lng, kind: "driver" as const }));
   const orderPins = activeOrders.map(o => {
     const lm = landmarks.find(l => l.id === o.landmarkId)!;
-    return { id: o.id, lat: lm.lat, lng: lm.lng, kind: "order" as const };
+    return { id: o.id, lat: lm?.lat ?? 14.71, lng: lm?.lng ?? -17.45, kind: "order" as const };
   });
 
   const dateStr = new Date().toLocaleDateString(lang === "en" ? "en-GB" : "fr-FR", { weekday: "long", day: "numeric", month: "long" });

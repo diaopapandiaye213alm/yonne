@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { drivers, avatarUrl } from "@/lib/mock-data/drivers";
-import { orders } from "@/lib/mock-data/orders";
+import { useDriversStore, avatarUrl } from "@/lib/store/drivers";
+import { useOrdersStore } from "@/lib/store/orders";
 import { useDriverStore } from "@/lib/store/driver";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
@@ -12,7 +12,7 @@ import { PushNotifBanner } from "@/components/driver/PushNotifBanner";
 import { cn } from "@/lib/utils";
 import { LogOut, Moon, Pencil, Check, X, Star, Award } from "lucide-react";
 
-const demo = drivers[0];
+// demo resolved in component from store
 
 const ALL_BADGES = ["Rapide","Top noté","Précis","10 jours","50 courses","Eco"] as const;
 
@@ -43,6 +43,9 @@ const maxMonth = Math.max(...monthlyEarnings.map(m => m.amount));
 export default function ProfilPage() {
   const t = useT();
   const { online, inPrayer, setOnline, setInPrayer } = useDriverStore();
+  const { drivers } = useDriversStore();
+  const { orders }  = useOrdersStore();
+  const demo = drivers[0] ?? { id: "drv-001", name: "—", phone: "", vehicle: "Moto Yamaha", rating: 5, tier: "Bronze", badges: [], ordersToday: 0, earningsToday: 0, avatarSeed: "" };
 
   const [editing,     setEditing]     = useState(false);
   const [editPhone,   setEditPhone]   = useState(demo.phone);

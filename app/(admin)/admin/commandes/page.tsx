@@ -2,7 +2,7 @@
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useOrdersStore } from "@/lib/store/orders";
-import { drivers } from "@/lib/mock-data/drivers";
+import { useDriversStore } from "@/lib/store/drivers";
 import { DataTable, Column } from "@/components/admin/DataTable";
 import { FilterBar, FilterDef } from "@/components/admin/FilterBar";
 import { downloadCsv } from "@/lib/utils/csv";
@@ -28,7 +28,8 @@ const PAYMENT_FILTERS: FilterDef[] = [
 
 export default function CommandesPage() {
   const router = useRouter();
-  const { orders } = useOrdersStore();
+  const { orders }  = useOrdersStore();
+  const { drivers } = useDriversStore();
   const [search, setSearch]     = useState("");
   const [status, setStatus]     = useState("");
   const [payment, setPayment]   = useState("");
@@ -52,7 +53,7 @@ export default function CommandesPage() {
       const matchTo   = !dateTo   || created <= new Date(dateTo + "T23:59:59");
       return matchSearch && matchStatus && matchPayment && matchDriver && matchFrom && matchTo;
     });
-  }, [orders, search, status, payment, driverId, dateFrom, dateTo]);
+  }, [orders, drivers, search, status, payment, driverId, dateFrom, dateTo]);
 
   const hasFilters = !!(search || status || payment || driverId || dateFrom || dateTo);
 

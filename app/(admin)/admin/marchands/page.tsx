@@ -1,7 +1,8 @@
 "use client";
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { merchants, Merchant, MerchantPlan, MerchantStatus } from "@/lib/mock-data/merchants";
+import { useMerchantsStore } from "@/lib/store/merchants";
+import type { Merchant, MerchantPlan, MerchantStatus } from "@/lib/mock-data/merchants";
 import { DataTable, Column } from "@/components/admin/DataTable";
 import { FilterBar, FilterDef } from "@/components/admin/FilterBar";
 
@@ -23,6 +24,7 @@ const FILTERS: FilterDef[] = [
 
 export default function MarchandsPage() {
   const router = useRouter();
+  const { merchants } = useMerchantsStore();
   const [search, setSearch]   = useState("");
   const [filters, setFilters] = useState<Record<string, string>>({});
 
@@ -33,7 +35,7 @@ export default function MarchandsPage() {
     const matchCity   = !filters.city   || m.city   === filters.city;
     const matchStatus = !filters.status || m.status === filters.status;
     return matchSearch && matchPlan && matchCity && matchStatus;
-  }), [search, filters]);
+  }), [search, filters, merchants]);
 
   const columns: Column<Merchant>[] = [
     { key: "name",  label: "Boutique" },
