@@ -1,8 +1,9 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { useDriversStore } from "@/lib/store/drivers";
+import { useSession } from "@/lib/hooks/useSession";
 import { landmarks } from "@/lib/mock-data/landmarks";
 import { incomingOrders } from "@/lib/mock-data/incoming-orders";
 import { useDriverStore } from "@/lib/store/driver";
@@ -21,10 +22,14 @@ const DakarMap = dynamic(() => import("@/components/map/DakarMap"), {
 
 export default function CartePage() {
   const router = useRouter();
+  const session = useSession();
   const { drivers } = useDriversStore();
   const { online, activeOrderId, setOnline, acceptOrder } = useDriverStore();
 
-  const demo = drivers[0];
+  const demo = useMemo(() => {
+    const byName = session?.displayName ? drivers.find(d => d.name === session.displayName) : null;
+    return byName ?? drivers[0];
+  }, [drivers, session?.displayName]);
   const defaultPos: [number, number] = [demo?.lat ?? 14.6928, demo?.lng ?? -17.4467];
 
   const [orderIndex, setOrderIndex]   = useState(0);

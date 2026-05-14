@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { useDriversStore } from "@/lib/store/drivers";
+import { useSession } from "@/lib/hooks/useSession";
 import { WeeklyEarningsChart } from "@/components/driver/WeeklyEarningsChart";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -31,8 +32,12 @@ const avgRating = (TODAY_DELIVERIES.reduce((s, d) => s + d.rating, 0) / TODAY_DE
 
 export default function GainsPage() {
   const t = useT();
+  const session = useSession();
   const { drivers } = useDriversStore();
-  const demo = useMemo(() => drivers[0] ?? { ordersToday: 8, earningsToday: 14200, badges: ["Rapide"], rating: 4.8 }, [drivers]);
+  const demo = useMemo(() => {
+    const byName = session?.displayName ? drivers.find(d => d.name === session.displayName) : null;
+    return byName ?? drivers[0] ?? { ordersToday: 8, earningsToday: 14200, badges: ["Rapide"], rating: 4.8 };
+  }, [drivers, session?.displayName]);
   const ADVANCE_MAX = Math.floor(demo.earningsToday * 0.8);
   const [avanceAmount, setAvanceAmount] = useState(0);
   useEffect(() => { setAvanceAmount(Math.floor(ADVANCE_MAX / 2)); }, [ADVANCE_MAX]);

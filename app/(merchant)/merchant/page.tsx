@@ -1,7 +1,9 @@
 "use client";
+import { useMemo } from "react";
 import Link from "next/link";
 import { useMerchantsStore } from "@/lib/store/merchants";
 import { useOrdersStore } from "@/lib/store/orders";
+import { useSession } from "@/lib/hooks/useSession";
 import { Package, TrendingUp, CheckCircle2, PlusSquare } from "lucide-react";
 import { useT, useLang } from "@/lib/i18n";
 
@@ -16,10 +18,14 @@ const STATUS_COLORS: Record<string, string> = {
 export default function MerchantAccueilPage() {
   const t    = useT();
   const lang = useLang(s => s.lang);
+  const session       = useSession();
   const { merchants } = useMerchantsStore();
   const { orders }    = useOrdersStore();
 
-  const merchant  = merchants[0] ?? { name: "—", plan: "Standard", ordersThisMonth: 0, revenueThisMonth: 0, ordersLastMonth: 1, revenueLastMonth: 1 };
+  const merchant = useMemo(() => {
+    const byEmail = session?.email ? merchants.find(m => m.email === session.email) : null;
+    return byEmail ?? merchants[0] ?? { name: "—", plan: "Standard", ordersThisMonth: 0, revenueThisMonth: 0, ordersLastMonth: 1, revenueLastMonth: 1 };
+  }, [merchants, session?.email]);
   const delivered = orders.filter(o => o.status === "livrée").length;
   const tauxLivre = Math.round(delivered / orders.length * 100);
   const recent    = [...orders].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5);

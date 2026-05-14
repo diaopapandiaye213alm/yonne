@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Image from "next/image";
 import { useDriversStore, avatarUrl } from "@/lib/store/drivers";
 import { useOrdersStore } from "@/lib/store/orders";
 import { useDriverStore } from "@/lib/store/driver";
+import { useSession } from "@/lib/hooks/useSession";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { useT } from "@/lib/i18n";
@@ -40,12 +41,18 @@ const monthlyEarnings = [
 ];
 const maxMonth = Math.max(...monthlyEarnings.map(m => m.amount));
 
+const DRIVER_FALLBACK = { id: "drv-001", name: "—", phone: "", vehicle: "Moto Yamaha" as const, rating: 5, tier: "Bronze" as const, badges: [] as string[], ordersToday: 0, earningsToday: 0, avatarSeed: "" };
+
 export default function ProfilPage() {
   const t = useT();
+  const session = useSession();
   const { online, inPrayer, setOnline, setInPrayer } = useDriverStore();
   const { drivers } = useDriversStore();
   const { orders }  = useOrdersStore();
-  const demo = drivers[0] ?? { id: "drv-001", name: "—", phone: "", vehicle: "Moto Yamaha", rating: 5, tier: "Bronze", badges: [], ordersToday: 0, earningsToday: 0, avatarSeed: "" };
+  const demo = useMemo(() => {
+    const byName = session?.displayName ? drivers.find(d => d.name === session.displayName) : null;
+    return byName ?? drivers[0] ?? DRIVER_FALLBACK;
+  }, [drivers, session?.displayName]);
 
   const [editing,     setEditing]     = useState(false);
   const [editPhone,   setEditPhone]   = useState(demo.phone);

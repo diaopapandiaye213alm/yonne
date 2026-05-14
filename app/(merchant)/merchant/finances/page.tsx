@@ -1,8 +1,9 @@
 "use client";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { useMerchantsStore } from "@/lib/store/merchants";
 import { useOrdersStore } from "@/lib/store/orders";
+import { useSession } from "@/lib/hooks/useSession";
 import { TrendingUp, Percent, Wallet, Download } from "lucide-react";
 import { downloadCsv } from "@/lib/utils/csv";
 import type { PaymentMethod } from "@/lib/mock-data/orders";
@@ -19,9 +20,13 @@ const MONTHLY = [
 function fmt(n: number) { return `${(n / 1000).toFixed(0)}k`; }
 
 export default function FinancesPage() {
+  const session       = useSession();
   const { merchants } = useMerchantsStore();
   const { orders }    = useOrdersStore();
-  const merchant       = merchants[0] ?? { plan: "Standard", revenueThisMonth: 0 };
+  const merchant = useMemo(() => {
+    const byEmail = session?.email ? merchants.find(m => m.email === session.email) : null;
+    return byEmail ?? merchants[0] ?? { plan: "Standard", revenueThisMonth: 0 };
+  }, [merchants, session?.email]);
   const commissionRate = merchant.plan === "Premium" ? 0.12 : 0.15;
   const commissionPct  = Math.round(commissionRate * 100);
   const revenuBrut     = merchant.revenueThisMonth;

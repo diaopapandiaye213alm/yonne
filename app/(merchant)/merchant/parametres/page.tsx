@@ -1,7 +1,8 @@
 "use client";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { toast } from "sonner";
 import { useMerchantsStore } from "@/lib/store/merchants";
+import { useSession } from "@/lib/hooks/useSession";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -9,12 +10,22 @@ import { Button } from "@/components/ui/button";
 import { QrCode, Download, Copy } from "lucide-react";
 
 export default function ParametresPage() {
+  const session = useSession();
   const { merchants } = useMerchantsStore();
-  const merchant = useMemo(() => merchants[0] ?? { id: "", name: "—", email: "", phone: "", city: "", plan: "Standard" as const }, [merchants]);
+  const merchant = useMemo(() => {
+    const byEmail = session?.email ? merchants.find(m => m.email === session.email) : null;
+    return byEmail ?? merchants[0] ?? { id: "", name: "—", email: "", phone: "", city: "", plan: "Standard" as const };
+  }, [merchants, session?.email]);
 
-  const [email, setEmail] = useState(merchant.email);
-  const [phone, setPhone] = useState(merchant.phone);
-  const [city,  setCity]  = useState(merchant.city);
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [city,  setCity]  = useState("");
+
+  useEffect(() => {
+    setEmail(merchant.email);
+    setPhone(merchant.phone);
+    setCity(merchant.city);
+  }, [merchant.email, merchant.phone, merchant.city]);
 
   const [whatsapp,   setWhatsapp]   = useState(true);
   const [sms,        setSms]        = useState(true);
