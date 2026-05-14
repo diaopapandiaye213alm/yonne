@@ -7,7 +7,8 @@ import { DataTable, Column } from "@/components/admin/DataTable";
 import { FilterBar, FilterDef } from "@/components/admin/FilterBar";
 import { downloadCsv } from "@/lib/utils/csv";
 import type { Order, OrderStatus } from "@/lib/mock-data/orders";
-import { Package, Truck, CheckCircle2, Banknote } from "lucide-react";
+import { Package, Truck, CheckCircle2, Banknote, MapPin, Share2 } from "lucide-react";
+import { toast } from "sonner";
 
 const STATUS_COLORS: Record<OrderStatus, string> = {
   "créée":    "bg-gray-100 text-gray-700",
@@ -75,6 +76,8 @@ export default function MesCommandesPage() {
     });
   }, [orders, search, filters, quickStatus]);
 
+  const trackingBase = typeof window !== "undefined" ? window.location.origin : "";
+
   const columns: Column<Order>[] = [
     { key: "id",            label: "ID",       render: o => <span className="font-mono text-xs text-emerald-500">{o.id}</span> },
     { key: "clientName",    label: "Client" },
@@ -84,6 +87,37 @@ export default function MesCommandesPage() {
     { key: "paymentMethod", label: "Paiement", render: o => o.paymentMethod },
     { key: "amount",        label: "Montant",  render: o => `${o.amount.toLocaleString("fr-FR")} F` },
     { key: "createdAt",     label: "Date",     render: o => new Date(o.createdAt).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) },
+    {
+      key: "id" as keyof Order,
+      label: "Suivi",
+      render: o => {
+        const isActive = ["assignée", "collecte", "en route"].includes(o.status);
+        return (
+          <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+            <a
+              href={`/suivi/${o.id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Voir le tracking client"
+              className={`p-1.5 rounded-md transition-colors ${isActive ? "text-emerald-600 hover:bg-emerald-50" : "text-ink-300 hover:bg-cream-100"}`}
+            >
+              <MapPin className="w-3.5 h-3.5" />
+            </a>
+            <button
+              type="button"
+              title="Copier le lien tracking"
+              onClick={() => {
+                const url = `${trackingBase}/suivi/${o.id}`;
+                navigator.clipboard.writeText(url).then(() => toast.success("Lien copié !"));
+              }}
+              className="p-1.5 rounded-md text-ink-300 hover:text-emerald-600 hover:bg-emerald-50 transition-colors"
+            >
+              <Share2 className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        );
+      },
+    },
   ];
 
   function handleExport() {

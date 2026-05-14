@@ -9,7 +9,7 @@ import type { StringKey } from "@/lib/i18n";
 import {
   Home, Package, Bike, Store, Wallet, BarChart3, Zap, Sparkles, Settings, LogOut,
   Bell, HeadphonesIcon, Trophy, MapPin, Umbrella, GitMerge, Gift,
-  PiggyBank, Moon, Leaf, Code2, Bot, Users, FileBarChart
+  PiggyBank, Moon, Leaf, Code2, Bot, Users, FileBarChart, ShieldCheck
 } from "lucide-react";
 
 type NavItem = {
@@ -47,6 +47,7 @@ const sections: Section[] = [
     titleKey: "sectionOps",
     items: [
       { href: "/admin/groupage",   key: "navGroupage",   icon: GitMerge },
+      { href: "/admin/assurance",  key: "navAssurance",  icon: ShieldCheck },
       { href: "/admin/zones",      key: "navZones",      icon: MapPin },
       { href: "/admin/landmarks",  key: "navLandmarks",  icon: MapPin },
       { href: "/admin/fidelite",   key: "navFidelite",   icon: Trophy },

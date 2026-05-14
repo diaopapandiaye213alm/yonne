@@ -169,6 +169,14 @@ const dict = {
   driversTitle:     { fr: "Livreurs",                            en: "Drivers",                      wo: "Yëgëlkat yi" },
   merchantsTitle:   { fr: "Commerçants",                         en: "Merchants",                    wo: "Jëkërbaat yi" },
   zonesTitle:       { fr: "Zones de livraison",                  en: "Delivery zones",               wo: "Seen yoon yi" },
+
+  // ── Assurance ──
+  navAssurance:     { fr: "Assurance Colis",   en: "Parcel Insurance",  wo: "Asuraas colis" },
+  assuranceTitle:   { fr: "Assurance Colis",   en: "Parcel Insurance",  wo: "Asuraas colis" },
+
+  // ── Onboarding marchand ──
+  navOnboarding:    { fr: "Démarrage",         en: "Get started",       wo: "Tànneef" },
+  onboardingTitle:  { fr: "Bienvenue sur YONNE !", en: "Welcome to YONNE!", wo: "Dalal YONNE !" },
 } as const;
 
 export type StringKey = keyof typeof dict;
