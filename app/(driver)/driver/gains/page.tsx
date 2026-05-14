@@ -14,6 +14,13 @@ import { Smartphone, Banknote, ChevronRight, Star, MapPin, Target, X, CheckCircl
 
 const DAILY_GOAL = 20000;
 
+type RetraitEntry = { id: string; amount: number; phone: string; provider: "wave" | "orange"; date: string };
+const RETRAIT_KEY = "yonne_retrait_history";
+
+function loadHistory(): RetraitEntry[] {
+  try { return JSON.parse(localStorage.getItem(RETRAIT_KEY) ?? "[]"); } catch { return []; }
+}
+
 export default function GainsPage() {
   const t = useT();
   const session = useSession();
@@ -71,13 +78,30 @@ export default function GainsPage() {
   const [withdrawProvider, setWithdrawProvider] = useState<WithdrawProvider>(null);
   const [withdrawPhone, setWithdrawPhone] = useState("");
   const [withdrawStep, setWithdrawStep] = useState<"form" | "processing" | "done">("form");
+  const [retraitHistory, setRetraitHistory] = useState<RetraitEntry[]>([]);
+  useEffect(() => { setRetraitHistory(loadHistory()); }, []);
 
   function openWithdraw(provider: "wave" | "orange") {
     setWithdrawProvider(provider);
     setWithdrawPhone("");
     setWithdrawStep("form");
   }
-  function closeWithdraw() { setWithdrawProvider(null); setWithdrawStep("form"); }
+  function closeWithdraw() {
+    if (withdrawStep === "done" && withdrawProvider && withdrawPhone) {
+      const entry: RetraitEntry = {
+        id: `r${Date.now()}`,
+        amount: earningsToday,
+        phone: withdrawPhone,
+        provider: withdrawProvider,
+        date: new Date().toLocaleDateString("fr-FR"),
+      };
+      const next = [entry, ...retraitHistory].slice(0, 10);
+      setRetraitHistory(next);
+      try { localStorage.setItem(RETRAIT_KEY, JSON.stringify(next)); } catch { /* ignore */ }
+    }
+    setWithdrawProvider(null);
+    setWithdrawStep("form");
+  }
   function confirmWithdraw() {
     if (!withdrawPhone.trim()) return;
     setWithdrawStep("processing");
@@ -246,6 +270,30 @@ export default function GainsPage() {
           </button>
         </div>
       </div>
+
+      {retraitHistory.length > 0 && (
+        <div className="bg-white rounded-lg border border-cream-200 p-4 space-y-3">
+          <h2 className="font-display font-semibold text-ink-900 text-sm">Historique des retraits</h2>
+          <div className="divide-y divide-cream-50">
+            {retraitHistory.map(r => (
+              <div key={r.id} className="flex items-center justify-between py-2.5">
+                <div className="flex items-center gap-2">
+                  <div className={`w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold ${r.provider === "wave" ? "bg-[#1B96D4]" : "bg-[#FF6600]"}`}>
+                    {r.provider === "wave" ? "W" : "O"}
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium text-ink-900">{r.provider === "wave" ? "Wave" : "Orange Money"}</div>
+                    <div className="text-xs text-ink-400">{r.phone} · {r.date}</div>
+                  </div>
+                </div>
+                <div className="font-mono font-semibold text-emerald-600 text-sm">
+                  {r.amount.toLocaleString("fr-FR")} F
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Avance sur salaire */}
       <div className="bg-white rounded-lg border border-cream-200 p-4 space-y-3">

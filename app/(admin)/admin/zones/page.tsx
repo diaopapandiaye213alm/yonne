@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { zoneActivity } from "@/lib/mock-data/analytics";
 import { MapPin, Plus, Zap, ToggleLeft, ToggleRight, TrendingUp, X } from "lucide-react";
@@ -30,6 +30,18 @@ const INITIAL_ZONES: Zone[] = zoneActivity.map((z, i) => ({
   deliveryFee:     1000 + Math.floor((8 - i) * 200),
 }));
 
+const ZONES_KEY = "yonne_delivery_zones";
+function loadZones(): Zone[] {
+  try {
+    const raw = localStorage.getItem(ZONES_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch { /* ignore */ }
+  return INITIAL_ZONES;
+}
+function saveZones(zones: Zone[]) {
+  try { localStorage.setItem(ZONES_KEY, JSON.stringify(zones)); } catch { /* ignore */ }
+}
+
 const ACTIVITY_COLORS = ["bg-red-500","bg-orange-500","bg-amber-500","bg-emerald-400","bg-emerald-300","bg-emerald-200","bg-cream-300","bg-cream-200"];
 
 function ActivityBar({ orders, max }: { orders: number; max: number }) {
@@ -47,7 +59,12 @@ function ActivityBar({ orders, max }: { orders: number; max: number }) {
 
 export default function ZonesPage() {
   const t = useT();
-  const [zones,    setZones]    = useState<Zone[]>(INITIAL_ZONES);
+  const [zones,    setZones]    = useState<Zone[]>(INITIAL_ZONES); // loaded from localStorage on mount
+  useEffect(() => { setZones(loadZones()); }, []);
+  function persistZones(next: Zone[]) {
+    setZones(next);
+    saveZones(next);
+  }
   const [showAdd,  setShowAdd]  = useState(false);
   const [newName,  setNewName]  = useState("");
   const [newFee,   setNewFee]   = useState("1000");
@@ -61,15 +78,17 @@ export default function ZonesPage() {
   const avgFee = Math.round(zones.reduce((s, z) => s + z.deliveryFee, 0) / zones.length);
 
   function toggleZone(id: string) {
-    setZones(prev => prev.map(z => z.id === id ? { ...z, active: !z.active } : z));
+    const next = zones.map(z => z.id === id ? { ...z, active: !z.active } : z);
+    persistZones(next);
   }
 
   function saveEdit(id: string) {
-    setZones(prev => prev.map(z =>
+    const next = zones.map(z =>
       z.id === id
         ? { ...z, deliveryFee: Number(editFee) || z.deliveryFee, surgeMultiplier: Number(editSurge) || z.surgeMultiplier }
         : z
-    ));
+    );
+    persistZones(next);
     setEditId(null);
     toast.success("Zone mise à jour");
   }
@@ -87,14 +106,14 @@ export default function ZonesPage() {
       surgeMultiplier: 1.0,
       deliveryFee:     Number(newFee) || 1000,
     };
-    setZones(prev => [...prev, zone]);
+    persistZones([...zones, zone]);
     setShowAdd(false);
     setNewName(""); setNewFee("1000");
     toast.success(`Zone "${zone.name}" ajoutée`);
   }
 
   function removeZone(id: string) {
-    setZones(prev => prev.filter(z => z.id !== id));
+    persistZones(zones.filter(z => z.id !== id));
     toast.success("Zone supprimée");
   }
 
