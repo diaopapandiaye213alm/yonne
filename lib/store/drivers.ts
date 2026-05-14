@@ -12,6 +12,7 @@ interface DriversState {
   fetchDrivers: () => Promise<void>;
   setOnline: (id: string, online: boolean) => Promise<void>;
   setInPrayer: (id: string, inPrayer: boolean) => Promise<void>;
+  updatePosition: (id: string, lat: number, lng: number) => void;
 }
 
 function rowToDriver(row: Record<string, unknown>): Driver {
@@ -70,5 +71,9 @@ export const useDriversStore = create<DriversState>((set, get) => ({
   setInPrayer: async (id, inPrayer) => {
     await supabase.from("drivers").update({ in_prayer: inPrayer, online: inPrayer ? false : true }).eq("id", id);
     set(s => ({ drivers: s.drivers.map(d => d.id === id ? { ...d, inPrayer, online: !inPrayer } : d) }));
+  },
+
+  updatePosition: (id, lat, lng) => {
+    set(s => ({ drivers: s.drivers.map(d => d.id === id ? { ...d, lat, lng } : d) }));
   },
 }));

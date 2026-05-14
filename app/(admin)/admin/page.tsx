@@ -9,6 +9,7 @@ import { landmarks } from "@/lib/mock-data/landmarks";
 import { useLiveKpis } from "@/lib/hooks/useLiveKpis";
 import { useT, useLang } from "@/lib/i18n";
 import { LiveFeed } from "@/components/admin/LiveFeed";
+import { SimulationControls } from "@/components/admin/SimulationControls";
 import { Sparkles, ChevronRight } from "lucide-react";
 
 export default function AdminHomePage() {
@@ -57,14 +58,17 @@ export default function AdminHomePage() {
             </div>
           </div>
 
-          <Link
-            href="/admin/tabaski"
-            className="flex items-center gap-2 bg-gold-500/20 hover:bg-gold-500/30 border border-gold-500/40 text-gold-300 hover:text-gold-200 rounded-lg px-4 py-2.5 text-sm font-medium transition-all shrink-0 w-fit"
-          >
-            <Sparkles className="w-4 h-4" />
-            {t("tabaskiAlert").split("—")[0].trim()}
-            <ChevronRight className="w-4 h-4" />
-          </Link>
+          <div className="flex items-center gap-2 shrink-0 flex-wrap">
+            <SimulationControls />
+            <Link
+              href="/admin/tabaski"
+              className="flex items-center gap-2 bg-gold-500/20 hover:bg-gold-500/30 border border-gold-500/40 text-gold-300 hover:text-gold-200 rounded-lg px-4 py-2.5 text-sm font-medium transition-all w-fit"
+            >
+              <Sparkles className="w-4 h-4" />
+              {t("tabaskiAlert").split("—")[0].trim()}
+              <ChevronRight className="w-4 h-4" />
+            </Link>
+          </div>
         </div>
       </div>
 

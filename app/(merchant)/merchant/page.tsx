@@ -1,11 +1,12 @@
 "use client";
-import { useMemo } from "react";
+import { useMemo, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useMerchantsStore } from "@/lib/store/merchants";
 import { useOrdersStore } from "@/lib/store/orders";
 import { useSession } from "@/lib/hooks/useSession";
 import { Package, TrendingUp, CheckCircle2, PlusSquare, Clock } from "lucide-react";
 import { useT, useLang } from "@/lib/i18n";
+import { toast } from "sonner";
 
 const STATUS_COLORS: Record<string, string> = {
   "créée":    "bg-gray-100 text-gray-700",
@@ -33,6 +34,22 @@ export default function MerchantAccueilPage() {
 
   const deltaOrders  = Math.round((merchant.ordersThisMonth  - merchant.ordersLastMonth)  / merchant.ordersLastMonth  * 100);
   const deltaRevenue = Math.round((merchant.revenueThisMonth - merchant.revenueLastMonth) / merchant.revenueLastMonth * 100);
+
+  // Notifier le marchand quand une nouvelle commande arrive en temps réel
+  const prevCountRef = useRef(orders.length);
+  useEffect(() => {
+    const prev = prevCountRef.current;
+    if (orders.length > prev) {
+      const newest = orders[0];
+      if (newest) {
+        toast(`📦 Nouvelle commande — ${newest.id}`, {
+          description: `${newest.clientName} · ${newest.amount.toLocaleString("fr-FR")} F`,
+          duration: 5000,
+        });
+      }
+    }
+    prevCountRef.current = orders.length;
+  }, [orders]);
   const tauxLivreLastMonth = Math.round(tauxLivre * (0.92 + (merchant.ordersLastMonth % 10) / 100));
   const deltaTaux = tauxLivre - tauxLivreLastMonth;
 

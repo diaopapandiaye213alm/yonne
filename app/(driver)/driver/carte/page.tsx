@@ -11,6 +11,7 @@ import { IncomingOrderCard } from "@/components/driver/IncomingOrderCard";
 import { Switch } from "@/components/ui/switch";
 import type { Pin } from "@/components/map/DakarMap";
 import { triggerOrderNotification } from "@/components/driver/PushNotifBanner";
+import { simulationEngine } from "@/lib/simulation/engine";
 import { Navigation } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
@@ -111,6 +112,12 @@ export default function CartePage() {
 
     return () => { supabase.removeChannel(channel); };
   }, [demo?.id, rowToIncoming]);
+
+  // Enregistrer ce livreur dans le moteur de simulation
+  useEffect(() => {
+    if (demo?.id) simulationEngine.registerActiveDriver(demo.id);
+    return () => simulationEngine.registerActiveDriver(null);
+  }, [demo?.id]);
 
   // Geolocation watch + send position to Supabase every 10s
   useEffect(() => {
