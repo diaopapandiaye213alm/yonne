@@ -6,6 +6,7 @@ import { useDriversStore } from "@/lib/store/drivers";
 import { useSession } from "@/lib/hooks/useSession";
 import { landmarks } from "@/lib/mock-data/landmarks";
 import { incomingOrders } from "@/lib/mock-data/incoming-orders";
+import { useOrdersStore } from "@/lib/store/orders";
 import { useDriverStore } from "@/lib/store/driver";
 import { DeliveryStepperCard } from "@/components/driver/DeliveryStepperCard";
 import { Button } from "@/components/ui/button";
@@ -27,6 +28,7 @@ export default function LivraisonPage({ params }: { params: { id: string } }) {
   const session = useSession();
   const { drivers } = useDriversStore();
   const { activeOrderId, deliveryStep, advanceStep, completeDelivery } = useDriverStore();
+  const { orders } = useOrdersStore();
   const demo = useMemo(() => {
     const byName = session?.displayName ? drivers.find(d => d.name === session.displayName) : null;
     return byName ?? drivers[0] ?? { lat: 14.6928, lng: -17.4467 };
@@ -36,10 +38,29 @@ export default function LivraisonPage({ params }: { params: { id: string } }) {
     if (activeOrderId === null) router.replace("/driver/carte");
   }, [activeOrderId, router]);
 
-  const order = useMemo(
-    () => incomingOrders.find((o) => o.id === params.id) ?? incomingOrders[0],
-    [params.id]
-  );
+  // Resolve order: try real Supabase orders first, then mock fallback
+  const order = useMemo(() => {
+    const real = orders.find(o => o.id === params.id);
+    if (real) {
+      // Build IncomingOrder-compatible shape from real Order
+      const destLm = landmarks.find(l => l.id === real.landmarkId) ?? landmarks[1];
+      const seedIdx = parseInt(real.id.slice(-2), 16) % landmarks.length;
+      const pickupLm = landmarks[seedIdx] ?? landmarks[0];
+      return {
+        id: real.id,
+        clientName: real.clientName,
+        clientPhone: real.clientPhone ?? "",
+        pickupLandmarkId: pickupLm.id,
+        destLandmarkId: destLm.id,
+        distanceKm: Math.round(
+          Math.sqrt((destLm.lat - pickupLm.lat) ** 2 + (destLm.lng - pickupLm.lng) ** 2) * 111 * 10
+        ) / 10,
+        amount: real.amount,
+        paymentMethod: real.paymentMethod as "wave" | "orange" | "cash",
+      };
+    }
+    return incomingOrders.find(o => o.id === params.id) ?? incomingOrders[0];
+  }, [orders, params.id]);
 
   const pickup = useMemo(
     () => landmarks.find((l) => l.id === order.pickupLandmarkId) ?? landmarks[0],

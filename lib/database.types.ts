@@ -71,6 +71,17 @@ export interface SavMessageRow {
   sent_at: string;
 }
 
+export interface CatalogueItemRow {
+  id: string;
+  merchant_id: string | null;
+  name: string;
+  price: number;
+  category: "Nourriture" | "Textile" | "Électronique" | "Pharmacie" | "Autre";
+  available: boolean;
+  stock: number;
+  created_at: string;
+}
+
 // ── Insert types ─────────────────────────────────────────────
 
 export type DriverInsert   = Omit<DriverRow,   "created_at"> & { created_at?: string };
@@ -78,17 +89,19 @@ export type MerchantInsert = Omit<MerchantRow, "created_at"> & { created_at?: st
 export type OrderInsert    = Omit<OrderRow,    "created_at"> & { created_at?: string };
 export type SavTicketInsert  = Omit<SavTicketRow,  "created_at" | "id"> & { id?: string; created_at?: string };
 export type SavMessageInsert = Omit<SavMessageRow, "id" | "sent_at"> & { sent_at?: string };
+export type CatalogueItemInsert = Omit<CatalogueItemRow, "created_at"> & { created_at?: string };
 
 // ── Database type for createClient<Database> ─────────────────
 
 export interface Database {
   public: {
     Tables: {
-      drivers:      { Row: DriverRow;     Insert: DriverInsert;     Update: Partial<DriverInsert>;     Relationships: [] };
-      merchants:    { Row: MerchantRow;   Insert: MerchantInsert;   Update: Partial<MerchantInsert>;   Relationships: [] };
-      orders:       { Row: OrderRow;      Insert: OrderInsert;      Update: Partial<OrderInsert>;       Relationships: [] };
-      sav_tickets:  { Row: SavTicketRow;  Insert: SavTicketInsert;  Update: Partial<SavTicketInsert>;  Relationships: [] };
-      sav_messages: { Row: SavMessageRow; Insert: SavMessageInsert; Update: Partial<SavMessageInsert>; Relationships: [] };
+      drivers:          { Row: DriverRow;          Insert: DriverInsert;          Update: Partial<DriverInsert>;          Relationships: [] };
+      merchants:        { Row: MerchantRow;        Insert: MerchantInsert;        Update: Partial<MerchantInsert>;        Relationships: [] };
+      orders:           { Row: OrderRow;           Insert: OrderInsert;           Update: Partial<OrderInsert>;           Relationships: [] };
+      sav_tickets:      { Row: SavTicketRow;       Insert: SavTicketInsert;       Update: Partial<SavTicketInsert>;       Relationships: [] };
+      sav_messages:     { Row: SavMessageRow;      Insert: SavMessageInsert;      Update: Partial<SavMessageInsert>;      Relationships: [] };
+      catalogue_items:  { Row: CatalogueItemRow;   Insert: CatalogueItemInsert;   Update: Partial<CatalogueItemInsert>;   Relationships: [] };
     };
     Views: { [_ in never]: never };
     Functions: { [_ in never]: never };

@@ -26,7 +26,7 @@ export default function CartePage() {
   const router  = useRouter();
   const session = useSession();
   const { drivers } = useDriversStore();
-  const { online, activeOrderId, setOnline, acceptOrder } = useDriverStore();
+  const { online, inPrayer, activeOrderId, setOnline, acceptOrder } = useDriverStore();
 
   const demo = useMemo(() => {
     const byName = session?.displayName ? drivers.find(d => d.name === session.displayName) : null;
@@ -222,8 +222,14 @@ export default function CartePage() {
 
       {/* Online toggle */}
       <div className="absolute top-4 right-4 z-[1001] bg-white rounded-full shadow-card px-3 py-2 flex items-center gap-2">
-        <Switch checked={online} onCheckedChange={setOnline} />
-        <span className="text-sm font-medium text-ink-900">En ligne</span>
+        {inPrayer ? (
+          <span className="text-sm font-medium text-gold-600">🕌 Mode prière</span>
+        ) : (
+          <>
+            <Switch checked={online} onCheckedChange={setOnline} />
+            <span className="text-sm font-medium text-ink-900">En ligne</span>
+          </>
+        )}
       </div>
 
       {/* GPS indicator */}

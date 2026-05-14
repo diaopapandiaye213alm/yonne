@@ -105,6 +105,20 @@ create table if not exists sav_messages (
 );
 
 -- ────────────────────────────────────────────────────────────
+-- CATALOGUE ARTICLES
+-- ────────────────────────────────────────────────────────────
+create table if not exists catalogue_items (
+  id          text primary key,
+  merchant_id text references merchants(id) on delete cascade,
+  name        text        not null,
+  price       integer     not null check (price > 0),
+  category    text        check (category in ('Nourriture','Textile','Électronique','Pharmacie','Autre')) default 'Autre',
+  available   boolean     default true,
+  stock       integer     default 0 check (stock >= 0),
+  created_at  timestamptz default now()
+);
+
+-- ────────────────────────────────────────────────────────────
 -- ROW LEVEL SECURITY (permissive pour le MVP)
 -- Active RLS mais autorise tout avec anon key pour l'instant
 -- ────────────────────────────────────────────────────────────
@@ -129,6 +143,10 @@ create policy if not exists "anon write sav_tickets" on sav_tickets  for all    
 
 create policy if not exists "anon read sav_messages" on sav_messages for select using (true);
 create policy if not exists "anon write sav_messages" on sav_messages for all   using (true) with check (true);
+
+alter table catalogue_items enable row level security;
+create policy if not exists "anon read catalogue"  on catalogue_items for select using (true);
+create policy if not exists "anon write catalogue" on catalogue_items for all    using (true) with check (true);
 
 -- ────────────────────────────────────────────────────────────
 -- INDEX utiles

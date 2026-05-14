@@ -1,8 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import { useT } from "@/lib/i18n";
+import { useMerchantsStore } from "@/lib/store/merchants";
+import { useSession } from "@/lib/hooks/useSession";
+import { supabase } from "@/lib/supabase";
 import { Plus, Pencil, Trash2, X, Check, PackageSearch } from "lucide-react";
 
 type Category = "Nourriture" | "Textile" | "Électronique" | "Pharmacie" | "Autre";
@@ -37,7 +40,7 @@ const INITIAL: Article[] = [
 
 const STORAGE_KEY = "yonne_catalogue";
 
-function saveCatalogue(articles: Article[]) {
+function saveLocal(articles: Article[]) {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(articles)); } catch { /* ignore */ }
 }
 
@@ -45,14 +48,67 @@ type EditState = { id: string; name: string; price: string; category: Category; 
 
 export default function CataloguePage() {
   const t                             = useT();
+  const session                       = useSession();
+  const { merchants }                 = useMerchantsStore();
+  const merchantId = merchants.find(m => m.email === session?.email)?.id ?? merchants[0]?.id ?? null;
+
   const [articles,    setArticles]    = useState<Article[]>(INITIAL);
+  const [supaLoaded,  setSupaLoaded]  = useState(false); // true when loaded from Supabase vs localStorage
+
+  // Sync article list to Supabase
+  const syncToSupabase = useCallback(async (next: Article[]) => {
+    if (!merchantId) return;
+    // Upsert all articles for this merchant
+    await supabase.from("catalogue_items").upsert(
+      next.map(a => ({
+        id: a.id,
+        merchant_id: merchantId,
+        name: a.name,
+        price: a.price,
+        category: a.category,
+        available: a.available,
+        stock: a.stock,
+      })),
+      { onConflict: "id" }
+    );
+  }, [merchantId]);
+
+  // Save helper: localStorage + Supabase
+  const saveAll = useCallback((next: Article[]) => {
+    saveLocal(next);
+    syncToSupabase(next);
+  }, [syncToSupabase]);
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) setArticles(JSON.parse(raw));
-    } catch { /* ignore */ }
-  }, []);
+    // Try Supabase first, fall back to localStorage
+    async function load() {
+      if (merchantId) {
+        const { data } = await supabase
+          .from("catalogue_items")
+          .select("*")
+          .eq("merchant_id", merchantId)
+          .order("created_at", { ascending: true });
+        if (data && data.length > 0) {
+          setArticles(data.map(r => ({
+            id: r.id,
+            name: r.name,
+            price: r.price,
+            category: r.category as Category,
+            available: r.available,
+            stock: r.stock,
+          })));
+          setSupaLoaded(true);
+          return;
+        }
+      }
+      // Fallback: localStorage
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) setArticles(JSON.parse(raw));
+      } catch { /* ignore */ }
+    }
+    load();
+  }, [merchantId]);
   const [catFilter,   setCatFilter]   = useState<Category | "Tous">("Tous");
   const [editState,   setEditState]   = useState<EditState>(null);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -68,13 +124,14 @@ export default function CataloguePage() {
   function toggleAvailable(id: string) {
     const next = articles.map(a => a.id === id ? { ...a, available: !a.available } : a);
     setArticles(next);
-    saveCatalogue(next);
+    saveAll(next);
   }
 
-  function deleteArticle(id: string) {
+  async function deleteArticle(id: string) {
     const next = articles.filter(a => a.id !== id);
     setArticles(next);
-    saveCatalogue(next);
+    saveLocal(next);
+    if (merchantId) await supabase.from("catalogue_items").delete().eq("id", id);
     toast.success("Article supprimé");
   }
 
@@ -90,7 +147,7 @@ export default function CataloguePage() {
         : a
     );
     setArticles(next);
-    saveCatalogue(next);
+    saveAll(next);
     setEditState(null);
     toast.success("Article mis à jour");
   }
@@ -107,7 +164,7 @@ export default function CataloguePage() {
     };
     const next = [article, ...articles];
     setArticles(next);
-    saveCatalogue(next);
+    saveAll(next);
     setShowAddForm(false);
     setNewName(""); setNewPrice(""); setNewStock("");
     toast.success("Article ajouté au catalogue");

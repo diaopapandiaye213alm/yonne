@@ -1,5 +1,5 @@
 "use client";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { useMerchantsStore } from "@/lib/store/merchants";
 import { useSession } from "@/lib/hooks/useSession";
@@ -7,6 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { QRCodeSVG } from "qrcode.react";
 import { QrCode, Download, Copy } from "lucide-react";
 
 export default function ParametresPage() {
@@ -16,6 +17,8 @@ export default function ParametresPage() {
     const byEmail = session?.email ? merchants.find(m => m.email === session.email) : null;
     return byEmail ?? merchants[0] ?? { id: "", name: "—", email: "", phone: "", city: "", plan: "Standard" as const };
   }, [merchants, session?.email]);
+  const qrRef = useRef<SVGSVGElement>(null);
+  const qrValue = `https://yonne.sn/m/${merchant.id}`;
 
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -108,28 +111,40 @@ export default function ParametresPage() {
           <QrCode className="w-4 h-4 text-ink-700" />
           <h2 className="font-semibold text-ink-900">QR Code boutique</h2>
         </div>
-        <p className="text-sm text-ink-500 mb-4">Partagez ce code avec vos clients pour qu'ils puissent passer commande directement via WhatsApp.</p>
+        <p className="text-sm text-ink-500 mb-4">Partagez ce code avec vos clients pour qu&apos;ils puissent passer commande directement.</p>
         <div className="flex items-center gap-6">
-          {/* QR placeholder — grid of squares */}
-          <div className="shrink-0 w-28 h-28 bg-ink-900 rounded-lg p-2">
-            <div className="w-full h-full grid grid-cols-7 gap-px">
-              {Array.from({ length: 49 }, (_, i) => (
-                <div key={i} className={`rounded-[1px] ${Math.random() > 0.5 ? "bg-white" : "bg-ink-900"}`} />
-              ))}
-            </div>
+          <div className="shrink-0 p-2 border border-cream-200 rounded-lg bg-white">
+            <QRCodeSVG
+              ref={qrRef}
+              value={qrValue}
+              size={96}
+              bgColor="#ffffff"
+              fgColor="#1a1a2e"
+              level="M"
+            />
           </div>
           <div className="flex-1 space-y-3">
             <div className="font-mono text-xs text-ink-600 bg-cream-50 rounded px-3 py-2 break-all">
-              yonne.sn/m/{merchant.id}
+              {qrValue}
             </div>
             <div className="flex gap-2">
               <button type="button"
-                onClick={() => { navigator.clipboard.writeText(`https://yonne.sn/m/${merchant.id}`).catch(() => {}); toast.success("Lien copié"); }}
+                onClick={() => { navigator.clipboard.writeText(qrValue).catch(() => {}); toast.success("Lien copié"); }}
                 className="flex items-center gap-1.5 text-xs border border-cream-200 text-ink-600 hover:bg-cream-50 px-3 py-1.5 rounded-lg transition-colors">
                 <Copy className="w-3.5 h-3.5" /> Copier le lien
               </button>
               <button type="button"
-                onClick={() => toast.success("QR Code téléchargé (PNG)")}
+                onClick={() => {
+                  const svg = qrRef.current;
+                  if (!svg) return;
+                  const data = new XMLSerializer().serializeToString(svg);
+                  const blob = new Blob([data], { type: "image/svg+xml" });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement("a");
+                  a.href = url; a.download = `qr-yonne-${merchant.id}.svg`; a.click();
+                  URL.revokeObjectURL(url);
+                  toast.success("QR Code téléchargé (SVG)");
+                }}
                 className="flex items-center gap-1.5 text-xs bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-1.5 rounded-lg transition-colors font-medium">
                 <Download className="w-3.5 h-3.5" /> Télécharger
               </button>
