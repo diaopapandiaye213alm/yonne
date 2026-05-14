@@ -11,6 +11,7 @@ import { EtaBadge } from "@/components/tracking/EtaBadge";
 import { Wordmark } from "@/components/brand/Wordmark";
 import { Share2, Phone, MessageCircle, Star, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/lib/supabase";
 
 const DakarMap = dynamic(() => import("@/components/map/DakarMap"), { ssr: false });
 
@@ -97,6 +98,12 @@ export default function PublicTrackingPage({ params }: { params: { id: string } 
 
   const [pos, setPos] = useState<[number, number]>([14.6928, -17.4467]);
 
+  const distanceKm = useMemo(() => {
+    const dLat = destination.lat - pos[0];
+    const dLng = destination.lng - pos[1];
+    return Math.round(Math.sqrt(dLat * dLat + dLng * dLng) * 111 * 10) / 10;
+  }, [pos, destination]);
+
   useEffect(() => {
     if (isDelivered) return;
     const total = 30;
@@ -155,7 +162,7 @@ export default function PublicTrackingPage({ params }: { params: { id: string } 
           <span className={`text-xs px-3 py-1 rounded-full font-medium ${STATUS_COLORS[status]}`}>
             {status}
           </span>
-          {!isDelivered && <EtaBadge initialMinutes={18} />}
+          {!isDelivered && <EtaBadge distanceKm={distanceKm} />}
         </div>
 
         {/* Driver card */}
@@ -203,7 +210,13 @@ export default function PublicTrackingPage({ params }: { params: { id: string } 
         {/* Rating — shown when delivered */}
         {isDelivered && (
           <div className="bg-white rounded-lg border border-emerald-200 shadow-card p-4 animate-fade-in-up">
-            <StarRating onRate={n => toast.success(`Note ${n}★ envoyée — merci !`)} />
+            <StarRating onRate={async (n) => {
+              toast.success(`Note ${n}★ envoyée — merci !`);
+              if (driver?.id) {
+                const newRating = Math.round((driver.rating * 0.9 + n * 0.1) * 10) / 10;
+                await supabase.from("drivers").update({ rating: newRating }).eq("id", driver.id);
+              }
+            }} />
           </div>
         )}
 
