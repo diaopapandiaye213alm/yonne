@@ -8,6 +8,7 @@ import { useOrdersStore } from "@/lib/store/orders";
 import type { Tier } from "@/lib/mock-data/drivers";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
+import { supabase } from "@/lib/supabase";
 import {
   ArrowLeft, Star, Bike, Package,
   Edit2, Check, X, MessageSquare, Send, Phone,
@@ -56,12 +57,16 @@ export default function LivreurDetailPage({ params }: { params: { id: string } }
   const [editName,    setEditName]    = useState("");
   const [editPhone,   setEditPhone]   = useState("");
   const [editVehicle, setEditVehicle] = useState<"Moto Yamaha" | "Moto TVS" | "Vélo électrique" | "Tricycle">("Moto Yamaha");
+  const [editTier,    setEditTier]    = useState<Tier>("Bronze");
+  const [editOnline,  setEditOnline]  = useState(false);
 
   useEffect(() => {
     if (driver) {
       setEditName(driver.name);
       setEditPhone(driver.phone);
       setEditVehicle(driver.vehicle);
+      setEditTier(driver.tier);
+      setEditOnline(driver.online);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [driver?.id]); // intentionally keyed on id to avoid re-running on unrelated re-renders
@@ -79,7 +84,15 @@ export default function LivreurDetailPage({ params }: { params: { id: string } }
   const scoreCharge   = Math.round(driver.scoreIA * 0.85);
   const scoreFiab     = Math.round(driver.scoreIA * 0.97);
 
-  function saveEdit() {
+  async function saveEdit() {
+    if (!driver) return;
+    await supabase.from("drivers").update({
+      name:    editName,
+      phone:   editPhone,
+      vehicle: editVehicle,
+      tier:    editTier,
+      online:  editOnline,
+    }).eq("id", driver.id);
     setEditing(false);
     toast.success("Fiche livreur mise à jour");
   }
@@ -127,7 +140,7 @@ export default function LivreurDetailPage({ params }: { params: { id: string } }
               className="flex items-center gap-1.5 bg-emerald-500 text-white rounded-lg px-3 py-1.5 text-sm font-medium hover:bg-emerald-600 transition-colors">
               <Check className="w-4 h-4" /> Enregistrer
             </button>
-            <button type="button" onClick={() => { setEditing(false); setEditName(driver.name); setEditPhone(driver.phone); setEditVehicle(driver.vehicle); }}
+            <button type="button" onClick={() => { setEditing(false); setEditName(driver.name); setEditPhone(driver.phone); setEditVehicle(driver.vehicle); setEditTier(driver.tier); setEditOnline(driver.online); }}
               className="p-1.5 rounded-lg hover:bg-cream-100 text-ink-500 transition-colors">
               <X className="w-4 h-4" />
             </button>
@@ -163,6 +176,24 @@ export default function LivreurDetailPage({ params }: { params: { id: string } }
                   <option key={v} value={v}>{v}</option>
                 ))}
               </select>
+            </div>
+            <div>
+              <label className="text-xs text-ink-500 mb-1 block">Tier</label>
+              <select value={editTier} onChange={e => setEditTier(e.target.value as Tier)}
+                className="w-full border border-cream-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-400">
+                {(["Bronze","Argent","Or"] as const).map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </div>
+            <div className="flex items-center gap-3 pt-5">
+              <label className="text-xs text-ink-500">Actif</label>
+              <button
+                type="button"
+                onClick={() => setEditOnline(v => !v)}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${editOnline ? "bg-emerald-500" : "bg-cream-200"}`}
+              >
+                <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${editOnline ? "translate-x-6" : "translate-x-1"}`} />
+              </button>
+              <span className="text-xs text-ink-700">{editOnline ? "En ligne" : "Hors-ligne"}</span>
             </div>
           </div>
         </div>

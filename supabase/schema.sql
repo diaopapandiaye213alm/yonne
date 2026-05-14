@@ -149,6 +149,20 @@ create policy if not exists "anon read catalogue"  on catalogue_items for select
 create policy if not exists "anon write catalogue" on catalogue_items for all    using (true) with check (true);
 
 -- ────────────────────────────────────────────────────────────
+-- MESSAGES DE COMMANDE (chat marchand ↔ livreur)
+-- ────────────────────────────────────────────────────────────
+create table if not exists order_messages (
+  id         bigserial   primary key,
+  order_id   text        references orders(id) on delete cascade,
+  from_role  text        check (from_role in ('merchant','driver')),
+  text       text        not null,
+  sent_at    timestamptz default now()
+);
+alter table order_messages enable row level security;
+create policy if not exists "anon read order_messages"  on order_messages for select using (true);
+create policy if not exists "anon write order_messages" on order_messages for all    using (true) with check (true);
+
+-- ────────────────────────────────────────────────────────────
 -- INDEX utiles
 -- ────────────────────────────────────────────────────────────
 create index if not exists idx_orders_status     on orders(status);
@@ -157,3 +171,4 @@ create index if not exists idx_orders_merchant   on orders(merchant_id);
 create index if not exists idx_orders_created    on orders(created_at desc);
 create index if not exists idx_orders_client     on orders(client_phone);
 create index if not exists idx_sav_messages_tick on sav_messages(ticket_id);
+create index if not exists idx_order_messages_order on order_messages(order_id);

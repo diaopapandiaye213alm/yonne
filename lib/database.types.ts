@@ -71,6 +71,15 @@ export interface SavMessageRow {
   sent_at: string;
 }
 
+export interface OrderMessageRow {
+  id: number;
+  order_id: string | null;
+  from_role: "merchant" | "driver";
+  text: string;
+  sent_at: string;
+}
+export type OrderMessageInsert = Omit<OrderMessageRow, "id" | "sent_at"> & { sent_at?: string };
+
 export interface CatalogueItemRow {
   id: string;
   merchant_id: string | null;
@@ -90,6 +99,7 @@ export type OrderInsert    = Omit<OrderRow,    "created_at"> & { created_at?: st
 export type SavTicketInsert  = Omit<SavTicketRow,  "created_at" | "id"> & { id?: string; created_at?: string };
 export type SavMessageInsert = Omit<SavMessageRow, "id" | "sent_at"> & { sent_at?: string };
 export type CatalogueItemInsert = Omit<CatalogueItemRow, "created_at"> & { created_at?: string };
+// OrderMessageInsert is defined alongside OrderMessageRow above
 
 // ── Database type for createClient<Database> ─────────────────
 
@@ -101,6 +111,7 @@ export interface Database {
       orders:           { Row: OrderRow;           Insert: OrderInsert;           Update: Partial<OrderInsert>;           Relationships: [] };
       sav_tickets:      { Row: SavTicketRow;       Insert: SavTicketInsert;       Update: Partial<SavTicketInsert>;       Relationships: [] };
       sav_messages:     { Row: SavMessageRow;      Insert: SavMessageInsert;      Update: Partial<SavMessageInsert>;      Relationships: [] };
+      order_messages:   { Row: OrderMessageRow;    Insert: OrderMessageInsert;    Update: Partial<OrderMessageInsert>;    Relationships: [] };
       catalogue_items:  { Row: CatalogueItemRow;   Insert: CatalogueItemInsert;   Update: Partial<CatalogueItemInsert>;   Relationships: [] };
     };
     Views: { [_ in never]: never };

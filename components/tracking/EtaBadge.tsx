@@ -1,8 +1,9 @@
 "use client";
 import { useEffect, useState } from "react";
 
-export function EtaBadge({ initialMinutes = 18 }: { initialMinutes?: number }) {
-  const [minutes, setMinutes] = useState(initialMinutes);
+export function EtaBadge({ distanceKm, initialMinutes }: { distanceKm?: number; initialMinutes?: number }) {
+  const calcMinutes = distanceKm ? Math.max(2, Math.round(distanceKm / 17.5 * 60)) : (initialMinutes ?? 18);
+  const [minutes, setMinutes] = useState(calcMinutes);
 
   useEffect(() => {
     const id = setInterval(() => {

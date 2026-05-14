@@ -3,7 +3,6 @@ import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { useDriversStore } from "@/lib/store/drivers";
 import { landmarks } from "@/lib/mock-data/landmarks";
-import { trackingChat } from "@/lib/mock-data/chat";
 import { useOrdersStore } from "@/lib/store/orders";
 import type { OrderStatus } from "@/lib/mock-data/orders";
 import { GlovoTimeline } from "@/components/tracking/GlovoTimeline";
@@ -11,7 +10,8 @@ import { ChatBubble } from "@/components/tracking/ChatBubble";
 import { EtaBadge } from "@/components/tracking/EtaBadge";
 import { DriverCard } from "@/components/tracking/DriverCard";
 import { Button } from "@/components/ui/button";
-import { Share2, XCircle, AlertTriangle, FileText } from "lucide-react";
+import { Share2, XCircle, AlertTriangle, FileText, Send } from "lucide-react";
+import { supabase } from "@/lib/supabase";
 
 const STATUS_STAGE: Record<OrderStatus, "created" | "assigned" | "enroute" | "delivered"> = {
   "créée":    "created",
@@ -70,6 +70,46 @@ export default function TrackingPage({ params }: { params: { id: string } }) {
     return () => clearInterval(id);
   }, [driver, destination]);
 
+  const distanceKm = useMemo(() => {
+    const dLat = destination.lat - pos[0];
+    const dLng = destination.lng - pos[1];
+    return Math.round(Math.sqrt(dLat * dLat + dLng * dLng) * 111 * 10) / 10;
+  }, [pos, destination]);
+
+  const [messages, setMessages] = useState<{ id: number; from_role: "merchant" | "driver"; text: string; sent_at: string }[]>([]);
+  const [chatInput, setChatInput] = useState("");
+
+  useEffect(() => {
+    supabase
+      .from("order_messages")
+      .select("*")
+      .eq("order_id", params.id)
+      .order("sent_at")
+      .then(({ data }) => {
+        if (data) setMessages(data as { id: number; from_role: "merchant" | "driver"; text: string; sent_at: string }[]);
+      });
+
+    const channel = supabase
+      .channel(`order_messages_${params.id}`)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "order_messages", filter: `order_id=eq.${params.id}` },
+        (payload) => {
+          setMessages(prev => [...prev, payload.new as { id: number; from_role: "merchant" | "driver"; text: string; sent_at: string }]);
+        }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [params.id]);
+
+  async function sendMessage() {
+    const text = chatInput.trim();
+    if (!text) return;
+    setChatInput("");
+    await supabase.from("order_messages").insert({ order_id: params.id, from_role: "merchant", text });
+  }
+
   const pins = [
     { id: "drv", lat: pos[0], lng: pos[1], kind: "driver" as const },
     { id: "dst", lat: destination.lat, lng: destination.lng, kind: "dest" as const },
@@ -91,7 +131,7 @@ export default function TrackingPage({ params }: { params: { id: string } }) {
           <span className={`inline-block mt-2 text-xs px-2 py-0.5 rounded-sm font-bold ${STATUS_COLORS[status]}`}>{status}</span>
         </div>
         <DriverCard driver={driver} />
-        <EtaBadge initialMinutes={18} />
+        <EtaBadge distanceKm={distanceKm} />
         <div>
           <h3 className="font-display font-semibold text-ink-900 mb-3">Suivi</h3>
           <GlovoTimeline activeStage={STATUS_STAGE[status]} />
@@ -99,7 +139,25 @@ export default function TrackingPage({ params }: { params: { id: string } }) {
         <div>
           <h3 className="font-display font-semibold text-ink-900 mb-3">Discussion</h3>
           <div className="space-y-2">
-            {trackingChat.map((m, i) => <ChatBubble key={i} msg={m} />)}
+            {messages.length === 0 && (
+              <div className="text-xs text-ink-400 text-center py-3">Aucun message pour le moment</div>
+            )}
+            {messages.map(m => (
+              <ChatBubble key={m.id} msg={{ from: m.from_role === "merchant" ? "client" : "driver", text: m.text, time: new Date(m.sent_at).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }) }} />
+            ))}
+            <div className="flex gap-2 mt-2">
+              <input
+                value={chatInput}
+                onChange={e => setChatInput(e.target.value)}
+                onKeyDown={e => e.key === "Enter" && sendMessage()}
+                placeholder="Envoyer un message…"
+                className="flex-1 border border-cream-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-emerald-400"
+              />
+              <button type="button" onClick={sendMessage} disabled={!chatInput.trim()}
+                className="bg-emerald-500 hover:bg-emerald-600 disabled:opacity-40 text-white rounded-lg px-3 py-2">
+                <Send className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
         </div>
         <a href={`https://wa.me/?text=${waText}`} target="_blank" rel="noopener noreferrer">

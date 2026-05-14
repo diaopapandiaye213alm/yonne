@@ -7,6 +7,7 @@ import { useMerchantsStore } from "@/lib/store/merchants";
 import { useOrdersStore } from "@/lib/store/orders";
 import { ArrowLeft, FileText, TrendingUp, TrendingDown, MessageSquare, Send, Download } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/lib/supabase";
 
 const PLAN_COLORS = {
   Standard: "bg-cream-200 text-ink-700",
@@ -45,6 +46,12 @@ export default function MarchandDetailPage({ params }: { params: { id: string } 
   const contractStart = new Date(merchant.joinedAt);
   const contractEnd   = new Date(contractStart);
   contractEnd.setFullYear(contractEnd.getFullYear() + 1);
+
+  async function upgradeToPremium() {
+    if (!merchant) return;
+    await supabase.from("merchants").update({ plan: "Premium" }).eq("id", merchant.id);
+    toast.success("Marchand upgradé en Premium");
+  }
 
   function sendChat() {
     const text = chatMsg.trim();
@@ -114,7 +121,7 @@ export default function MarchandDetailPage({ params }: { params: { id: string } 
           </div>
           {merchant.plan === "Standard" && (
             <button type="button"
-              onClick={() => toast.success("Demande Premium enregistrée — l'équipe YONNE va contacter ce commerçant")}
+              onClick={upgradeToPremium}
               className="w-full mt-1 bg-gold-500 text-white rounded-lg py-2 text-sm font-medium hover:bg-gold-600 transition-colors">
               Passer en Premium (15 000 F/mois)
             </button>
