@@ -1,4 +1,5 @@
 import { MerchantSidebar } from "@/components/layout/MerchantSidebar";
+import { MerchantBottomNav } from "@/components/layout/MerchantBottomNav";
 import { Topbar } from "@/components/layout/Topbar";
 import { getSession } from "@/lib/session";
 import { MerchantNotifier } from "@/components/providers/MerchantNotifier";
@@ -13,8 +14,9 @@ export default async function MerchantLayout({ children }: { children: React.Rea
         <Topbar breadcrumb="Marchand" userName={session?.displayName ?? "Marchand"} role="merchant" />
         <MerchantNotifier />
         <OnboardingGuard />
-        <main className="flex-1 overflow-y-auto">{children}</main>
+        <main className="flex-1 overflow-y-auto pb-16 md:pb-0">{children}</main>
       </div>
+      <MerchantBottomNav />
     </div>
   );
 }

@@ -247,8 +247,8 @@ export default function CataloguePage() {
             const isEditing = editState?.id === article.id;
             return (
               <div key={article.id}
-                className={`bg-white rounded-lg border shadow-card p-4 transition-colors ${
-                  isEditing ? "border-emerald-300" : "border-cream-200"
+                className={`bg-white rounded-xl border shadow-card p-5 transition-colors ${
+                  isEditing ? "border-emerald-300 ring-1 ring-emerald-200" : "border-cream-200 hover:border-cream-300 hover:shadow-md"
                 }`}>
                 {isEditing ? (
                   <div className="space-y-3">

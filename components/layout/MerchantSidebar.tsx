@@ -24,7 +24,7 @@ export function MerchantSidebar() {
   const pathname = usePathname();
   const t = useT();
   return (
-    <aside className="w-60 shrink-0 bg-emerald-900 flex flex-col">
+    <aside className="hidden md:flex w-60 shrink-0 bg-emerald-900 flex-col">
       <div className="h-16 px-5 flex items-center border-b border-emerald-800">
         <Link href="/merchant"><Wordmark size="md" variant="dark" /></Link>
       </div>

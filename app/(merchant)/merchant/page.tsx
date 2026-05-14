@@ -73,30 +73,33 @@ export default function MerchantAccueilPage() {
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {[
-          { label: t("ordersThisMonth"),  value: String(merchant.ordersThisMonth),                         icon: Package,      delta: deltaOrders  },
-          { label: t("revenueThisMonth"), value: `${merchant.revenueThisMonth.toLocaleString("fr-FR")} F`, icon: TrendingUp,   delta: deltaRevenue },
-          { label: t("deliveryRate"),     value: `${tauxLivre}%`,                                          icon: CheckCircle2, delta: deltaTaux    },
-        ].map(({ label, value, icon: Icon, delta }) => (
-          <div key={label} className="bg-white rounded-lg border border-cream-200 shadow-card p-4">
-            <Icon className="w-4 h-4 text-ink-500 mb-2" />
-            <div className="text-xl font-display font-bold text-ink-900 tabular-nums">{value}</div>
-            <div className="text-xs text-ink-500 mt-0.5">{label}</div>
-            <div className="mt-1"><Delta pct={delta} /></div>
+          { label: t("ordersThisMonth"),  value: String(merchant.ordersThisMonth),                         icon: Package,      delta: deltaOrders,  chip: "bg-emerald-100 text-emerald-600", border: "border-emerald-100" },
+          { label: t("revenueThisMonth"), value: `${merchant.revenueThisMonth.toLocaleString("fr-FR")} F`, icon: TrendingUp,   delta: deltaRevenue, chip: "bg-gold-500/15 text-gold-600",     border: "border-gold-300/40" },
+          { label: t("deliveryRate"),     value: `${tauxLivre}%`,                                          icon: CheckCircle2, delta: deltaTaux,    chip: "bg-blue-100 text-blue-600",        border: "border-blue-100" },
+        ].map(({ label, value, icon: Icon, delta, chip, border }) => (
+          <div key={label} className={`bg-white rounded-xl border ${border} shadow-card p-5`}>
+            <div className={`w-8 h-8 rounded-lg flex items-center justify-center mb-3 ${chip}`}>
+              <Icon className="w-4 h-4" />
+            </div>
+            <div className="text-2xl font-display font-bold text-ink-900 tabular-nums">{value}</div>
+            <div className="text-xs text-ink-500 mt-1">{label}</div>
+            <div className="mt-2"><Delta pct={delta} /></div>
           </div>
         ))}
       </div>
 
       <Link
         href="/merchant/nouvelle-commande"
-        className="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg py-3 px-6 font-display font-bold transition-colors"
+        className="flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl py-3.5 px-6 font-display font-bold transition-colors shadow-glow-emerald"
       >
-        <PlusSquare className="w-4 h-4" />
+        <PlusSquare className="w-5 h-5" />
         {t("newOrder")}
       </Link>
 
       <div className="bg-white rounded-lg border border-cream-200 shadow-card">
-        <div className="px-5 py-4 border-b border-cream-100">
+        <div className="px-5 py-4 border-b border-cream-100 flex items-center justify-between">
           <h2 className="font-semibold text-ink-900">{t("recentOrders")}</h2>
+          <Link href="/merchant/commandes" className="text-xs text-emerald-600 hover:underline font-medium">Voir tout →</Link>
         </div>
         <div className="divide-y divide-cream-100">
           {recent.map(o => (
