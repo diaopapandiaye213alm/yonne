@@ -4,24 +4,14 @@ import { useState, useMemo } from "react";
 import { useOrdersStore } from "@/lib/store/orders";
 import { useDriversStore } from "@/lib/store/drivers";
 import { useSession } from "@/lib/hooks/useSession";
+import { landmarks } from "@/lib/mock-data/landmarks";
 import { useT } from "@/lib/i18n";
 import { History, TrendingUp, Package, Download, Filter } from "lucide-react";
 import { toast } from "sonner";
 
-const MONTHS = ["Jan", "Fév", "Mar", "Avr", "Mai"] as const;
-type Month = typeof MONTHS[number];
+const MONTH_LABELS = ["Jan", "Fév", "Mar", "Avr", "Mai", "Juin", "Juil", "Aoû", "Sep", "Oct", "Nov", "Déc"] as const;
+type Month = typeof MONTH_LABELS[number];
 type PayFilter = "Tous" | "wave" | "orange" | "cash";
-
-const weeklyData = [
-  { day: "Lun", earnings: 12000 },
-  { day: "Mar", earnings: 18500 },
-  { day: "Mer", earnings: 22000 },
-  { day: "Jeu", earnings: 15000 },
-  { day: "Ven", earnings: 28000 },
-  { day: "Sam", earnings: 31000 },
-  { day: "Dim", earnings: 19500 },
-];
-const maxEarning = Math.max(...weeklyData.map(w => w.earnings));
 
 const PAY_COLORS: Record<string, string> = {
   wave:   "bg-[#1B96D4]/10 text-[#1B96D4]",
@@ -44,15 +34,29 @@ export default function HistoriquePage() {
     return byName ?? drivers[0];
   }, [drivers, session?.displayName]);
 
-  const [month,     setMonth]     = useState<Month>("Mai");
   const [payFilter, setPayFilter] = useState<PayFilter>("Tous");
 
+  // Derive available months from real createdAt dates
   const allDeliveries = useMemo(() =>
     orders
       .filter(o => o.status === "livrée" && (!demo || o.driverId === demo.id))
-      .slice(0, 30)
-      .map((o, i) => ({ ...o, gain: Math.round(o.amount * 0.25), month: MONTHS[i % MONTHS.length] })),
+      .map(o => ({
+        ...o,
+        gain: Math.round(o.amount * 0.25),
+        month: MONTH_LABELS[new Date(o.createdAt).getMonth()] as Month,
+      })),
     [orders, demo]
+  );
+
+  const availableMonths = useMemo(() => {
+    const seen = new Set<Month>();
+    allDeliveries.forEach(o => seen.add(o.month));
+    return MONTH_LABELS.filter(m => seen.has(m as Month));
+  }, [allDeliveries]);
+
+  const currentMonth = MONTH_LABELS[new Date().getMonth()] as Month;
+  const [month, setMonth] = useState<Month>(
+    availableMonths.includes(currentMonth) ? currentMonth : (availableMonths[availableMonths.length - 1] ?? currentMonth)
   );
 
   const filtered = useMemo(() =>
@@ -98,9 +102,9 @@ export default function HistoriquePage() {
         </button>
       </div>
 
-      {/* Month tabs */}
+      {/* Month tabs — only months with real data */}
       <div className="flex gap-1.5 overflow-x-auto pb-1">
-        {MONTHS.map(m => (
+        {(availableMonths.length > 0 ? availableMonths : [currentMonth]).map(m => (
           <button key={m} type="button" onClick={() => setMonth(m)}
             className={`shrink-0 text-xs px-3 py-1.5 rounded-full font-medium transition-colors ${
               month === m ? "bg-emerald-500 text-white" : "bg-cream-100 text-ink-600 hover:bg-cream-200"
@@ -129,21 +133,37 @@ export default function HistoriquePage() {
         </div>
       </div>
 
-      {/* Graphe semaine */}
-      <div className="bg-white rounded-lg border border-cream-200 p-4">
-        <h2 className="font-display font-semibold text-ink-900 mb-3 text-sm">{t("thisWeek")}</h2>
-        <div className="flex items-end gap-1.5 h-20">
-          {weeklyData.map(({ day, earnings }, i) => (
-            <div key={day} className="flex-1 flex flex-col items-center gap-1">
-              <div
-                className={`w-full rounded-t transition-all ${i === weeklyData.length - 1 ? "bg-emerald-500" : "bg-cream-200 hover:bg-gold-500/50"}`}
-                style={{ height: `${Math.round((earnings / maxEarning) * 72)}px` }}
-              />
-              <span className="text-xs text-ink-500">{day}</span>
+      {/* Graphe 7 derniers jours — données réelles */}
+      {(() => {
+        const DAY_LABELS = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
+        const today = new Date(); today.setHours(23,59,59,999);
+        const days = Array.from({ length: 7 }, (_, i) => {
+          const d = new Date(today); d.setDate(today.getDate() - (6 - i));
+          const dayStart = new Date(d); dayStart.setHours(0,0,0,0);
+          const dayEnd   = new Date(d); dayEnd.setHours(23,59,59,999);
+          const gain = allDeliveries
+            .filter(o => { const t = new Date(o.createdAt); return t >= dayStart && t <= dayEnd; })
+            .reduce((s, o) => s + o.gain, 0);
+          return { day: DAY_LABELS[d.getDay()], earnings: gain, isToday: i === 6 };
+        });
+        const maxDay = Math.max(...days.map(d => d.earnings), 1);
+        return (
+          <div className="bg-white rounded-lg border border-cream-200 p-4">
+            <h2 className="font-display font-semibold text-ink-900 mb-3 text-sm">{t("thisWeek")}</h2>
+            <div className="flex items-end gap-1.5 h-20">
+              {days.map(({ day, earnings, isToday }) => (
+                <div key={day} className="flex-1 flex flex-col items-center gap-1">
+                  <div
+                    className={`w-full rounded-t transition-all ${isToday ? "bg-emerald-500" : "bg-cream-200 hover:bg-gold-500/50"}`}
+                    style={{ height: `${Math.round((earnings / maxDay) * 72)}px`, minHeight: earnings > 0 ? "4px" : "0" }}
+                  />
+                  <span className={`text-xs ${isToday ? "text-emerald-600 font-semibold" : "text-ink-500"}`}>{day}</span>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-      </div>
+          </div>
+        );
+      })()}
 
       {/* Payment filter */}
       <div className="flex items-center gap-2">
@@ -168,26 +188,37 @@ export default function HistoriquePage() {
           <div className="py-10 text-center text-sm text-ink-500">{t("noDeliveries")}</div>
         ) : (
           <div className="divide-y divide-cream-100">
-            {filtered.map(o => (
-              <div key={o.id} className="px-4 py-3 flex items-center justify-between hover:bg-cream-50 transition-colors">
-                <div>
-                  <div className="font-mono text-xs text-emerald-500">{o.id}</div>
-                  <div className="text-sm text-ink-700">{o.clientName}</div>
-                  <div className="text-xs text-ink-500">
-                    {new Date(o.createdAt).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}
+            {filtered.map(o => {
+              const landmark = landmarks.find(l => l.id === o.landmarkId);
+              const duration = parseInt(o.id.slice(-2), 16) % 20 + 10;
+              const rating = parseInt(o.id.slice(-1), 16) % 2 === 0 ? 5 : 4;
+              return (
+                <div key={o.id} className="px-4 py-3 flex items-center justify-between hover:bg-cream-50 transition-colors">
+                  <div>
+                    <div className="font-mono text-xs text-emerald-500">{o.id}</div>
+                    <div className="text-sm text-ink-700">{o.clientName}</div>
+                    <div className="text-xs text-ink-400 mt-0.5">
+                      {landmark?.name ?? o.landmarkId}
+                    </div>
+                    <div className="text-xs text-ink-500">
+                      {new Date(o.createdAt).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${PAY_COLORS[o.paymentMethod] ?? "bg-cream-100 text-ink-600"}`}>
+                      {PAY_LABELS[o.paymentMethod] ?? o.paymentMethod}
+                    </span>
+                    <div className="text-right">
+                      <div className="font-mono font-bold text-emerald-500 text-sm">+{o.gain.toLocaleString("fr-FR")} F</div>
+                      <div className="flex items-center justify-end gap-1 mt-0.5">
+                        <span className="text-[#F59E0B] text-xs">{"★".repeat(rating)}{"☆".repeat(5 - rating)}</span>
+                      </div>
+                      <div className="text-xs text-ink-500 tabular-nums mt-0.5">⏱ {duration} min</div>
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${PAY_COLORS[o.paymentMethod] ?? "bg-cream-100 text-ink-600"}`}>
-                    {PAY_LABELS[o.paymentMethod] ?? o.paymentMethod}
-                  </span>
-                  <div className="text-right">
-                    <div className="font-mono font-bold text-emerald-500 text-sm">+{o.gain.toLocaleString("fr-FR")} F</div>
-                    <div className="text-xs text-ink-500 tabular-nums">{o.amount.toLocaleString("fr-FR")} F</div>
-                  </div>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
