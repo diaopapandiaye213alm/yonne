@@ -6,6 +6,7 @@ import { useDriversStore, avatarUrl } from "@/lib/store/drivers";
 import { useOrdersStore } from "@/lib/store/orders";
 import { useDriverStore } from "@/lib/store/driver";
 import { useSession } from "@/lib/hooks/useSession";
+import { supabase } from "@/lib/supabase";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { useT } from "@/lib/i18n";
@@ -60,9 +61,17 @@ export default function ProfilPage() {
 
   const totalOrders = orders.filter(o => o.driverId === demo.id).length || demo.ordersToday * 14;
 
-  function saveEdit() {
+  async function saveEdit() {
+    const { error } = await supabase
+      .from("drivers")
+      .update({ phone: editPhone, vehicle: editVehicle })
+      .eq("id", demo.id);
     setEditing(false);
-    toast.success("Profil mis à jour");
+    if (error) {
+      toast.error("Erreur lors de la mise à jour");
+    } else {
+      toast.success("Profil mis à jour");
+    }
   }
 
   return (

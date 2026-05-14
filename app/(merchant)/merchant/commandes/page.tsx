@@ -2,6 +2,7 @@
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useOrdersStore } from "@/lib/store/orders";
+import { useT } from "@/lib/i18n";
 import { DataTable, Column } from "@/components/admin/DataTable";
 import { FilterBar, FilterDef } from "@/components/admin/FilterBar";
 import { downloadCsv } from "@/lib/utils/csv";
@@ -37,8 +38,9 @@ const STATUS_QUICK: { label: string; value: OrderStatus | ""; color: string }[] 
 ];
 
 export default function MesCommandesPage() {
-  const { orders } = useOrdersStore();
-  const router = useRouter();
+  const t           = useT();
+  const { orders }  = useOrdersStore();
+  const router      = useRouter();
   const [search,      setSearch]      = useState("");
   const [filters,     setFilters]     = useState<Record<string, string>>({});
   const [quickStatus, setQuickStatus] = useState<string>("");
@@ -99,42 +101,42 @@ export default function MesCommandesPage() {
   }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
+    <div className="p-6 max-w-7xl mx-auto space-y-6 animate-fade-in-up">
       <div>
-        <h1 className="text-2xl font-display font-bold text-ink-900">Mes commandes</h1>
-        <p className="text-sm text-ink-500 mt-1">{orders.length} commande{orders.length > 1 ? "s" : ""} au total</p>
+        <h1 className="text-2xl font-display font-bold text-ink-900">{t("navMyOrders")}</h1>
+        <p className="text-sm text-ink-500 mt-1">{orders.length} {t("ordersTotal")}</p>
       </div>
 
       {/* KPI cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="bg-white rounded-lg border border-cream-200 shadow-card p-4 flex items-start gap-3">
+        <div className="stagger-1 animate-fade-in-up bg-white rounded-lg border border-cream-200 shadow-card p-4 flex items-start gap-3">
           <Package className="w-5 h-5 text-ink-400 mt-0.5 shrink-0" />
           <div>
             <div className="text-2xl font-display font-bold text-ink-900 tabular-nums">{kpis.total}</div>
-            <div className="text-xs text-ink-500 mt-0.5">Total commandes</div>
+            <div className="text-xs text-ink-500 mt-0.5">{t("totalOrders")}</div>
           </div>
         </div>
-        <div className="bg-white rounded-lg border border-gold-500/30 shadow-card p-4 flex items-start gap-3">
+        <div className="stagger-2 animate-fade-in-up bg-white rounded-lg border border-gold-500/30 shadow-card p-4 flex items-start gap-3">
           <Truck className="w-5 h-5 text-gold-500 mt-0.5 shrink-0" />
           <div>
             <div className="text-2xl font-display font-bold text-ink-900 tabular-nums">{kpis.enRoute}</div>
-            <div className="text-xs text-ink-500 mt-0.5">En route</div>
+            <div className="text-xs text-ink-500 mt-0.5">{t("enRouteLabel")}</div>
           </div>
         </div>
-        <div className="bg-white rounded-lg border border-emerald-200 shadow-card p-4 flex items-start gap-3">
+        <div className="stagger-3 animate-fade-in-up bg-white rounded-lg border border-emerald-200 shadow-card p-4 flex items-start gap-3">
           <CheckCircle2 className="w-5 h-5 text-emerald-500 mt-0.5 shrink-0" />
           <div>
             <div className="text-2xl font-display font-bold text-emerald-600 tabular-nums">{kpis.livrees}</div>
-            <div className="text-xs text-ink-500 mt-0.5">Livrées</div>
+            <div className="text-xs text-ink-500 mt-0.5">{t("livreesLabel")}</div>
           </div>
         </div>
-        <div className="bg-white rounded-lg border border-cream-200 shadow-card p-4 flex items-start gap-3">
+        <div className="stagger-4 animate-fade-in-up bg-white rounded-lg border border-cream-200 shadow-card p-4 flex items-start gap-3">
           <Banknote className="w-5 h-5 text-gold-500 mt-0.5 shrink-0" />
           <div>
             <div className="text-2xl font-display font-bold text-ink-900 tabular-nums">
               {kpis.revToday.toLocaleString("fr-FR")}
             </div>
-            <div className="text-xs text-ink-500 mt-0.5">F aujourd'hui</div>
+            <div className="text-xs text-ink-500 mt-0.5">{t("revenuToday")}</div>
           </div>
         </div>
       </div>
@@ -169,7 +171,7 @@ export default function MesCommandesPage() {
           onFilter={(k, v) => { setFilters(prev => ({ ...prev, [k]: v })); setQuickStatus(""); }}
           onExport={handleExport}
         />
-        <p className="text-xs text-ink-400 mt-2">{filtered.length} résultat{filtered.length > 1 ? "s" : ""}</p>
+        <p className="text-xs text-ink-400 mt-2">{filtered.length} {t("resultsCount")}{filtered.length > 1 ? "s" : ""}</p>
       </div>
       <DataTable<Order>
         columns={columns}

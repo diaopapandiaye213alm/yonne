@@ -6,11 +6,10 @@ export function J7Countdown() {
   const [diff, setDiff] = useState(() => TABASKI_DATE.getTime() - DEMO_NOW.getTime());
 
   useEffect(() => {
+    const target = TABASKI_DATE.getTime() - DEMO_NOW.getTime();
     const start = Date.now();
-    const initial = diff;
     const interval = setInterval(() => {
-      const elapsed = Date.now() - start;
-      setDiff(initial - elapsed);
+      setDiff(target - (Date.now() - start));
     }, 1000);
     return () => clearInterval(interval);
   }, []);

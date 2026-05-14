@@ -8,6 +8,7 @@ import { FilterBar, FilterDef } from "@/components/admin/FilterBar";
 import { downloadCsv } from "@/lib/utils/csv";
 import { Search, Download, CalendarDays, X } from "lucide-react";
 import type { Order, OrderStatus } from "@/lib/mock-data/orders";
+import { useT } from "@/lib/i18n";
 
 const STATUS_COLORS: Record<OrderStatus, string> = {
   "créée":    "bg-gray-100 text-gray-700",
@@ -27,6 +28,7 @@ const PAYMENT_FILTERS: FilterDef[] = [
 ];
 
 export default function CommandesPage() {
+  const t = useT();
   const router = useRouter();
   const { orders }  = useOrdersStore();
   const { drivers } = useDriversStore();
@@ -91,10 +93,10 @@ export default function CommandesPage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto">
+    <div className="max-w-7xl mx-auto animate-fade-in-up">
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-display font-bold text-ink-900">Commandes</h1>
+          <h1 className="text-2xl font-display font-bold text-ink-900">{t("navOrders")}</h1>
           <p className="text-sm text-ink-500 mt-1">{filtered.length} commande{filtered.length > 1 ? "s" : ""}</p>
         </div>
         <button type="button" onClick={handleExport}

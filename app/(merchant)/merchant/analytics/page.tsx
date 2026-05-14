@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useMerchantsStore } from "@/lib/store/merchants";
 import { useOrdersStore } from "@/lib/store/orders";
+import { useSession } from "@/lib/hooks/useSession";
+import { useT } from "@/lib/i18n";
 import { TrendingUp, TrendingDown, Package, Wallet, Users, Star } from "lucide-react";
 
 const PAYMENTS = [
@@ -12,9 +14,14 @@ const PAYMENTS = [
 ];
 
 export default function MerchantAnalyticsPage() {
+  const t             = useT();
+  const session       = useSession();
   const { merchants } = useMerchantsStore();
   const { orders }    = useOrdersStore();
-  const merchant = merchants[0] ?? { revenueThisMonth: 310000, ordersThisMonth: 91 };
+  const merchant = useMemo(() => {
+    const byEmail = session?.email ? merchants.find(m => m.email === session.email) : null;
+    return byEmail ?? merchants[0] ?? { name: "—", plan: "Standard", revenueThisMonth: 310000, ordersThisMonth: 91 };
+  }, [merchants, session?.email]);
 
   const MONTHLY = [
     { month: "Jan", revenue: 820000,  orderCount: 68 },
@@ -48,7 +55,7 @@ export default function MerchantAnalyticsPage() {
   const ordersGrowth  = Math.round(((currentMonth.orderCount - prevMonth.orderCount) / prevMonth.orderCount) * 100);
 
   return (
-    <div className="p-6 max-w-5xl mx-auto space-y-6">
+    <div className="p-6 max-w-5xl mx-auto space-y-6 animate-fade-in-up">
 
       <div className="flex items-center justify-between">
         <div>
@@ -71,31 +78,31 @@ export default function MerchantAnalyticsPage() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
           {
-            label: "Revenus",
+            label: t("revenueThisMonth"),
             value: `${(currentMonth.revenue / 1000).toFixed(0)} k F`,
             growth: revenueGrowth,
             icon: Wallet, color: "text-gold-500",
           },
           {
-            label: "Commandes",
+            label: t("ordersCount"),
             value: String(currentMonth.orderCount),
             growth: ordersGrowth,
             icon: Package, color: "text-emerald-600",
           },
           {
-            label: "Taux livré",
+            label: t("deliveryRate"),
             value: `${deliveryRate}%`,
             growth: null,
             icon: Star, color: "text-emerald-500",
           },
           {
-            label: "Clients uniques",
+            label: t("uniqueClients"),
             value: String(clientMap.size),
             growth: null,
             icon: Users, color: "text-ink-600",
           },
-        ].map(({ label, value, growth, icon: Icon, color }) => (
-          <div key={label} className="bg-white rounded-lg border border-cream-200 shadow-card p-4">
+        ].map(({ label, value, growth, icon: Icon, color }, i) => (
+          <div key={label} className={`stagger-${i + 1} animate-fade-in-up bg-white rounded-lg border border-cream-200 shadow-card p-4`}>
             <Icon className={`w-5 h-5 mb-2 ${color}`} />
             <div className="text-xl font-display font-bold text-ink-900 tabular-nums">{value}</div>
             <div className="flex items-center gap-1.5 mt-1">
@@ -113,7 +120,7 @@ export default function MerchantAnalyticsPage() {
 
       {/* Monthly revenue bars */}
       <div className="bg-white rounded-lg border border-cream-200 shadow-card p-5">
-        <h2 className="font-semibold text-ink-900 mb-4">Revenus mensuels</h2>
+        <h2 className="font-semibold text-ink-900 mb-4">{t("monthlyRevenue")}</h2>
         <div className="flex items-end gap-3 h-32">
           {MONTHLY.map(({ month, revenue }, i) => (
             <div key={month} className="flex-1 flex flex-col items-center gap-1.5">
@@ -173,7 +180,7 @@ export default function MerchantAnalyticsPage() {
 
       {/* Top clients */}
       <div className="bg-white rounded-lg border border-cream-200 shadow-card p-5">
-        <h2 className="font-semibold text-ink-900 mb-4">Top clients</h2>
+        <h2 className="font-semibold text-ink-900 mb-4">{t("topClients")}</h2>
         <ol className="space-y-2.5">
           {topClients.map((c, i) => (
             <li key={c.name} className="flex items-center gap-3">
@@ -197,9 +204,9 @@ export default function MerchantAnalyticsPage() {
 
       {/* Commission summary */}
       <div className="bg-white rounded-lg border border-cream-200 shadow-card p-5">
-        <h2 className="font-semibold text-ink-900 mb-3">Commission YONNE — Mai</h2>
+        <h2 className="font-semibold text-ink-900 mb-3">{t("yonneCommission")} — Mai</h2>
         <div className="flex items-center justify-between text-sm py-2 border-b border-cream-100">
-          <span className="text-ink-500">Revenus bruts</span>
+          <span className="text-ink-500">{t("grossRevenue")}</span>
           <span className="font-semibold tabular-nums">{currentMonth.revenue.toLocaleString("fr-FR")} F</span>
         </div>
         <div className="flex items-center justify-between text-sm py-2 border-b border-cream-100">
@@ -209,7 +216,7 @@ export default function MerchantAnalyticsPage() {
           </span>
         </div>
         <div className="flex items-center justify-between text-sm pt-2">
-          <span className="font-semibold text-ink-900">Net reversé</span>
+          <span className="font-semibold text-ink-900">{t("netReturned")}</span>
           <span className="font-bold text-emerald-600 tabular-nums text-base">
             {Math.round(currentMonth.revenue * (merchant.plan === "Premium" ? 0.88 : 0.85)).toLocaleString("fr-FR")} F
           </span>

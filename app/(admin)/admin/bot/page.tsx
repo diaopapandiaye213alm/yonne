@@ -2,6 +2,7 @@
 import { useState, useRef, useEffect } from "react";
 import { toast } from "sonner";
 import { Send, TrendingUp, MessageSquare, Clock, Plus, Trash2, ToggleLeft, ToggleRight, Edit2, Check, X } from "lucide-react";
+import { useT } from "@/lib/i18n";
 
 type Msg      = { from: "user" | "bot"; text: string; time: string };
 type Scenario = { id: string; keyword: string; response: string; active: boolean; hits: number };
@@ -22,6 +23,7 @@ const INITIAL: Msg[] = [
 function now() { return new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }); }
 
 export default function BotPage() {
+  const t = useT();
   const [tab,       setTab]       = useState<"simulator" | "scenarios">("simulator");
   const [msgs,      setMsgs]      = useState<Msg[]>(INITIAL);
   const [input,     setInput]     = useState("");
@@ -86,7 +88,7 @@ export default function BotPage() {
 
   return (
     <div className="max-w-5xl mx-auto space-y-6 animate-fade-in-up">
-      <h1 className="text-2xl font-display font-bold text-ink-900">Bot WhatsApp</h1>
+      <h1 className="text-2xl font-display font-bold text-ink-900">{t("navBot")}</h1>
 
       <div className="grid grid-cols-3 gap-4">
         {[

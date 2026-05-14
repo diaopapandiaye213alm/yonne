@@ -14,6 +14,7 @@ function rowToOrder(row: Record<string, unknown>): Order {
   return {
     id:            row.id as string,
     driverId:      (row.driver_id as string) ?? "",
+    merchantId:    (row.merchant_id as string) ?? undefined,
     landmarkId:    (row.landmark_id as string) ?? "",
     clientName:    (row.client_name as string) ?? "",
     clientPhone:   (row.client_phone as string) ?? "",

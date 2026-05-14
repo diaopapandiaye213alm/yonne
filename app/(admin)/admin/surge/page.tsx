@@ -7,6 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n";
 
 function multiplierColor(m: number) {
   if (m < 1.3) return "#15803D";
@@ -21,12 +22,13 @@ function multiplierBadgeClass(m: number) {
 }
 
 export default function SurgePage() {
+  const t = useT();
   const { multiplier, autoMode, setMultiplier, toggleAutoMode } = useSurgeStore();
   const extraPct = Math.round((multiplier - 1) * 100);
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <h1 className="text-2xl font-display font-bold text-ink-900">Surge Pricing</h1>
+    <div className="max-w-4xl mx-auto space-y-6 animate-fade-in-up">
+      <h1 className="text-2xl font-display font-bold text-ink-900">{t("surgeTitle")}</h1>
 
       {/* Contrôle */}
       <div className="bg-white rounded-lg border border-cream-200 shadow-card p-6 space-y-6">

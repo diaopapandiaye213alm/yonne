@@ -2,6 +2,9 @@
 
 import { useState, useMemo } from "react";
 import { useOrdersStore } from "@/lib/store/orders";
+import { useDriversStore } from "@/lib/store/drivers";
+import { useSession } from "@/lib/hooks/useSession";
+import { useT } from "@/lib/i18n";
 import { History, TrendingUp, Package, Download, Filter } from "lucide-react";
 import { toast } from "sonner";
 
@@ -31,17 +34,25 @@ const PAY_LABELS: Record<string, string> = {
 };
 
 export default function HistoriquePage() {
-  const { orders } = useOrdersStore();
+  const t           = useT();
+  const { orders }  = useOrdersStore();
+  const { drivers } = useDriversStore();
+  const session     = useSession();
+
+  const demo = useMemo(() => {
+    const byName = session?.displayName ? drivers.find(d => d.name === session.displayName) : null;
+    return byName ?? drivers[0];
+  }, [drivers, session?.displayName]);
 
   const [month,     setMonth]     = useState<Month>("Mai");
   const [payFilter, setPayFilter] = useState<PayFilter>("Tous");
 
   const allDeliveries = useMemo(() =>
     orders
-      .filter(o => o.status === "livrée")
+      .filter(o => o.status === "livrée" && (!demo || o.driverId === demo.id))
       .slice(0, 30)
       .map((o, i) => ({ ...o, gain: Math.round(o.amount * 0.25), month: MONTHS[i % MONTHS.length] })),
-    [orders]
+    [orders, demo]
   );
 
   const filtered = useMemo(() =>
@@ -73,17 +84,17 @@ export default function HistoriquePage() {
   }
 
   return (
-    <div className="pb-20 px-4 pt-6 space-y-5">
+    <div className="pb-20 px-4 pt-6 space-y-5 animate-fade-in-up">
 
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-display font-bold text-2xl text-ink-900">Historique</h1>
-          <p className="text-xs text-ink-500 mt-0.5">Vos livraisons passées</p>
+          <h1 className="font-display font-bold text-2xl text-ink-900">{t("driverHistory")}</h1>
+          <p className="text-xs text-ink-500 mt-0.5">{t("pastDeliveries")}</p>
         </div>
         <button type="button" onClick={exportCsv}
           className="flex items-center gap-1.5 text-xs border border-cream-200 text-ink-700 rounded-lg px-3 py-1.5 hover:bg-cream-100 transition-colors">
-          <Download className="w-3.5 h-3.5" /> Export
+          <Download className="w-3.5 h-3.5" /> {t("exportBtn")}
         </button>
       </div>
 
@@ -101,26 +112,26 @@ export default function HistoriquePage() {
 
       {/* KPI résumé */}
       <div className="grid grid-cols-3 gap-3">
-        <div className="bg-white rounded-lg border border-cream-200 p-3 text-center">
+        <div className="stagger-1 animate-fade-in-up bg-white rounded-lg border border-cream-200 p-3 text-center">
           <History className="w-4 h-4 text-ink-500 mx-auto mb-1" />
           <div className="font-mono font-bold text-xl text-ink-900">{filtered.length}</div>
-          <div className="text-xs text-ink-500">Livraisons</div>
+          <div className="text-xs text-ink-500">{t("livraisons")}</div>
         </div>
-        <div className="bg-white rounded-lg border border-cream-200 p-3 text-center">
+        <div className="stagger-2 animate-fade-in-up bg-white rounded-lg border border-cream-200 p-3 text-center">
           <TrendingUp className="w-4 h-4 text-emerald-500 mx-auto mb-1" />
           <div className="font-mono font-bold text-lg text-emerald-500">{totalEarnings.toLocaleString("fr-FR")}</div>
-          <div className="text-xs text-ink-500">F total</div>
+          <div className="text-xs text-ink-500">{t("totalEarnings")}</div>
         </div>
-        <div className="bg-white rounded-lg border border-cream-200 p-3 text-center">
+        <div className="stagger-3 animate-fade-in-up bg-white rounded-lg border border-cream-200 p-3 text-center">
           <Package className="w-4 h-4 text-gold-500 mx-auto mb-1" />
           <div className="font-mono font-bold text-xl text-gold-500">{avgPerOrder.toLocaleString("fr-FR")}</div>
-          <div className="text-xs text-ink-500">F / course</div>
+          <div className="text-xs text-ink-500">{t("perCourse")}</div>
         </div>
       </div>
 
       {/* Graphe semaine */}
       <div className="bg-white rounded-lg border border-cream-200 p-4">
-        <h2 className="font-display font-semibold text-ink-900 mb-3 text-sm">Cette semaine</h2>
+        <h2 className="font-display font-semibold text-ink-900 mb-3 text-sm">{t("thisWeek")}</h2>
         <div className="flex items-end gap-1.5 h-20">
           {weeklyData.map(({ day, earnings }, i) => (
             <div key={day} className="flex-1 flex flex-col items-center gap-1">
@@ -154,7 +165,7 @@ export default function HistoriquePage() {
           <span className="text-xs text-ink-500">{filtered.length} commandes</span>
         </div>
         {filtered.length === 0 ? (
-          <div className="py-10 text-center text-sm text-ink-500">Aucune livraison pour ce filtre.</div>
+          <div className="py-10 text-center text-sm text-ink-500">{t("noDeliveries")}</div>
         ) : (
           <div className="divide-y divide-cream-100">
             {filtered.map(o => (

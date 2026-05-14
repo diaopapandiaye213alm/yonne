@@ -135,6 +135,7 @@ create policy "anon write sav_messages" on sav_messages for all   using (true) w
 -- ────────────────────────────────────────────────────────────
 create index if not exists idx_orders_status     on orders(status);
 create index if not exists idx_orders_driver     on orders(driver_id);
+create index if not exists idx_orders_merchant   on orders(merchant_id);
 create index if not exists idx_orders_created    on orders(created_at desc);
 create index if not exists idx_orders_client     on orders(client_phone);
 create index if not exists idx_sav_messages_tick on sav_messages(ticket_id);

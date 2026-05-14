@@ -8,6 +8,7 @@ export type PaymentMethod = "wave" | "orange" | "cash";
 export interface Order {
   id: string;
   driverId: string;
+  merchantId?: string;
   landmarkId: string;
   clientName: string;
   clientPhone: string;

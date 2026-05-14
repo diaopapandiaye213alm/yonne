@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { GitMerge, MapPin, Clock, TrendingDown, Package } from "lucide-react";
+import { useT } from "@/lib/i18n";
 
 type Group = { id: string; orders: string[]; zone: string; driver: string; saving: string; distance: string };
 
@@ -12,6 +13,7 @@ const GROUPS_INIT: Group[] = [
 ];
 
 export default function GroupagePage() {
+  const t = useT();
   const [radius, setRadius]   = useState(800);
   const [maxSize, setMaxSize] = useState(3);
   const [groups, setGroups]   = useState<Group[]>(GROUPS_INIT);
@@ -25,7 +27,7 @@ export default function GroupagePage() {
 
   return (
     <div className="max-w-5xl mx-auto space-y-6 animate-fade-in-up">
-      <h1 className="text-2xl font-display font-bold text-ink-900">Groupage Multi-stops</h1>
+      <h1 className="text-2xl font-display font-bold text-ink-900">{t("groupageTitle")}</h1>
 
       <div className="grid grid-cols-4 gap-4">
         {[

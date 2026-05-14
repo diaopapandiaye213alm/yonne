@@ -2,6 +2,8 @@
 import { useState, useRef, useEffect } from "react";
 import { toast } from "sonner";
 import { AlertTriangle, CheckCircle2, Clock, XCircle, Filter, ChevronDown, ChevronUp, Send, UserCircle, Bot } from "lucide-react";
+import { useT } from "@/lib/i18n";
+import { supabase } from "@/lib/supabase";
 
 type Status = "ouvert" | "en cours" | "résolu";
 type MsgFrom = "client" | "admin";
@@ -13,67 +15,21 @@ type Ticket = {
   messages: Msg[];
 };
 
-const INITIAL: Ticket[] = [
-  {
-    id: "SAV-001", ref: "YN-2026-10124", type: "Retard livraison",
-    description: "Client signale un retard de plus de 2h",
-    status: "ouvert", responsable: "—", date: "Auj. 14:30", delay: "45 min",
-    messages: [
-      { from: "client", text: "Bonjour, ma commande YN-2026-10124 devait arriver à 13h, il est 15h30 et toujours rien.", time: "14:32" },
-      { from: "admin",  text: "Bonjour, nous vérifions avec le livreur. Un délai météo est possible dans votre zone.", time: "14:45" },
-      { from: "client", text: "D'accord, mais c'est urgent pour moi.", time: "14:47" },
-    ],
-  },
-  {
-    id: "SAV-002", ref: "YN-2026-10098", type: "Colis abîmé",
-    description: "Tissu endommagé à la livraison",
-    status: "en cours", responsable: "Moussa D.", date: "Auj. 11:20", delay: "3h 10m",
-    messages: [
-      { from: "client", text: "Mon tissu Wax a été livré avec une déchirure. Je veux un remboursement.", time: "11:22" },
-      { from: "admin",  text: "Nous sommes désolés. Pouvez-vous envoyer une photo du dommage sur WhatsApp?", time: "11:35" },
-      { from: "client", text: "Photo envoyée.", time: "11:40" },
-      { from: "admin",  text: "Reçu. Nous traitons votre demande de remboursement. Délai : 24–48h.", time: "11:50" },
-    ],
-  },
-  {
-    id: "SAV-003", ref: "YN-2026-10085", type: "Mauvaise adresse",
-    description: "Livreur livré à mauvais point repère",
-    status: "en cours", responsable: "Fatou S.", date: "Hier 16:45", delay: "22h",
-    messages: [
-      { from: "client", text: "Le livreur a laissé mon colis chez le voisin sans me prévenir.", time: "16:48" },
-      { from: "admin",  text: "Nous contactons le livreur pour récupérer votre colis immédiatement.", time: "16:55" },
-    ],
-  },
-  {
-    id: "SAV-004", ref: "YN-2026-10071", type: "Non livré",
-    description: "Commande marquée livrée mais non reçue",
-    status: "résolu", responsable: "Ibrahima C.", date: "Hier 09:15", delay: "—",
-    messages: [
-      { from: "client", text: "Mon statut dit livré mais je n'ai rien reçu.", time: "09:18" },
-      { from: "admin",  text: "Enquête lancée. Le livreur a confirmé avoir déposé chez la gardienne.", time: "09:40" },
-      { from: "client", text: "Ah oui, la gardienne avait le colis. Merci !", time: "10:05" },
-      { from: "admin",  text: "Parfait. Ticket résolu. Merci de votre confiance.", time: "10:07" },
-    ],
-  },
-  {
-    id: "SAV-005", ref: "YN-2026-10060", type: "Paiement incorrect",
-    description: "Montant Wave incorrect débité",
-    status: "résolu", responsable: "Admin", date: "13/05 18:00", delay: "—",
-    messages: [
-      { from: "client", text: "J'ai été débité 2500F au lieu de 2000F.", time: "18:02" },
-      { from: "admin",  text: "Remboursement de 500F effectué sur votre compte Wave. Désolés pour la gêne.", time: "18:45" },
-      { from: "client", text: "Reçu, merci.", time: "18:50" },
-    ],
-  },
-  {
-    id: "SAV-006", ref: "YN-2026-10050", type: "Retard livraison",
-    description: "Zone inondée, livreur bloqué",
-    status: "ouvert", responsable: "—", date: "13/05 17:30", delay: "2h 30m",
-    messages: [
-      { from: "client", text: "Ça fait 3h que j'attends ma livraison.", time: "17:32" },
-    ],
-  },
-];
+function fmtDate(iso: string) {
+  const d = new Date(iso);
+  const today = new Date();
+  const isToday = d.toDateString() === today.toDateString();
+  const time = d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+  if (isToday) return `Auj. ${time}`;
+  const yesterday = new Date(today);
+  yesterday.setDate(today.getDate() - 1);
+  if (d.toDateString() === yesterday.toDateString()) return `Hier ${time}`;
+  return d.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" }) + ` ${time}`;
+}
+
+function fmtTime(iso: string) {
+  return new Date(iso).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+}
 
 const STATUS_CONFIG: Record<Status, { label: string; color: string; icon: React.ElementType }> = {
   "ouvert":   { label: "Ouvert",   color: "bg-red-100 text-red-700",          icon: XCircle },
@@ -99,10 +55,12 @@ function TicketCard({ ticket, onTake, onResolve }: {
     if (open) endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [msgs, open]);
 
-  function sendReply() {
+  async function sendReply() {
     if (!draft.trim()) return;
-    setMsgs(prev => [...prev, { from: "admin", text: draft, time: now() }]);
+    const text = draft;
     setDraft("");
+    await supabase.from("sav_messages").insert({ ticket_id: ticket.id, from_role: "admin", text });
+    setMsgs(prev => [...prev, { from: "admin", text, time: now() }]);
     toast.success("Réponse envoyée au client via WhatsApp");
   }
 
@@ -201,27 +159,55 @@ function TicketCard({ ticket, onTake, onResolve }: {
 }
 
 export default function SavPage() {
-  const [tickets, setTickets] = useState<Ticket[]>(INITIAL);
+  const t = useT();
+  const [tickets, setTickets] = useState<Ticket[]>([]);
   const [filter,  setFilter]  = useState<Status | "tous">("tous");
 
-  const visible = filter === "tous" ? tickets : tickets.filter(t => t.status === filter);
-  const open    = tickets.filter(t => t.status === "ouvert").length;
-  const cours   = tickets.filter(t => t.status === "en cours").length;
-  const solved  = tickets.filter(t => t.status === "résolu").length;
-  const rate    = Math.round((solved / tickets.length) * 100);
+  useEffect(() => {
+    async function load() {
+      const { data: trows } = await supabase.from("sav_tickets").select("*").order("created_at", { ascending: false });
+      const { data: mrows } = await supabase.from("sav_messages").select("*").order("sent_at");
+      if (!trows) return;
+      const msgs = (mrows ?? []) as { ticket_id: string; from_role: string; text: string; sent_at: string }[];
+      setTickets(trows.map(r => ({
+        id: r.id as string,
+        ref: (r.order_ref as string) ?? "—",
+        type: (r.type as string) ?? "—",
+        description: (r.description as string) ?? "",
+        status: (r.status as Status),
+        responsable: (r.responsable as string) ?? "—",
+        date: fmtDate(r.created_at as string),
+        delay: (r.delay as string) ?? "—",
+        messages: msgs.filter(m => m.ticket_id === r.id).map(m => ({
+          from: m.from_role as MsgFrom,
+          text: m.text,
+          time: fmtTime(m.sent_at),
+        })),
+      })));
+    }
+    load();
+  }, []);
 
-  function take(id: string) {
-    setTickets(prev => prev.map(t => t.id === id ? { ...t, status: "en cours" as Status, responsable: "Admin" } : t));
+  const visible = filter === "tous" ? tickets : tickets.filter(tk => tk.status === filter);
+  const open    = tickets.filter(tk => tk.status === "ouvert").length;
+  const cours   = tickets.filter(tk => tk.status === "en cours").length;
+  const solved  = tickets.filter(tk => tk.status === "résolu").length;
+  const rate    = tickets.length ? Math.round((solved / tickets.length) * 100) : 0;
+
+  async function take(id: string) {
+    await supabase.from("sav_tickets").update({ status: "en cours", responsable: "Admin" }).eq("id", id);
+    setTickets(prev => prev.map(tk => tk.id === id ? { ...tk, status: "en cours" as Status, responsable: "Admin" } : tk));
     toast.success(`Ticket ${id} pris en charge`);
   }
-  function resolve(id: string) {
-    setTickets(prev => prev.map(t => t.id === id ? { ...t, status: "résolu" as Status, responsable: "Admin", delay: "—" } : t));
+  async function resolve(id: string) {
+    await supabase.from("sav_tickets").update({ status: "résolu", delay: "—" }).eq("id", id);
+    setTickets(prev => prev.map(tk => tk.id === id ? { ...tk, status: "résolu" as Status, delay: "—" } : tk));
     toast.success(`Ticket ${id} marqué résolu`);
   }
 
   return (
     <div className="max-w-5xl mx-auto space-y-6 animate-fade-in-up">
-      <h1 className="text-2xl font-display font-bold text-ink-900">SAV & Incidents</h1>
+      <h1 className="text-2xl font-display font-bold text-ink-900">{t("navSav")}</h1>
 
       <div className="grid grid-cols-4 gap-4">
         {[

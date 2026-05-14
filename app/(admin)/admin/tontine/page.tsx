@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { PiggyBank, CheckCircle2, Circle, Bell, TrendingUp, Users } from "lucide-react";
+import { useT } from "@/lib/i18n";
 
 type Member = { id: string; name: string; paid: boolean; week: number };
 
@@ -23,6 +24,7 @@ const MEMBERS_INIT: Member[] = [
 ];
 
 export default function TontinePage() {
+  const t = useT();
   const [members, setMembers] = useState<Member[]>(MEMBERS_INIT);
 
   function markPaid(id: string) {
@@ -44,7 +46,7 @@ export default function TontinePage() {
   return (
     <div className="max-w-4xl mx-auto space-y-6 animate-fade-in-up">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-display font-bold text-ink-900">Tontine Livreurs</h1>
+        <h1 className="text-2xl font-display font-bold text-ink-900">{t("tontineTitle")}</h1>
         <button type="button" onClick={relancerTous}
           className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2.5 rounded-lg text-sm font-display font-bold transition-colors shadow-glow-emerald">
           <Bell className="w-4 h-4" /> Relancer tous

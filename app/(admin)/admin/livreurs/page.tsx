@@ -5,6 +5,7 @@ import Link from "next/link";
 import { UserPlus } from "lucide-react";
 import { useDriversStore } from "@/lib/store/drivers";
 import type { Driver, Tier } from "@/lib/mock-data/drivers";
+import { useT } from "@/lib/i18n";
 import { DataTable, Column } from "@/components/admin/DataTable";
 import { FilterBar, FilterDef } from "@/components/admin/FilterBar";
 import { Progress } from "@/components/ui/progress";
@@ -30,6 +31,7 @@ const FILTERS: FilterDef[] = [
 ];
 
 export default function LivreursPage() {
+  const t = useT();
   const router = useRouter();
   const { drivers } = useDriversStore();
   const [search, setSearch]   = useState("");
@@ -78,10 +80,10 @@ export default function LivreursPage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto">
+    <div className="max-w-7xl mx-auto animate-fade-in-up">
       <div className="mb-6 flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-display font-bold text-ink-900">Livreurs</h1>
+          <h1 className="text-2xl font-display font-bold text-ink-900">{t("driversTitle")}</h1>
           <p className="text-sm text-ink-500 mt-1">{filtered.length} livreur{filtered.length > 1 ? "s" : ""}</p>
         </div>
         <Link href="/admin/livreurs/nouveau"

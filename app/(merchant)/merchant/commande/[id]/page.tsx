@@ -72,7 +72,7 @@ export default function TrackingPage({ params }: { params: { id: string } }) {
       <div className="relative">
         <DakarMap pins={pins} trail={{ from: pos, to: [destination.lat, destination.lng] }} center={pos} zoom={14} height="100%" />
       </div>
-      <aside className="bg-white border-l border-cream-200 p-5 space-y-5 overflow-y-auto">
+      <aside className="bg-white border-l border-cream-200 p-5 space-y-5 overflow-y-auto animate-fade-in-up">
         <div>
           <div className="text-xs text-ink-500">Commande</div>
           <div className="font-mono text-sm text-ink-900">{params.id}</div>

@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { useDriversStore } from "@/lib/store/drivers";
+import { useSession } from "@/lib/hooks/useSession";
 import { landmarks } from "@/lib/mock-data/landmarks";
 import { incomingOrders } from "@/lib/mock-data/incoming-orders";
 import { useDriverStore } from "@/lib/store/driver";
@@ -21,10 +22,14 @@ const DakarMap = dynamic(() => import("@/components/map/DakarMap"), {
 });
 
 export default function LivraisonPage({ params }: { params: { id: string } }) {
-  const router = useRouter();
+  const router  = useRouter();
+  const session = useSession();
   const { drivers } = useDriversStore();
   const { activeOrderId, deliveryStep, advanceStep, completeDelivery } = useDriverStore();
-  const demo = useMemo(() => drivers[0] ?? { lat: 14.6928, lng: -17.4467 }, [drivers]);
+  const demo = useMemo(() => {
+    const byName = session?.displayName ? drivers.find(d => d.name === session.displayName) : null;
+    return byName ?? drivers[0] ?? { lat: 14.6928, lng: -17.4467 };
+  }, [drivers, session?.displayName]);
 
   useEffect(() => {
     if (activeOrderId === null) router.replace("/driver/carte");

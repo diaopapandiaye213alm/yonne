@@ -5,6 +5,7 @@ import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, Responsi
 import { hourlyRevenue, zoneActivity, weeklyMerchants } from "@/lib/mock-data/analytics";
 import { useOrdersStore } from "@/lib/store/orders";
 import { Activity, Zap } from "lucide-react";
+import { useT } from "@/lib/i18n";
 
 const BREAKEVEN_TARGET  = 24;
 const PROFITABLE_TARGET = 300;
@@ -50,6 +51,7 @@ const PREDICTIONS = [
 ];
 
 export default function AnalyticsPage() {
+  const t = useT();
   const { orders } = useOrdersStore();
   const ordersToday = orders.filter(o => {
     const d = new Date(o.createdAt);
@@ -75,7 +77,7 @@ export default function AnalyticsPage() {
   return (
     <div className="max-w-7xl mx-auto space-y-6 animate-fade-in-up">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-display font-bold text-ink-900">Analytics avancé</h1>
+        <h1 className="text-2xl font-display font-bold text-ink-900">{t("analyticsTitle")}</h1>
         <div className="flex items-center gap-2 text-xs text-emerald-600 font-medium">
           <span className="w-2 h-2 bg-emerald-500 rounded-full animate-live-pulse" />
           <span className="tabular-nums">{liveCount} commandes live</span>

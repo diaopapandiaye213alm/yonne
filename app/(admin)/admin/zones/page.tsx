@@ -4,6 +4,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { zoneActivity } from "@/lib/mock-data/analytics";
 import { MapPin, Plus, Zap, ToggleLeft, ToggleRight, TrendingUp, X } from "lucide-react";
+import { useT } from "@/lib/i18n";
 
 interface Zone {
   id: string;
@@ -45,6 +46,7 @@ function ActivityBar({ orders, max }: { orders: number; max: number }) {
 }
 
 export default function ZonesPage() {
+  const t = useT();
   const [zones,    setZones]    = useState<Zone[]>(INITIAL_ZONES);
   const [showAdd,  setShowAdd]  = useState(false);
   const [newName,  setNewName]  = useState("");
@@ -101,7 +103,7 @@ export default function ZonesPage() {
 
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-display font-bold text-ink-900">Zones de livraison</h1>
+          <h1 className="text-2xl font-display font-bold text-ink-900">{t("zonesTitle")}</h1>
           <p className="text-sm text-ink-500 mt-1">Dakar · {zones.length} zones configurées</p>
         </div>
         <button type="button" onClick={() => setShowAdd(v => !v)}

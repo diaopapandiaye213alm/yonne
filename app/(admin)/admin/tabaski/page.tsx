@@ -7,15 +7,17 @@ import { actionPlan, tabaski2025Stats } from "@/lib/mock-data/tabaski";
 import { Button } from "@/components/ui/button";
 import { Sparkles } from "lucide-react";
 import { toast } from "sonner";
+import { useT } from "@/lib/i18n";
 
 export default function TabaskiPage() {
+  const t = useT();
   return (
-    <div className="max-w-7xl mx-auto space-y-8">
+    <div className="max-w-7xl mx-auto space-y-8 animate-fade-in-up">
       <header className="bg-gradient-to-br from-emerald-500 to-emerald-700 text-white rounded-lg p-7 shadow-card">
         <div className="flex items-center gap-2 text-gold-400 text-sm font-medium uppercase tracking-wider">
           <Sparkles className="w-4 h-4" /> Tabaski 2026
         </div>
-        <h1 className="font-display text-3xl font-bold mt-2">Mercredi 27 mai · J-7</h1>
+        <h1 className="font-display text-3xl font-bold mt-2">{t("tabaskiTitle")}</h1>
         <p className="mt-2 text-cream-100/90 max-w-2xl">
           Pic de demande prévu × 3.2 sur la fenêtre 10h–14h le jour J. Voici votre plan d'action préparé par l'IA YONNE.
         </p>

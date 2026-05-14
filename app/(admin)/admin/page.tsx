@@ -12,7 +12,7 @@ import { LiveFeed } from "@/components/admin/LiveFeed";
 import { Sparkles, ChevronRight } from "lucide-react";
 
 export default function AdminHomePage() {
-  const kpis = useLiveKpis(28000);
+  const kpis = useLiveKpis(10000);
   const t    = useT();
   const lang = useLang(s => s.lang);
   const { drivers } = useDriversStore();

@@ -47,7 +47,7 @@ export default function GainsPage() {
   });
 
   return (
-    <div className="pb-20 px-4 pt-6 space-y-5">
+    <div className="pb-20 px-4 pt-6 space-y-5 animate-fade-in-up">
       <div>
         <h1 className="font-display font-bold text-2xl text-ink-900">{t("myEarnings")}</h1>
         <p className="text-xs text-ink-500 capitalize">{dateStr}</p>
@@ -55,17 +55,17 @@ export default function GainsPage() {
 
       {/* KPIs */}
       <div className="grid grid-cols-3 gap-3">
-        <div className="bg-white rounded-lg border border-cream-200 p-3 text-center">
+        <div className="stagger-1 animate-fade-in-up bg-white rounded-lg border border-cream-200 p-3 text-center">
           <div className="font-mono font-bold text-xl text-ink-900">{demo.ordersToday}</div>
           <div className="text-xs text-ink-500">{t("courses")}</div>
         </div>
-        <div className="bg-white rounded-lg border border-cream-200 p-3 text-center">
+        <div className="stagger-2 animate-fade-in-up bg-white rounded-lg border border-cream-200 p-3 text-center">
           <div className="font-mono font-bold text-lg text-emerald-500">
             {demo.earningsToday.toLocaleString("fr-FR")}
           </div>
           <div className="text-xs text-ink-500">F CFA</div>
         </div>
-        <div className="bg-white rounded-lg border border-cream-200 p-3 text-center">
+        <div className="stagger-3 animate-fade-in-up bg-white rounded-lg border border-cream-200 p-3 text-center">
           <div className="font-mono font-bold text-xl text-gold-500">{avgRating}</div>
           <div className="text-xs text-ink-500">Note ★</div>
         </div>
@@ -80,7 +80,7 @@ export default function GainsPage() {
         >
           <div className="flex items-center gap-2">
             <MapPin className="w-4 h-4 text-emerald-500" />
-            <span className="font-display font-semibold text-ink-900 text-sm">Livraisons du jour</span>
+            <span className="font-display font-semibold text-ink-900 text-sm">{t("todayDeliveries")}</span>
             <span className="text-xs bg-emerald-500/10 text-emerald-700 px-2 py-0.5 rounded-full font-medium">
               {TODAY_DELIVERIES.length} courses
             </span>
@@ -150,7 +150,7 @@ export default function GainsPage() {
 
       {/* Retrait Wave / Orange Money */}
       <div className="bg-white rounded-lg border border-cream-200 p-4 space-y-3">
-        <h2 className="font-display font-semibold text-ink-900 text-sm">Retrait immédiat</h2>
+        <h2 className="font-display font-semibold text-ink-900 text-sm">{t("instantWithdraw")}</h2>
         <div className="grid grid-cols-2 gap-3">
           <button type="button"
             onClick={() => toast.success("Virement Wave de " + demo.earningsToday.toLocaleString("fr-FR") + " F CFA lancé · 2–5 min")}
@@ -173,9 +173,9 @@ export default function GainsPage() {
       <div className="bg-white rounded-lg border border-cream-200 p-4 space-y-3">
         <div className="flex items-center gap-2">
           <Banknote className="w-4 h-4 text-gold-500" />
-          <h2 className="font-display font-semibold text-ink-900 text-sm">Avance sur salaire</h2>
+          <h2 className="font-display font-semibold text-ink-900 text-sm">{t("salaryAdvance")}</h2>
         </div>
-        <p className="text-xs text-ink-500">Recevez jusqu'à 80% de vos gains du jour immédiatement.</p>
+        <p className="text-xs text-ink-500">{t("advanceDesc")}</p>
         <div className="flex items-center gap-3">
           <input type="range" min={500} max={ADVANCE_MAX} step={500} value={avanceAmount}
             onChange={e => setAvanceAmount(Number(e.target.value))}
@@ -187,7 +187,7 @@ export default function GainsPage() {
         <Button type="button"
           onClick={() => toast.success(`Avance de ${avanceAmount.toLocaleString("fr-FR")} F validée · Wave dans 2 min`)}
           className="w-full bg-gold-500 hover:bg-gold-600 text-ink-900 font-display font-bold">
-          Demander l'avance
+          {t("requestAdvance")}
         </Button>
       </div>
 

@@ -5,7 +5,7 @@ import { Wordmark } from "@/components/brand/Wordmark";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ShieldCheck, CheckCircle2, Loader2 } from "lucide-react";
+import { ShieldCheck, CheckCircle2, Loader2, LayoutDashboard, Store, Bike } from "lucide-react";
 import { useT } from "@/lib/i18n";
 
 const features = [
@@ -13,6 +13,36 @@ const features = [
   "28 livreurs actifs en temps réel",
   "Suivi GPS partagé via WhatsApp",
 ];
+
+const DEMO_PERSONAS = [
+  {
+    icon: LayoutDashboard,
+    label: "Admin",
+    hint: "Tableau de bord complet",
+    email: "admin@yonne.sn",
+    password: "Admin123!",
+    color: "border-ink-200 hover:border-ink-400 hover:bg-ink-50",
+    iconColor: "text-ink-600 bg-ink-500/10",
+  },
+  {
+    icon: Store,
+    label: "Commerçant",
+    hint: "Boutique Plateau",
+    email: "boutique.plateau@gmail.com",
+    password: "Demo123!",
+    color: "border-emerald-200 hover:border-emerald-400 hover:bg-emerald-50/50",
+    iconColor: "text-emerald-600 bg-emerald-500/10",
+  },
+  {
+    icon: Bike,
+    label: "Livreur",
+    hint: "Ibrahima Sow",
+    email: "livreur.dakar@yonne.sn",
+    password: "Demo123!",
+    color: "border-gold-300 hover:border-gold-500 hover:bg-gold-50/50",
+    iconColor: "text-gold-600 bg-gold-500/10",
+  },
+] as const;
 
 export default function LoginPage() {
   const router = useRouter();
@@ -156,14 +186,43 @@ export default function LoginPage() {
             Authentification 2FA SMS activée
           </div>
 
-          <details className="mt-6 text-xs text-ink-500 bg-white rounded-lg p-3 border border-cream-200 shadow-sm">
-            <summary className="cursor-pointer font-medium text-ink-700">{t("loginDemoTitle")}</summary>
-            <ul className="mt-2 space-y-1 font-mono text-ink-500">
-              <li>admin@yonne.sn / Admin123!</li>
-              <li>boutique.plateau@gmail.com / Demo123!</li>
-              <li>livreur.dakar@yonne.sn / Demo123!</li>
-            </ul>
-          </details>
+          <div className="mt-6">
+            <p className="text-xs text-ink-400 text-center mb-3">{t("loginDemoTitle")}</p>
+            <div className="grid grid-cols-3 gap-2">
+              {DEMO_PERSONAS.map(({ icon: Icon, label, hint, email: demoEmail, password: demoPassword, color, iconColor }) => (
+                <button
+                  key={label}
+                  type="button"
+                  disabled={loading}
+                  onClick={async () => {
+                    setError(null);
+                    setLoading(true);
+                    try {
+                      const res = await fetch("/api/auth/login", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ email: demoEmail, password: demoPassword }),
+                      });
+                      if (!res.ok) { setError("Erreur de connexion demo."); return; }
+                      const { redirect } = await res.json();
+                      router.push(redirect ?? "/");
+                    } catch {
+                      setError("Erreur réseau.");
+                    } finally {
+                      setLoading(false);
+                    }
+                  }}
+                  className={`flex flex-col items-center gap-1.5 p-3 rounded-lg border transition-colors ${color}`}
+                >
+                  <div className={`w-7 h-7 rounded-md flex items-center justify-center ${iconColor}`}>
+                    <Icon className="w-4 h-4" />
+                  </div>
+                  <span className="text-xs font-semibold text-ink-800">{label}</span>
+                  <span className="text-[10px] text-ink-400 leading-tight text-center">{hint}</span>
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </div>

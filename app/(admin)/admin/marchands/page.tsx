@@ -3,6 +3,7 @@ import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useMerchantsStore } from "@/lib/store/merchants";
 import type { Merchant, MerchantPlan, MerchantStatus } from "@/lib/mock-data/merchants";
+import { useT } from "@/lib/i18n";
 import { DataTable, Column } from "@/components/admin/DataTable";
 import { FilterBar, FilterDef } from "@/components/admin/FilterBar";
 
@@ -23,6 +24,7 @@ const FILTERS: FilterDef[] = [
 ];
 
 export default function MarchandsPage() {
+  const t = useT();
   const router = useRouter();
   const { merchants } = useMerchantsStore();
   const [search, setSearch]   = useState("");
@@ -53,9 +55,9 @@ export default function MarchandsPage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto">
+    <div className="max-w-7xl mx-auto animate-fade-in-up">
       <div className="mb-6">
-        <h1 className="text-2xl font-display font-bold text-ink-900">Commerçants</h1>
+        <h1 className="text-2xl font-display font-bold text-ink-900">{t("merchantsTitle")}</h1>
         <p className="text-sm text-ink-500 mt-1">{filtered.length} commerçant{filtered.length > 1 ? "s" : ""}</p>
       </div>
       <FilterBar

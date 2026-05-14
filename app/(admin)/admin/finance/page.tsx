@@ -37,14 +37,14 @@ export default function FinancePage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6">
+    <div className="max-w-7xl mx-auto space-y-6 animate-fade-in-up">
       <div className="mb-2">
         <h1 className="text-2xl font-display font-bold text-ink-900">Finance</h1>
         <p className="text-sm text-ink-500 mt-1">Vue d'ensemble — aujourd'hui</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-        <StatCard title="💳 Réconciliation" className="xl:col-span-1">
+        <StatCard title="💳 Réconciliation" className="stagger-1 animate-fade-in-up xl:col-span-1">
           <div className="text-3xl font-display font-bold text-ink-900 tabular-nums mb-4">{fmt(totalDay)} F</div>
           <div className="space-y-2">
             {[
@@ -69,7 +69,7 @@ export default function FinancePage() {
           </div>
         </StatCard>
 
-        <StatCard title="🤝 Parrainage livreurs">
+        <StatCard title="🤝 Parrainage livreurs" className="stagger-2 animate-fade-in-up">
           <div className="text-sm text-ink-500 mb-3">
             {prizes.length} primes à verser · {fmt(prizes.length * 5_000)} F
           </div>
@@ -95,7 +95,7 @@ export default function FinancePage() {
           )}
         </StatCard>
 
-        <StatCard title="🏦 Tontine numérique">
+        <StatCard title="🏦 Tontine numérique" className="stagger-3 animate-fade-in-up">
           <div className="mb-3">
             <div className="text-xs text-ink-500">Semaine {tontineWeek} / 52 · Cotisation : 2 000 F/membre</div>
             <div className="mt-2 text-sm">
@@ -119,7 +119,7 @@ export default function FinancePage() {
           </div>
         </StatCard>
 
-        <StatCard title="💵 Avances sur salaire" className="md:col-span-2 xl:col-span-2">
+        <StatCard title="💵 Avances sur salaire" className="stagger-4 animate-fade-in-up md:col-span-2 xl:col-span-2">
           <div className="text-sm text-ink-500 mb-3">
             {advances.length} demandes · Total : {fmt(advances.reduce((s, r) => s + r.requestedAmount, 0))} F
           </div>
@@ -151,7 +151,7 @@ export default function FinancePage() {
           )}
         </StatCard>
 
-        <StatCard title="🛡️ Assurance colis">
+        <StatCard title="🛡️ Assurance colis" className="stagger-5 animate-fade-in-up">
           <div className="space-y-3">
             <div>
               <div className="text-3xl font-display font-bold text-ink-900 tabular-nums">{insuranceCount}</div>

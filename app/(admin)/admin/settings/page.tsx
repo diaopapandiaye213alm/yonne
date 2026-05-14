@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n";
 
 const PRAYERS = ["Fajr", "Dhuhr", "Asr", "Maghrib", "Isha"] as const;
 type Prayer = typeof PRAYERS[number];
@@ -22,6 +23,7 @@ const WA_TEMPLATES_DEFAULT = {
 };
 
 export default function SettingsPage() {
+  const t = useT();
   const [iaWeights,   setIaWeights]   = useState(IA_WEIGHTS_DEFAULT);
   const [templates,   setTemplates]   = useState(WA_TEMPLATES_DEFAULT);
   const [hivernage,   setHivernage]   = useState(false);
@@ -37,8 +39,8 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
-      <h1 className="text-2xl font-display font-bold text-ink-900">Paramètres</h1>
+    <div className="max-w-3xl mx-auto space-y-6 animate-fade-in-up">
+      <h1 className="text-2xl font-display font-bold text-ink-900">{t("navSettings")}</h1>
 
       {/* Plateforme */}
       <div className="bg-white rounded-lg border border-cream-200 shadow-card p-6 space-y-4">

@@ -28,7 +28,7 @@ export function KpiCard({ label, value, delta, hint, spark, highlight, accent = 
       <div className={cn("h-0.5 w-8 rounded-full mb-4", accentClasses[accent])} />
       <div className="text-xs uppercase tracking-wider text-ink-500 font-medium">{label}</div>
       <div className="mt-2 flex items-baseline gap-3">
-        <div className="text-2xl font-display font-bold text-ink-900 tabular-nums">{value}</div>
+        <div key={value} className="text-2xl font-display font-bold text-ink-900 tabular-nums animate-flash-green">{value}</div>
         {delta && (
           <span className={cn(
             "text-xs font-medium flex items-center gap-0.5",

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
+import { useT } from "@/lib/i18n";
 import { Plus, Pencil, Trash2, X, Check, PackageSearch } from "lucide-react";
 
 type Category = "Nourriture" | "Textile" | "Électronique" | "Pharmacie" | "Autre";
@@ -37,6 +38,7 @@ const INITIAL: Article[] = [
 type EditState = { id: string; name: string; price: string; category: Category; stock: string } | null;
 
 export default function CataloguePage() {
+  const t                             = useT();
   const [articles,    setArticles]    = useState<Article[]>(INITIAL);
   const [catFilter,   setCatFilter]   = useState<Category | "Tous">("Tous");
   const [editState,   setEditState]   = useState<EditState>(null);
@@ -91,17 +93,17 @@ export default function CataloguePage() {
   }
 
   return (
-    <div className="p-6 max-w-5xl mx-auto space-y-6">
+    <div className="p-6 max-w-5xl mx-auto space-y-6 animate-fade-in-up">
 
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-display font-bold text-ink-900">Catalogue</h1>
+          <h1 className="text-2xl font-display font-bold text-ink-900">{t("myCatalogue")}</h1>
           <p className="text-sm text-ink-500 mt-1">{articles.length} article{articles.length > 1 ? "s" : ""}</p>
         </div>
         <button type="button" onClick={() => setShowAddForm(v => !v)}
           className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg px-4 py-2 text-sm font-medium transition-colors">
           {showAddForm ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-          {showAddForm ? "Annuler" : "Ajouter un article"}
+          {showAddForm ? t("cancel") : t("addArticle")}
         </button>
       </div>
 
@@ -226,7 +228,7 @@ export default function CataloguePage() {
                       <span className="text-xs text-ink-500">
                         Stock : <span className={`font-medium ${article.stock < 5 ? "text-red-600" : "text-ink-900"}`}>{article.stock}</span>
                         {article.stock < 5 && article.stock > 0 && <span className="ml-1 text-red-500">⚠ Faible</span>}
-                        {article.stock === 0 && <span className="ml-1 text-red-500">Rupture</span>}
+                        {article.stock === 0 && <span className="ml-1 text-red-500">{t("outOfStock")}</span>}
                       </span>
                       <button type="button" onClick={() => toggleAvailable(article.id)}
                         className={`text-xs px-3 py-1 rounded-full font-medium transition-colors ${

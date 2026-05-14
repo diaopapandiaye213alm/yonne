@@ -2,6 +2,7 @@
 import { LangSwitcher } from "./LangSwitcher";
 import { NotificationBell } from "./NotificationBell";
 import type { NotifRole } from "@/lib/store/notifications";
+import { LogOut } from "lucide-react";
 
 interface Props {
   breadcrumb: string;
@@ -15,7 +16,7 @@ export function Topbar({ breadcrumb, userName, role }: Props) {
   return (
     <header className="h-16 border-b border-cream-200 bg-white px-6 flex items-center justify-between">
       <div className="text-sm font-display font-semibold text-ink-900">{breadcrumb}</div>
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3">
         <LangSwitcher />
         <NotificationBell role={role} />
         <div className="flex items-center gap-2">
@@ -24,6 +25,15 @@ export function Topbar({ breadcrumb, userName, role }: Props) {
             {initials}
           </div>
         </div>
+        <form action="/api/auth/logout" method="POST">
+          <button
+            type="submit"
+            title="Se déconnecter"
+            className="p-1.5 text-ink-400 hover:text-ink-700 hover:bg-cream-100 rounded-lg transition-colors"
+          >
+            <LogOut className="w-4 h-4" />
+          </button>
+        </form>
       </div>
     </header>
   );

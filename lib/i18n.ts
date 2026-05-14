@@ -113,6 +113,62 @@ const dict = {
   apply:            { fr: "Appliquer",            en: "Apply",             wo: "Def" },
   confirm:          { fr: "Confirmer",            en: "Confirm",           wo: "Seeti" },
   language:         { fr: "Langue",               en: "Language",          wo: "Làkk" },
+
+  // ── Driver historique ──
+  pastDeliveries:   { fr: "Vos livraisons passées",              en: "Your past deliveries",        wo: "Sa jën yi bu yëgël" },
+  noDeliveries:     { fr: "Aucune livraison pour ce filtre.",    en: "No deliveries for this filter.", wo: "Jën amul ci filtre bii." },
+  livraisons:       { fr: "Livraisons",                          en: "Deliveries",                  wo: "Jën yi" },
+  totalEarnings:    { fr: "F total",                             en: "Total F",                     wo: "F yépp" },
+  perCourse:        { fr: "F / course",                          en: "F / ride",                    wo: "F / jën" },
+  exportBtn:        { fr: "Export",                              en: "Export",                      wo: "Jënd" },
+
+  // ── Driver gains ──
+  instantWithdraw:  { fr: "Retrait immédiat",                   en: "Instant withdrawal",           wo: "Fëcc bu tammit" },
+  salaryAdvance:    { fr: "Avance sur salaire",                  en: "Salary advance",              wo: "Njëkk liggéey" },
+  advanceDesc:      { fr: "Recevez jusqu'à 80% de vos gains du jour immédiatement.", en: "Receive up to 80% of today's earnings instantly.", wo: "Jël ñaata 80% xaalis bi tey rekk." },
+  requestAdvance:   { fr: "Demander l'avance",                   en: "Request advance",             wo: "Laaj njëkk" },
+  todayDeliveries:  { fr: "Livraisons du jour",                  en: "Today's deliveries",          wo: "Jën yi ci tey" },
+
+  // ── Merchant analytics ──
+  monthlyRevenue:   { fr: "Revenus mensuels",                   en: "Monthly revenue",              wo: "Xaalis bi wiyu" },
+  uniqueClients:    { fr: "Clients uniques",                     en: "Unique clients",              wo: "Jëkkër yu neex" },
+  topClients:       { fr: "Top clients",                         en: "Top clients",                 wo: "Jëkkër yu ndaw" },
+  yonneCommission:  { fr: "Commission YONNE",                    en: "YONNE commission",            wo: "YONNE njëkk" },
+  grossRevenue:     { fr: "Revenus bruts",                       en: "Gross revenue",               wo: "Xaalis bu réér" },
+  netReturned:      { fr: "Net reversé",                         en: "Net returned",                wo: "Xaalis bu dëkk" },
+
+  // ── Merchant commandes ──
+  totalOrders:      { fr: "Total commandes",                    en: "Total orders",                 wo: "Ñépp komaand" },
+  enRouteLabel:     { fr: "En route",                           en: "En route",                     wo: "Ci yoon" },
+  livreesLabel:     { fr: "Livrées",                            en: "Delivered",                    wo: "Yëgël" },
+  revenuToday:      { fr: "F aujourd'hui",                      en: "F today",                      wo: "F ci tey" },
+  resultsCount:     { fr: "résultat",                           en: "result",                       wo: "njëkk" },
+  ordersTotal:      { fr: "commandes au total",                 en: "orders in total",              wo: "komaand yépp" },
+
+  // ── Merchant nouvelle commande ──
+  wizardSubtitle:   { fr: "3 étapes · dispatch IA automatique", en: "3 steps · AI auto-dispatch",  wo: "3 yoon · dispatch IA" },
+
+  // ── Merchant catalogue ──
+  myCatalogue:      { fr: "Mon catalogue",                      en: "My catalogue",                 wo: "Sam liste" },
+  addArticle:       { fr: "Ajouter un article",                 en: "Add article",                  wo: "Yokk yoon" },
+  inStock:          { fr: "En stock",                           en: "In stock",                     wo: "Am na" },
+  outOfStock:       { fr: "Rupture",                            en: "Out of stock",                 wo: "Dafa weex" },
+
+  // ── Admin page titles ──
+  analyticsTitle:   { fr: "Analytics avancé",                   en: "Advanced analytics",           wo: "Xabar yu xam-xam" },
+  fideliteTitle:    { fr: "Fidélité Livreurs",                   en: "Driver Loyalty",               wo: "Yëgëlkat yi ci dëkk" },
+  groupageTitle:    { fr: "Groupage Multi-stops",                en: "Multi-stop Grouping",          wo: "Groupage bu bari" },
+  hivernageTitle:   { fr: "Mode Hivernage",                      en: "Rainy Season Mode",            wo: "Nawet" },
+  landmarksTitle:   { fr: "Points de Repère",                    en: "Landmarks",                    wo: "Dëkk-dëkk yi" },
+  parrainageTitle:  { fr: "Programme Parrainage",                en: "Referral Program",             wo: "Jëg-ànd bu bees" },
+  tontineTitle:     { fr: "Tontine Livreurs",                    en: "Driver Tontine",               wo: "Tontine yëgëlkat" },
+  carboneTitle:     { fr: "Score Carbone CO₂",                   en: "CO₂ Carbon Score",             wo: "Xayma CO₂" },
+  surgeTitle:       { fr: "Surge Pricing",                       en: "Surge Pricing",                wo: "Jëkkër bu yokk" },
+  tabaskiTitle:     { fr: "Tabaski 2026",                        en: "Tabaski 2026",                 wo: "Tabaski 2026" },
+  clientsTitle:     { fr: "Clients",                             en: "Clients",                      wo: "Jëkkër yi" },
+  driversTitle:     { fr: "Livreurs",                            en: "Drivers",                      wo: "Yëgëlkat yi" },
+  merchantsTitle:   { fr: "Commerçants",                         en: "Merchants",                    wo: "Jëkërbaat yi" },
+  zonesTitle:       { fr: "Zones de livraison",                  en: "Delivery zones",               wo: "Seen yoon yi" },
 } as const;
 
 export type StringKey = keyof typeof dict;

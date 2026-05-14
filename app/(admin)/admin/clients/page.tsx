@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useOrdersStore } from "@/lib/store/orders";
 import { Search, Users, ShoppingBag, TrendingUp, Star } from "lucide-react";
+import { useT } from "@/lib/i18n";
 
 interface ClientSummary {
   name: string;
@@ -55,6 +56,7 @@ function buildClients(orders: ReturnType<typeof useOrdersStore.getState>["orders
 }
 
 export default function ClientsPage() {
+  const t = useT();
   const router = useRouter();
   const { orders } = useOrdersStore();
   const [search, setSearch] = useState("");
@@ -78,7 +80,7 @@ export default function ClientsPage() {
     <div className="max-w-6xl mx-auto space-y-6 animate-fade-in-up">
 
       <div>
-        <h1 className="text-2xl font-display font-bold text-ink-900">Clients</h1>
+        <h1 className="text-2xl font-display font-bold text-ink-900">{t("clientsTitle")}</h1>
         <p className="text-sm text-ink-500 mt-1">{ALL_CLIENTS.length} client{ALL_CLIENTS.length > 1 ? "s" : ""} uniques</p>
       </div>
 

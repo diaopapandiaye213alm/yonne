@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { Gift, Users, TrendingUp, Share2, Copy } from "lucide-react";
+import { useT } from "@/lib/i18n";
 
 type Referral = { id: string; name: string; code: string; referred: number; earned: string; status: "actif" | "inactif" };
 
@@ -14,6 +15,7 @@ const REFERRALS_INIT: Referral[] = [
 ];
 
 export default function ParrainagePage() {
+  const t = useT();
   const [bonus, setBonus] = useState(2000);
   const [referrals] = useState<Referral[]>(REFERRALS_INIT);
 
@@ -34,7 +36,7 @@ export default function ParrainagePage() {
     <div className="max-w-4xl mx-auto space-y-6 animate-fade-in-up">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-display font-bold text-ink-900">Programme Parrainage</h1>
+          <h1 className="text-2xl font-display font-bold text-ink-900">{t("parrainageTitle")}</h1>
           <p className="text-sm text-ink-500 mt-1">Livreurs qui recrutent d'autres livreurs</p>
         </div>
         <button type="button" onClick={broadcast}

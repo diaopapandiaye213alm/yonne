@@ -3,6 +3,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { MapPin, Plus, Search } from "lucide-react";
 import { landmarks } from "@/lib/mock-data/landmarks";
+import { useT } from "@/lib/i18n";
 import type { LandmarkType } from "@/lib/mock-data/landmarks";
 
 const TYPE_ICONS: Record<LandmarkType, string> = {
@@ -15,6 +16,7 @@ const ICONS_LIST: string[] = ["🏪", "🏥", "🕌", "🏫", "🏦", "🌳", "�
 type Extra = { id: string; name: string; quartier: string; icon: string; type: LandmarkType };
 
 export default function LandmarksPage() {
+  const t = useT();
   const [search, setSearch]   = useState("");
   const [showForm, setShowForm] = useState(false);
   const [form, setForm]       = useState({ name: "", quartier: "Plateau", icon: "🏪" });
@@ -40,7 +42,7 @@ export default function LandmarksPage() {
     <div className="max-w-4xl mx-auto space-y-6 animate-fade-in-up">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-display font-bold text-ink-900">Points de Repère</h1>
+          <h1 className="text-2xl font-display font-bold text-ink-900">{t("landmarksTitle")}</h1>
           <p className="text-sm text-ink-500 mt-1">{all.length} repères · Autocomplétion activée</p>
         </div>
         <button type="button" onClick={() => setShowForm(v => !v)}

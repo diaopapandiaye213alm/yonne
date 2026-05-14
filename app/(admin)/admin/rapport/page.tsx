@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { useDriversStore } from "@/lib/store/drivers";
 import { useMerchantsStore } from "@/lib/store/merchants";
 import { Printer, Download, TrendingUp, TrendingDown, Package, Wallet, Star, Bike } from "lucide-react";
+import { useT } from "@/lib/i18n";
 
 const MONTHS = ["Janvier", "Février", "Mars", "Avril", "Mai"] as const;
 type Month = typeof MONTHS[number];
@@ -21,6 +22,7 @@ const DAILY = [142, 158, 147, 163, 155, 178, 192, 168, 145, 171, 183, 197, 152, 
 const maxDay = Math.max(...DAILY);
 
 export default function RapportPage() {
+  const t = useT();
   const { drivers }   = useDriversStore();
   const { merchants } = useMerchantsStore();
   const [month, setMonth] = useState<Month>("Mai");
@@ -55,7 +57,7 @@ export default function RapportPage() {
       {/* Header */}
       <div className="flex items-start justify-between print:hidden">
         <div>
-          <h1 className="text-2xl font-display font-bold text-ink-900">Rapport mensuel</h1>
+          <h1 className="text-2xl font-display font-bold text-ink-900">{t("navRapport")}</h1>
           <p className="text-sm text-ink-500 mt-1">Synthèse opérationnelle YONNE</p>
         </div>
         <div className="flex gap-2">

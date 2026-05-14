@@ -1,6 +1,7 @@
 "use client";
 import { toast } from "sonner";
 import { Leaf, TrendingDown, Award, Bike } from "lucide-react";
+import { useT } from "@/lib/i18n";
 
 const VEHICLES = [
   { type: "Moto thermique",   icon: "🛵", kgPerKm: 0.080, count: 28, color: "bg-amber-100 text-amber-700" },
@@ -20,9 +21,10 @@ const TOTAL_KG = 103;
 const SAVED_KG = 18;
 
 export default function CarbonePage() {
+  const t = useT();
   return (
     <div className="max-w-4xl mx-auto space-y-6 animate-fade-in-up">
-      <h1 className="text-2xl font-display font-bold text-ink-900">Score Carbone CO₂</h1>
+      <h1 className="text-2xl font-display font-bold text-ink-900">{t("carboneTitle")}</h1>
 
       {/* KPI cards */}
       <div className="grid grid-cols-4 gap-4">

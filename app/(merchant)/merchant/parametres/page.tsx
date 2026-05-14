@@ -11,7 +11,7 @@ import { QrCode, Download, Copy } from "lucide-react";
 
 export default function ParametresPage() {
   const session = useSession();
-  const { merchants } = useMerchantsStore();
+  const { merchants, updateMerchant } = useMerchantsStore();
   const merchant = useMemo(() => {
     const byEmail = session?.email ? merchants.find(m => m.email === session.email) : null;
     return byEmail ?? merchants[0] ?? { id: "", name: "—", email: "", phone: "", city: "", plan: "Standard" as const };
@@ -61,7 +61,11 @@ export default function ParametresPage() {
         </div>
         <Button
           type="button"
-          onClick={() => toast.success("Profil enregistré")}
+          onClick={async () => {
+            if (!merchant.id) return;
+            await updateMerchant(merchant.id, { email, phone, city });
+            toast.success("Profil enregistré");
+          }}
           className="bg-emerald-500 hover:bg-emerald-600 text-white"
         >
           Enregistrer

@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { MessageSquare, CheckCircle2, XCircle, ToggleLeft, ToggleRight, Send, Plus, Users, Bike, Store, X } from "lucide-react";
+import { useT } from "@/lib/i18n";
 
 const TEMPLATES = [
   {
@@ -48,6 +49,7 @@ const AUDIENCE_OPTS: { value: Audience; label: string; icon: React.ElementType; 
 ];
 
 export default function NotificationsPage() {
+  const t = useT();
   const [smsActive, setSmsActive] = useState(true);
   const [showCampaign, setShowCampaign] = useState(false);
   const [audience, setAudience] = useState<Audience>("drivers");
@@ -76,7 +78,7 @@ export default function NotificationsPage() {
     <div className="max-w-5xl mx-auto space-y-6 animate-fade-in-up">
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-display font-bold text-ink-900">Notifications</h1>
+          <h1 className="text-2xl font-display font-bold text-ink-900">{t("navNotifications")}</h1>
           <p className="text-sm text-ink-500 mt-1">WhatsApp Business · SMS Orange</p>
         </div>
         <div className="flex items-center gap-2">

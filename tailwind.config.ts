@@ -64,12 +64,22 @@ const config: Config = {
           "0%, 100%": { opacity: "1" },
           "50%": { opacity: "0.3" },
         },
+        marquee: {
+          "0%":   { transform: "translateX(0)" },
+          "100%": { transform: "translateX(-50%)" },
+        },
+        flashGreen: {
+          "0%":   { color: "#15803D", transform: "translateY(-3px)", opacity: "0.6" },
+          "100%": { color: "inherit",  transform: "translateY(0)",    opacity: "1" },
+        },
       },
       animation: {
         "pulse-gold":  "pulseGold 2s ease-in-out infinite",
         "fade-in-up":  "fadeInUp 0.4s ease-out both",
         shimmer:       "shimmer 1.8s linear infinite",
         "live-pulse":  "livePulse 1.4s ease-in-out infinite",
+        marquee:       "marquee 28s linear infinite",
+        "flash-green": "flashGreen 0.35s ease-out both",
       },
     },
   },

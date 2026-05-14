@@ -7,6 +7,7 @@ interface MerchantsState {
   loading: boolean;
   fetchMerchants: () => Promise<void>;
   updateStatus: (id: string, status: Merchant["status"]) => Promise<void>;
+  updateMerchant: (id: string, fields: Partial<Pick<Merchant, "email" | "phone" | "city">>) => Promise<void>;
 }
 
 function rowToMerchant(row: Record<string, unknown>): Merchant {
@@ -44,5 +45,14 @@ export const useMerchantsStore = create<MerchantsState>((set, get) => ({
   updateStatus: async (id, status) => {
     await supabase.from("merchants").update({ status }).eq("id", id);
     set(s => ({ merchants: s.merchants.map(m => m.id === id ? { ...m, status } : m) }));
+  },
+
+  updateMerchant: async (id, fields) => {
+    const patch: Record<string, string> = {};
+    if (fields.email !== undefined) patch.email = fields.email;
+    if (fields.phone !== undefined) patch.phone = fields.phone;
+    if (fields.city  !== undefined) patch.city  = fields.city;
+    await supabase.from("merchants").update(patch).eq("id", id);
+    set(s => ({ merchants: s.merchants.map(m => m.id === id ? { ...m, ...fields } : m) }));
   },
 }));

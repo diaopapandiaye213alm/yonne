@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { Umbrella, AlertTriangle, TrendingUp, ToggleLeft, ToggleRight, MapPin } from "lucide-react";
+import { useT } from "@/lib/i18n";
 
 const ZONES = [
   { name: "Médina",              risk: 5, status: "Inondée",      lat: 14.677, lng: -17.448 },
@@ -19,6 +20,7 @@ const RISK_COLORS: Record<number, string> = {
 };
 
 export default function HivernagePage() {
+  const t = useT();
   const [active, setActive] = useState(false);
   const [surge, setSurge] = useState(1.3);
   const [bonus, setBonus] = useState(500);
@@ -27,7 +29,7 @@ export default function HivernagePage() {
     <div className="max-w-5xl mx-auto space-y-6 animate-fade-in-up">
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-display font-bold text-ink-900">Mode Hivernage</h1>
+          <h1 className="text-2xl font-display font-bold text-ink-900">{t("hivernageTitle")}</h1>
           <p className="text-sm text-ink-500 mt-1">Saison des pluies · Juillet–Octobre</p>
         </div>
         <div className="flex items-center gap-3 bg-white border border-cream-200 rounded-lg px-4 py-2.5 shadow-card">

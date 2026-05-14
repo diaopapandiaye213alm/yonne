@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Moon, Clock, TrendingUp, ToggleLeft, ToggleRight, Users } from "lucide-react";
+import { useT } from "@/lib/i18n";
 
 type Prayer = {
   name: string; arabic: string; time: string;
@@ -96,6 +97,7 @@ function DayTimeline({ prayers }: { prayers: Prayer[] }) {
 }
 
 export default function PrierePage() {
+  const t = useT();
   const [enabled,  setEnabled]  = useState(true);
   const [prayers,  setPrayers]  = useState<Prayer[]>(PRAYERS_INIT);
   const [countdown, setCountdown] = useState("");
@@ -123,7 +125,7 @@ export default function PrierePage() {
     <div className="max-w-4xl mx-auto space-y-6 animate-fade-in-up">
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-display font-bold text-ink-900">Heures de Prière</h1>
+          <h1 className="text-2xl font-display font-bold text-ink-900">{t("navPriere")}</h1>
           <p className="text-sm text-ink-500 mt-1">Horaires Dakar · API IslamicFinder</p>
         </div>
         <div className="flex items-center gap-3 bg-white border border-cream-200 rounded-lg px-4 py-2.5 shadow-card">

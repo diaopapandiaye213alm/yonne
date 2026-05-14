@@ -3,6 +3,7 @@ import { useMemo } from "react";
 import { toast } from "sonner";
 import { Trophy, Star, Gift } from "lucide-react";
 import { useDriversStore } from "@/lib/store/drivers";
+import { useT } from "@/lib/i18n";
 
 const BADGES = [
   { tier: "Bronze", min: 0,   max: 50,  color: "bg-amber-700/20 text-amber-700 border-amber-700/30",  emoji: "🥉", points: 2 },
@@ -15,6 +16,7 @@ function getBadge(points: number) {
 }
 
 export default function FidelitePage() {
+  const t = useT();
   const { drivers } = useDriversStore();
   const leaderboard = useMemo(() =>
     drivers.slice(0, 10).map((d, i) => ({
@@ -27,7 +29,7 @@ export default function FidelitePage() {
 
   return (
     <div className="max-w-5xl mx-auto space-y-6 animate-fade-in-up">
-      <h1 className="text-2xl font-display font-bold text-ink-900">Fidélité Livreurs</h1>
+      <h1 className="text-2xl font-display font-bold text-ink-900">{t("fideliteTitle")}</h1>
 
       {/* Badges legend */}
       <div className="grid grid-cols-3 gap-4">
