@@ -44,7 +44,8 @@ export default function LivraisonPage({ params }: { params: { id: string } }) {
     if (real) {
       // Build IncomingOrder-compatible shape from real Order
       const destLm = landmarks.find(l => l.id === real.landmarkId) ?? landmarks[1];
-      const seedIdx = parseInt(real.id.slice(-2), 16) % landmarks.length;
+      const merchantSeed = real.merchantId ?? real.id;
+      const seedIdx = parseInt(merchantSeed.slice(-2), 16) % landmarks.length;
       const pickupLm = landmarks[seedIdx] ?? landmarks[0];
       return {
         id: real.id,

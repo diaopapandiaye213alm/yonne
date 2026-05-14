@@ -16,6 +16,18 @@ const INIT_SCENARIOS: Scenario[] = [
   { id: "s6", keyword: "prix, tarif",     response: "💰 Frais de livraison à partir de 1 000 F CFA selon la zone. Demandez un devis : *devis*.", active: false, hits: 3 },
 ];
 
+const SCENARIOS_KEY = "yonne_bot_scenarios";
+function loadScenarios(): Scenario[] {
+  try {
+    const raw = localStorage.getItem(SCENARIOS_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch { /* ignore */ }
+  return INIT_SCENARIOS;
+}
+function saveScenarios(s: Scenario[]) {
+  try { localStorage.setItem(SCENARIOS_KEY, JSON.stringify(s)); } catch { /* ignore */ }
+}
+
 const INITIAL: Msg[] = [
   { from: "bot", text: "Bienvenu à YONNE Bot ! 🛵\n\nTapez :\n• *1* ou *commander* — nouvelle commande\n• *statut* — suivre votre colis\n• *annuler* — annuler une commande\n• *agent* — parler à un humain\n• *horaires* — nos horaires", time: "14:30" },
 ];
@@ -36,7 +48,13 @@ export default function BotPage() {
   const [showAdd,   setShowAdd]   = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
 
+  useEffect(() => { setScenarios(loadScenarios()); }, []);
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [msgs]);
+
+  function persistScenarios(next: Scenario[]) {
+    setScenarios(next);
+    saveScenarios(next);
+  }
 
   function getResponse(msg: string): string {
     const lower = msg.toLowerCase().trim();
@@ -56,7 +74,7 @@ export default function BotPage() {
   }
 
   function toggleScenario(id: string) {
-    setScenarios(prev => prev.map(s => s.id === id ? { ...s, active: !s.active } : s));
+    persistScenarios(scenarios.map(s => s.id === id ? { ...s, active: !s.active } : s));
   }
 
   function startEdit(s: Scenario) {
@@ -64,19 +82,19 @@ export default function BotPage() {
   }
 
   function saveEdit(id: string) {
-    setScenarios(prev => prev.map(s => s.id === id ? { ...s, keyword: editKw, response: editResp } : s));
+    persistScenarios(scenarios.map(s => s.id === id ? { ...s, keyword: editKw, response: editResp } : s));
     setEditId(null);
     toast.success("Scénario mis à jour");
   }
 
   function deleteScenario(id: string) {
-    setScenarios(prev => prev.filter(s => s.id !== id));
+    persistScenarios(scenarios.filter(s => s.id !== id));
     toast.success("Scénario supprimé");
   }
 
   function addScenario() {
     if (!newKw.trim() || !newResp.trim()) return;
-    setScenarios(prev => [...prev, {
+    persistScenarios([...scenarios, {
       id: `s${Date.now()}`, keyword: newKw.trim(), response: newResp.trim(), active: true, hits: 0,
     }]);
     setNewKw(""); setNewResp(""); setShowAdd(false);
