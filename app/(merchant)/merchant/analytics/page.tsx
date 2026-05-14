@@ -87,7 +87,6 @@ export default function MerchantAnalyticsPage() {
     const total = myOrders.length || 1;
     const wave   = myOrders.filter(o => o.paymentMethod === "wave").length;
     const orange = myOrders.filter(o => o.paymentMethod === "orange").length;
-    const cash   = myOrders.filter(o => o.paymentMethod === "cash").length;
     const wavePct   = Math.round((wave / total) * 100);
     const orangePct = Math.round((orange / total) * 100);
     const cashPct   = 100 - wavePct - orangePct;

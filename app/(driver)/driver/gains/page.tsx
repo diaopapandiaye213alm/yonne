@@ -8,7 +8,7 @@ import { landmarks } from "@/lib/mock-data/landmarks";
 import { WeeklyEarningsChart } from "@/components/driver/WeeklyEarningsChart";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { toast } from "sonner";
+
 import { useT } from "@/lib/i18n";
 import { Smartphone, Banknote, ChevronRight, Star, MapPin, Target, X, CheckCircle2, Loader2 } from "lucide-react";
 

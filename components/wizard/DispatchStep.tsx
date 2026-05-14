@@ -6,6 +6,7 @@ import { useWizard } from "@/lib/store/wizard";
 import { useOrdersStore } from "@/lib/store/orders";
 import { useDriversStore, avatarUrl } from "@/lib/store/drivers";
 import type { Driver } from "@/lib/mock-data/drivers";
+import { landmarks } from "@/lib/mock-data/landmarks";
 import { Button } from "@/components/ui/button";
 import { Loader2, Star } from "lucide-react";
 
@@ -58,7 +59,7 @@ export function DispatchStep() {
     // Save client to recent clients (LIFO, max 5)
     try {
       const landmarkObj = w.landmarkId
-        ? (() => { try { const { landmarks } = require("@/lib/mock-data/landmarks"); return landmarks.find((l: { id: string; name: string }) => l.id === w.landmarkId); } catch { return null; } })()
+        ? landmarks.find(l => l.id === w.landmarkId) ?? null
         : null;
       const newEntry = {
         name: w.clientName,

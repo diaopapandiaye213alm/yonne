@@ -53,7 +53,7 @@ export default function CataloguePage() {
   const merchantId = merchants.find(m => m.email === session?.email)?.id ?? merchants[0]?.id ?? null;
 
   const [articles,    setArticles]    = useState<Article[]>(INITIAL);
-  const [supaLoaded,  setSupaLoaded]  = useState(false); // true when loaded from Supabase vs localStorage
+  const [, setSupaLoaded]  = useState(false);
 
   // Sync article list to Supabase
   const syncToSupabase = useCallback(async (next: Article[]) => {
