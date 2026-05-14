@@ -62,6 +62,8 @@ export default function MerchantAnalyticsPage() {
 
   const maxRevenue   = Math.max(...MONTHLY.map(m => m.revenue), 1);
   const maxDay       = Math.max(...DAILY_ORDERS, 1);
+  const currentMonthName = MONTH_NAMES[new Date().getMonth()];
+  const daysInMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
 
   const clientMap = useMemo(() => {
     const map = new Map<string, { count: number; total: number }>();
@@ -197,11 +199,11 @@ export default function MerchantAnalyticsPage() {
             ))}
           </div>
           <div className="flex justify-between text-xs text-ink-400 mt-2">
-            <span>1 Mai</span>
+            <span>1 {currentMonthName}</span>
             <span className="font-medium text-ink-700 tabular-nums">
               Moy : {Math.round(DAILY_ORDERS.reduce((a, b) => a + b, 0) / DAILY_ORDERS.length)} / jour
             </span>
-            <span>31 Mai</span>
+            <span>{daysInMonth} {currentMonthName}</span>
           </div>
         </div>
 

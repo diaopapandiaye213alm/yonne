@@ -115,6 +115,8 @@ export default function GainsPage() {
           </span>
           {goalPct >= 100 ? (
             <span className="text-emerald-600 font-semibold">🎉 Objectif atteint !</span>
+          ) : earningsToday === 0 ? (
+            <span className="text-ink-500">🚀 Première livraison du jour — bonne journée !</span>
           ) : (
             <span className="text-ink-500">
               Encore <span className="font-semibold text-ink-700">{remaining.toLocaleString("fr-FR")} F</span> pour atteindre votre objectif !
@@ -145,7 +147,11 @@ export default function GainsPage() {
         {showDeliveries && (
           <div className="border-t border-cream-100 divide-y divide-cream-50">
             {todayDeliveries.length === 0 ? (
-              <div className="py-8 text-center text-sm text-ink-500">Aucune livraison aujourd&apos;hui</div>
+              <div className="py-8 text-center space-y-2">
+                <div className="text-2xl">🛵</div>
+                <div className="text-sm font-medium text-ink-900">Aucune livraison aujourd&apos;hui</div>
+                <div className="text-xs text-ink-500">Vos gains s&apos;afficheront ici dès votre première livraison</div>
+              </div>
             ) : (
               todayDeliveries.map(d => (
                 <div key={d.id} className="flex items-center gap-3 px-4 py-3">

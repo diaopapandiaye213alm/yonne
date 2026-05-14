@@ -11,7 +11,7 @@ import { ChatBubble } from "@/components/tracking/ChatBubble";
 import { EtaBadge } from "@/components/tracking/EtaBadge";
 import { DriverCard } from "@/components/tracking/DriverCard";
 import { Button } from "@/components/ui/button";
-import { Share2, XCircle, AlertTriangle } from "lucide-react";
+import { Share2, XCircle, AlertTriangle, FileText } from "lucide-react";
 
 const STATUS_STAGE: Record<OrderStatus, "created" | "assigned" | "enroute" | "delivered"> = {
   "créée":    "created",
@@ -107,6 +107,27 @@ export default function TrackingPage({ params }: { params: { id: string } }) {
             <Share2 className="w-4 h-4" /> Partager le suivi par WhatsApp
           </Button>
         </a>
+
+        {status === "livrée" && (
+          <a
+            href={`https://wa.me/?text=${encodeURIComponent(
+              `🛵 Bon de livraison YONNE\n\n` +
+              `📦 Commande : ${params.id}\n` +
+              `👤 Client : ${order?.clientName ?? "—"}\n` +
+              `💰 Montant : ${order?.amount.toLocaleString("fr-FR") ?? "—"} F CFA\n` +
+              `💳 Paiement : ${order?.paymentMethod ?? "—"}\n` +
+              `✅ Statut : Livrée\n` +
+              `📅 Date : ${order ? new Date(order.createdAt).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" }) : "—"}\n\n` +
+              `Merci de votre confiance — YONNE Dakar 🇸🇳`
+            )}`}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Button className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-display font-bold gap-2">
+              <FileText className="w-4 h-4" /> Envoyer le bon de livraison
+            </Button>
+          </a>
+        )}
 
         {isCancelled && (
           <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
