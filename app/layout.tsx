@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { NavProgress } from "@/components/ui/NavProgress";
+import { DataProvider } from "@/components/providers/DataProvider";
 import "./globals.css";
 
 const geist = localFont({
@@ -24,7 +25,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="fr" className={`${geist.variable} ${inter.variable} ${jetbrains.variable}`}>
       <body>
         <NavProgress />
-        {children}
+        <DataProvider>{children}</DataProvider>
         <Toaster />
       </body>
     </html>
