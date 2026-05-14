@@ -183,17 +183,17 @@ export default async function LandingPage() {
 
           <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center animate-fade-in-up" style={{ animationDelay: "300ms" }}>
             <Link
-              href="/login"
+              href="/register"
               className="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl px-8 py-4 font-display font-bold text-base transition-all shadow-glow-emerald hover:scale-105 hover:shadow-lg"
             >
-              Accéder à la plateforme <ChevronRight className="w-5 h-5" />
+              Créer un compte <ChevronRight className="w-5 h-5" />
             </Link>
-            <a
-              href="#comment"
+            <Link
+              href="/login"
               className="inline-flex items-center gap-2 bg-white/10 hover:bg-white/20 border border-white/20 text-white rounded-xl px-8 py-4 text-base transition-all backdrop-blur-sm"
             >
-              Comment ça marche
-            </a>
+              Se connecter
+            </Link>
           </div>
 
           {/* Animated stats */}
