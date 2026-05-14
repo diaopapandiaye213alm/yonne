@@ -112,40 +112,64 @@ export default function GainsPage() {
   });
 
   return (
-    <div className="pb-20 px-4 pt-6 space-y-5 animate-fade-in-up">
-      <div>
-        <h1 className="font-display font-bold text-2xl text-ink-900">{t("myEarnings")}</h1>
-        <p className="text-xs text-ink-500 capitalize">{dateStr}</p>
+    <div className="pb-20 px-4 pt-4 space-y-5 animate-fade-in-up">
+      {/* Greeting header card */}
+      <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-emerald-800 via-emerald-700 to-emerald-600 p-5 shadow-glow-emerald">
+        <div className="absolute inset-0 opacity-[0.07] pointer-events-none">
+          <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <pattern id="driver-gains-dots" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
+                <circle cx="10" cy="10" r="1" fill="white" />
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#driver-gains-dots)" />
+          </svg>
+        </div>
+        <div className="absolute -bottom-4 -right-4 w-28 h-28 bg-gold-500/15 rounded-full blur-2xl pointer-events-none" />
+        <div className="relative flex items-start justify-between gap-3">
+          <div>
+            <div className="flex items-center gap-2 text-emerald-300/70 text-xs font-medium uppercase tracking-widest mb-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-live-pulse" />
+              <span className="capitalize">{dateStr}</span>
+            </div>
+            <h1 className="font-display font-bold text-xl text-white">{t("myEarnings")}</h1>
+            <p className="text-emerald-200/60 text-sm mt-0.5">{session?.displayName ?? demo.id}</p>
+          </div>
+          <div className="shrink-0 flex items-center gap-1.5 bg-emerald-500/30 border border-emerald-400/40 rounded-full px-3 py-1.5">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-live-pulse" />
+            <span className="text-white text-xs font-semibold">En ligne</span>
+          </div>
+        </div>
       </div>
 
       {/* KPIs */}
       <div className="grid grid-cols-3 gap-3">
-        <div className="stagger-1 animate-fade-in-up bg-white rounded-lg border border-cream-200 p-3 text-center">
-          <div className="font-mono font-bold text-xl text-ink-900">{coursesCount}</div>
-          <div className="text-xs text-ink-500">{t("courses")}</div>
+        <div className="stagger-1 animate-fade-in-up bg-white rounded-xl border border-cream-200 shadow-card p-4 text-center">
+          <div className="font-mono font-bold text-2xl text-ink-900">{coursesCount}</div>
+          <div className="text-xs text-ink-500 mt-0.5">{t("courses")}</div>
         </div>
-        <div className="stagger-2 animate-fade-in-up bg-white rounded-lg border border-cream-200 p-3 text-center">
-          <div className="font-mono font-bold text-lg text-emerald-500">
+        <div className="stagger-2 animate-fade-in-up bg-white rounded-xl border border-emerald-200 shadow-card p-4 text-center">
+          <div className="font-mono font-bold text-xl text-emerald-500">
             {earningsToday.toLocaleString("fr-FR")}
           </div>
-          <div className="text-xs text-ink-500">F CFA</div>
+          <div className="text-xs text-ink-500 mt-0.5">F CFA</div>
         </div>
-        <div className="stagger-3 animate-fade-in-up bg-white rounded-lg border border-cream-200 p-3 text-center">
-          <div className="font-mono font-bold text-xl text-gold-500">{avgRating}</div>
-          <div className="text-xs text-ink-500">Note ★</div>
+        <div className="stagger-3 animate-fade-in-up bg-white rounded-xl border border-gold-300/40 shadow-card p-4 text-center">
+          <div className="font-mono font-bold text-2xl text-gold-500">{avgRating}</div>
+          <div className="text-xs text-ink-500 mt-0.5">Note ★</div>
         </div>
       </div>
 
       {/* Objectif du jour */}
-      <div className="bg-white rounded-lg border border-emerald-200 p-4 space-y-3">
+      <div className={`rounded-xl border p-5 space-y-3 ${goalPct >= 100 ? "bg-emerald-500/5 border-emerald-300" : "bg-white border-emerald-200"}`}>
         <div className="flex items-center gap-2">
           <Target className="w-4 h-4 text-emerald-500" />
           <h2 className="font-display font-semibold text-ink-900 text-sm">Objectif du jour</h2>
-          <span className="ml-auto text-xs font-mono text-ink-500">{goalPct}%</span>
+          <span className={`ml-auto text-xs font-bold font-mono tabular-nums ${goalPct >= 100 ? "text-emerald-600" : "text-ink-700"}`}>{goalPct}%</span>
         </div>
-        <div className="w-full h-3 rounded-full bg-cream-100 overflow-hidden">
+        <div className="w-full h-4 rounded-full bg-cream-100 overflow-hidden shadow-inner">
           <div
-            className="h-full rounded-full bg-emerald-500 transition-all duration-500"
+            className={`h-full rounded-full transition-all duration-700 ease-out ${goalPct >= 100 ? "bg-gradient-to-r from-emerald-500 to-emerald-400" : "bg-gradient-to-r from-emerald-600 to-emerald-400"}`}
             style={{ width: `${goalPct}%` }}
           />
         </div>
@@ -155,12 +179,12 @@ export default function GainsPage() {
             <span className="text-ink-400 font-normal"> / 20 000 F</span>
           </span>
           {goalPct >= 100 ? (
-            <span className="text-emerald-600 font-semibold">🎉 Objectif atteint !</span>
+            <span className="text-emerald-600 font-bold">🎉 Objectif atteint !</span>
           ) : earningsToday === 0 ? (
-            <span className="text-ink-500">🚀 Première livraison du jour — bonne journée !</span>
+            <span className="text-ink-500">🚀 Première livraison du jour !</span>
           ) : (
             <span className="text-ink-500">
-              Encore <span className="font-semibold text-ink-700">{remaining.toLocaleString("fr-FR")} F</span> pour atteindre votre objectif !
+              Encore <span className="font-bold text-ink-700">{remaining.toLocaleString("fr-FR")} F</span>
             </span>
           )}
         </div>
@@ -250,23 +274,25 @@ export default function GainsPage() {
       </div>
 
       {/* Retrait Wave / Orange Money */}
-      <div className="bg-white rounded-lg border border-cream-200 p-4 space-y-3">
-        <h2 className="font-display font-semibold text-ink-900 text-sm">{t("instantWithdraw")}</h2>
-        <p className="text-xs text-ink-500">Recevez vos gains instantanément sur votre portefeuille mobile.</p>
+      <div className="bg-white rounded-xl border border-cream-200 p-5 space-y-4">
+        <div>
+          <h2 className="font-display font-semibold text-ink-900 text-sm">{t("instantWithdraw")}</h2>
+          <p className="text-xs text-ink-500 mt-0.5">Recevez vos gains instantanément sur votre portefeuille mobile.</p>
+        </div>
         <div className="grid grid-cols-2 gap-3">
           <button type="button"
             onClick={() => openWithdraw("wave")}
-            className="flex items-center gap-2 bg-[#1B96D4] hover:bg-[#1580B8] text-white rounded-lg px-4 py-3 text-sm font-semibold transition-colors">
-            <Smartphone className="w-4 h-4 shrink-0" />
-            <span>Wave</span>
-            <ChevronRight className="w-3.5 h-3.5 ml-auto" />
+            className="flex flex-col items-center gap-2 bg-[#1B96D4] hover:bg-[#1580B8] text-white rounded-xl px-4 py-4 font-bold transition-all hover:scale-[1.02] hover:shadow-md">
+            <Smartphone className="w-5 h-5" />
+            <span className="text-sm">Wave</span>
+            <span className="text-[10px] text-white/70 font-normal">2–5 min</span>
           </button>
           <button type="button"
             onClick={() => openWithdraw("orange")}
-            className="flex items-center gap-2 bg-[#FF6600] hover:bg-[#E55A00] text-white rounded-lg px-4 py-3 text-sm font-semibold transition-colors">
-            <Smartphone className="w-4 h-4 shrink-0" />
-            <span>Orange Money</span>
-            <ChevronRight className="w-3.5 h-3.5 ml-auto" />
+            className="flex flex-col items-center gap-2 bg-[#FF6600] hover:bg-[#E55A00] text-white rounded-xl px-4 py-4 font-bold transition-all hover:scale-[1.02] hover:shadow-md">
+            <Smartphone className="w-5 h-5" />
+            <span className="text-sm">Orange Money</span>
+            <span className="text-[10px] text-white/70 font-normal">5–10 min</span>
           </button>
         </div>
       </div>

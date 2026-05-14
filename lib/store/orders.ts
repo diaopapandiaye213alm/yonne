@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { supabase } from "@/lib/supabase";
 import type { Order, OrderStatus } from "@/lib/mock-data/orders";
+import { sendSms } from "@/lib/sms";
 
 interface OrdersState {
   orders: Order[];
@@ -69,7 +70,23 @@ export const useOrdersStore = create<OrdersState>((set, get) => ({
       active:         order.active,
       created_at:     order.createdAt,
     });
-    if (!error) set((s) => ({ orders: [order, ...s.orders] }));
+    if (!error) {
+      set((s) => ({ orders: [order, ...s.orders] }));
+      // Notify driver via SMS if assigned
+      if (order.driverId) {
+        const { data: driverData } = await supabase
+          .from("drivers")
+          .select("phone,name")
+          .eq("id", order.driverId)
+          .single();
+        if (driverData?.phone) {
+          await sendSms(
+            driverData.phone,
+            `Nouvelle commande YONNE 📦 ${order.id} — ${order.clientName} — ${order.amount.toLocaleString("fr-FR")} F. Connectez-vous pour accepter.`
+          );
+        }
+      }
+    }
   },
 
   updateStatus: async (id, status) => {

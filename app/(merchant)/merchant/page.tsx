@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useMerchantsStore } from "@/lib/store/merchants";
 import { useOrdersStore } from "@/lib/store/orders";
 import { useSession } from "@/lib/hooks/useSession";
-import { Package, TrendingUp, CheckCircle2, PlusSquare } from "lucide-react";
+import { Package, TrendingUp, CheckCircle2, PlusSquare, Clock } from "lucide-react";
 import { useT, useLang } from "@/lib/i18n";
 
 const STATUS_COLORS: Record<string, string> = {
@@ -37,6 +37,7 @@ export default function MerchantAccueilPage() {
   const deltaTaux = tauxLivre - tauxLivreLastMonth;
 
   const dateStr = new Date().toLocaleDateString(lang === "en" ? "en-GB" : "fr-FR", { weekday: "long", day: "numeric", month: "long" });
+  const timeStr = new Date().toLocaleTimeString(lang === "en" ? "en-GB" : "fr-FR", { hour: "2-digit", minute: "2-digit" });
 
   function Delta({ pct }: { pct: number }) {
     const up = pct >= 0;
@@ -51,7 +52,8 @@ export default function MerchantAccueilPage() {
     <div className="p-6 max-w-4xl mx-auto space-y-6 animate-fade-in-up">
 
       {/* ── Greeting header ── */}
-      <div className="relative rounded-xl overflow-hidden bg-gradient-to-br from-emerald-800 to-emerald-600 p-5 shadow-glow-emerald">
+      <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-emerald-800 via-emerald-700 to-emerald-600 p-6 shadow-glow-emerald">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(200,146,76,0.18)_0%,transparent_55%)] pointer-events-none" />
         <div className="absolute inset-0 opacity-[0.07] pointer-events-none">
           <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
             <defs>
@@ -62,13 +64,20 @@ export default function MerchantAccueilPage() {
             <rect width="100%" height="100%" fill="url(#merchant-dots)" />
           </svg>
         </div>
-        <div className="relative">
-          <div className="flex items-center gap-2 text-emerald-300/60 text-xs font-medium uppercase tracking-widest mb-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-live-pulse" />
-            {dateStr}
+        <div className="absolute -bottom-6 -right-6 w-32 h-32 bg-gold-500/15 rounded-full blur-2xl pointer-events-none" />
+        <div className="relative flex items-start justify-between">
+          <div>
+            <div className="flex items-center gap-2 text-emerald-300/70 text-xs font-medium uppercase tracking-widest mb-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-live-pulse" />
+              <span className="capitalize">{dateStr}</span>
+            </div>
+            <h1 className="text-2xl font-display font-bold text-white leading-tight">{t("goodMorning")}, <span className="text-gold-300">{merchant.name}</span> 👋</h1>
+            <p className="text-emerald-200/60 text-sm mt-1">Plan {merchant.plan} · Commission {merchant.plan === "Premium" ? "12%" : "15%"}</p>
           </div>
-          <h1 className="text-2xl font-display font-bold text-white">{t("goodMorning")}, {merchant.name} 👋</h1>
-          <p className="text-emerald-200/60 text-sm mt-0.5">Plan {merchant.plan} · Commission {merchant.plan === "Premium" ? "12%" : "15%"}</p>
+          <div className="shrink-0 flex items-center gap-1.5 bg-white/10 border border-white/15 rounded-lg px-3 py-1.5 backdrop-blur-sm">
+            <Clock className="w-3.5 h-3.5 text-emerald-300/80" />
+            <span className="text-white/80 text-sm font-mono font-medium">{timeStr}</span>
+          </div>
         </div>
       </div>
 
@@ -78,43 +87,55 @@ export default function MerchantAccueilPage() {
           { label: t("revenueThisMonth"), value: `${merchant.revenueThisMonth.toLocaleString("fr-FR")} F`, icon: TrendingUp,   delta: deltaRevenue, chip: "bg-gold-500/15 text-gold-600",     border: "border-gold-300/40" },
           { label: t("deliveryRate"),     value: `${tauxLivre}%`,                                          icon: CheckCircle2, delta: deltaTaux,    chip: "bg-blue-100 text-blue-600",        border: "border-blue-100" },
         ].map(({ label, value, icon: Icon, delta, chip, border }) => (
-          <div key={label} className={`bg-white rounded-xl border ${border} shadow-card p-5`}>
-            <div className={`w-8 h-8 rounded-lg flex items-center justify-center mb-3 ${chip}`}>
-              <Icon className="w-4 h-4" />
+          <div key={label} className={`bg-white rounded-xl border ${border} shadow-card p-5 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200`}>
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-4 ${chip}`}>
+              <Icon className="w-5 h-5" />
             </div>
-            <div className="text-2xl font-display font-bold text-ink-900 tabular-nums">{value}</div>
+            <div className="text-3xl font-display font-bold text-ink-900 tabular-nums">{value}</div>
             <div className="text-xs text-ink-500 mt-1">{label}</div>
-            <div className="mt-2"><Delta pct={delta} /></div>
+            <div className="mt-2.5"><Delta pct={delta} /></div>
           </div>
         ))}
       </div>
 
       <Link
         href="/merchant/nouvelle-commande"
-        className="flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl py-3.5 px-6 font-display font-bold transition-colors shadow-glow-emerald"
+        className="flex items-center justify-center gap-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl py-4 px-6 font-display font-bold text-base transition-all shadow-glow-emerald hover:scale-[1.01] hover:shadow-lg group"
       >
-        <PlusSquare className="w-5 h-5" />
+        <PlusSquare className="w-5 h-5 group-hover:animate-pulse" />
         {t("newOrder")}
+        <span className="ml-1 text-emerald-200/70 font-normal text-sm hidden sm:inline">— en 30 secondes</span>
       </Link>
 
-      <div className="bg-white rounded-lg border border-cream-200 shadow-card">
+      <div className="bg-white rounded-xl border border-cream-200 shadow-card">
         <div className="px-5 py-4 border-b border-cream-100 flex items-center justify-between">
           <h2 className="font-semibold text-ink-900">{t("recentOrders")}</h2>
           <Link href="/merchant/commandes" className="text-xs text-emerald-600 hover:underline font-medium">Voir tout →</Link>
         </div>
         <div className="divide-y divide-cream-100">
-          {recent.map(o => (
-            <Link
-              key={o.id}
-              href={`/merchant/commande/${o.id}`}
-              className="flex items-center justify-between px-5 py-3 hover:bg-cream-50 transition-colors"
-            >
-              <span className="font-mono text-xs text-emerald-500">{o.id}</span>
-              <span className="text-sm text-ink-700">{o.clientName}</span>
-              <span className="text-sm font-medium tabular-nums">{o.amount.toLocaleString("fr-FR")} F</span>
-              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[o.status]}`}>{o.status}</span>
-            </Link>
-          ))}
+          {recent.map(o => {
+            const dotColor: Record<string, string> = {
+              "créée":    "bg-gray-400",
+              "assignée": "bg-blue-400",
+              "collecte": "bg-amber-400",
+              "en route": "bg-gold-500",
+              "livrée":   "bg-emerald-500",
+              "annulée":  "bg-red-400",
+            };
+            return (
+              <Link
+                key={o.id}
+                href={`/merchant/commande/${o.id}`}
+                className="flex items-center gap-3 px-5 py-3.5 hover:bg-cream-50 transition-colors"
+              >
+                <span className={`w-2 h-2 rounded-full shrink-0 ${dotColor[o.status] ?? "bg-gray-300"}`} />
+                <span className="font-mono text-xs text-emerald-500 shrink-0">{o.id}</span>
+                <span className="text-sm text-ink-700 flex-1 min-w-0 truncate">{o.clientName}</span>
+                <span className="text-sm font-bold tabular-nums text-ink-900 shrink-0">{o.amount.toLocaleString("fr-FR")} F</span>
+                <span className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${STATUS_COLORS[o.status]}`}>{o.status}</span>
+              </Link>
+            );
+          })}
         </div>
       </div>
     </div>

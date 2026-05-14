@@ -5,7 +5,6 @@ import dynamic from "next/dynamic";
 import { useDriversStore } from "@/lib/store/drivers";
 import { useSession } from "@/lib/hooks/useSession";
 import { landmarks } from "@/lib/mock-data/landmarks";
-import { incomingOrders as mockOrders } from "@/lib/mock-data/incoming-orders";
 import type { IncomingOrder } from "@/lib/mock-data/incoming-orders";
 import { useDriverStore } from "@/lib/store/driver";
 import { IncomingOrderCard } from "@/components/driver/IncomingOrderCard";
@@ -37,10 +36,8 @@ export default function CartePage() {
   // Supabase real orders assigned to this driver
   const [realOrders, setRealOrders] = useState<IncomingOrder[]>([]);
 
-  // Combined queue: real Supabase orders first, then mock rotation for demo
-  const allOrders = useMemo<IncomingOrder[]>(() => {
-    return realOrders.length > 0 ? realOrders : mockOrders;
-  }, [realOrders]);
+  // Only real Supabase orders — no mock fallback
+  const allOrders = useMemo<IncomingOrder[]>(() => realOrders, [realOrders]);
 
   const [orderIndex, setOrderIndex]   = useState(0);
   const [secondsLeft, setSecondsLeft] = useState(30);
@@ -140,26 +137,6 @@ export default function CartePage() {
     };
   }, [demo?.id]);
 
-  // Mock order rotation (only when no real orders)
-  useEffect(() => {
-    if (!online || activeOrderId || realOrders.length > 0) return;
-    const id = setInterval(() => {
-      setSecondsLeft((s) => {
-        if (s <= 1) {
-          setOrderIndex((i) => {
-            const next = (i + 1) % mockOrders.length;
-            const o = mockOrders[next];
-            triggerOrderNotification(o.id, o.clientName, o.amount);
-            return next;
-          });
-          return 30;
-        }
-        return s - 1;
-      });
-    }, 1000);
-    return () => clearInterval(id);
-  }, [online, activeOrderId, realOrders.length]);
-
   // Countdown for real orders
   useEffect(() => {
     if (!online || activeOrderId || realOrders.length === 0) return;
@@ -198,10 +175,7 @@ export default function CartePage() {
 
   function handleRefuse() {
     if (realOrders.length > 0) {
-      // Move to next real order
       setOrderIndex(i => (i + 1) % realOrders.length);
-    } else {
-      setOrderIndex((i) => (i + 1) % mockOrders.length);
     }
     setSecondsLeft(30);
   }
@@ -245,6 +219,19 @@ export default function CartePage() {
         )}
       </div>
 
+      {/* Waiting state overlay — shown when online but no real orders */}
+      {online && allOrders.length === 0 && (
+        <div className="absolute bottom-20 left-0 right-0 z-[1001] flex justify-center px-4">
+          <div className="bg-white rounded-2xl shadow-card px-5 py-4 flex items-center gap-3 max-w-xs w-full">
+            <div className="w-2 h-2 rounded-full bg-ink-300 animate-pulse shrink-0" />
+            <div>
+              <p className="text-sm font-semibold text-ink-900">En attente de commandes</p>
+              <p className="text-xs text-ink-500 mt-0.5">Vous serez notifié dès qu&apos;une livraison arrive</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="fixed bottom-14 left-0 right-0 z-[1001] max-w-sm mx-auto">
         {online ? (
           currentOrder ? (
@@ -255,11 +242,7 @@ export default function CartePage() {
               onAccept={handleAccept}
               onRefuse={handleRefuse}
             />
-          ) : (
-            <div className="bg-white rounded-t-xl p-4 text-center text-sm text-ink-500 border-t border-cream-200">
-              En attente de commandes…
-            </div>
-          )
+          ) : null
         ) : (
           <div className="bg-white rounded-t-xl p-4 text-center text-sm text-ink-500 border-t border-cream-200">
             Vous êtes hors ligne

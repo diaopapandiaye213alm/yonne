@@ -275,3 +275,4 @@ INSERT INTO sav_messages (ticket_id, from_role, text, sent_at) VALUES
 -- INDEX manquant
 -- ────────────────────────────────────────────────────────────
 CREATE INDEX IF NOT EXISTS idx_orders_merchant ON orders(merchant_id);
+

@@ -130,10 +130,16 @@ export function LiveFeed() {
   }, []);
 
   return (
-    <div className="bg-white rounded-lg border border-cream-200 shadow-card overflow-hidden">
-      <div className="px-4 py-3 border-b border-cream-100 flex items-center gap-2">
-        <Radio className="w-3.5 h-3.5 text-emerald-500 animate-live-pulse" />
+    <div className="bg-white rounded-xl border border-cream-200 shadow-card overflow-hidden">
+      <div className="px-5 py-3.5 border-b border-cream-100 flex items-center gap-2 bg-cream-50/60">
+        <div className="w-6 h-6 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+          <Radio className="w-3.5 h-3.5 text-emerald-600 animate-live-pulse" />
+        </div>
         <h2 className="font-semibold text-ink-900 text-sm">Flux en direct</h2>
+        <span className="ml-2 inline-flex items-center gap-1 text-[10px] font-medium text-emerald-700 bg-emerald-500/10 px-2 py-0.5 rounded-full">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-live-pulse" />
+          Live
+        </span>
         <span className="ml-auto text-xs text-ink-400 tabular-nums">{events.length} événements</span>
       </div>
 
@@ -144,20 +150,20 @@ export function LiveFeed() {
             <div
               key={ev.uid}
               className={`flex items-center gap-3 px-4 py-2.5 transition-colors ${
-                flash === ev.uid ? "bg-emerald-50" : "hover:bg-cream-50"
+                flash === ev.uid ? "bg-emerald-50" : "hover:bg-cream-50/70"
               }`}
             >
-              <span className={`w-2 h-2 rounded-full shrink-0 ${cfg.dot}`} />
-              <span className="text-xs text-ink-400 tabular-nums shrink-0 w-16">{ev.time}</span>
-              <span className="font-mono text-xs text-emerald-500 shrink-0 w-20">{ev.id}</span>
+              <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${cfg.dot}`} />
+              <span className="text-[11px] text-ink-400 tabular-nums shrink-0 w-16 font-mono">{ev.time}</span>
+              <span className="font-mono text-xs font-semibold text-emerald-600 shrink-0 w-20">{ev.id}</span>
               <div className="flex-1 min-w-0">
-                <span className={`text-xs font-medium ${cfg.color}`}>{cfg.label}</span>
-                <span className="text-xs text-ink-500 ml-1">· {ev.client}</span>
+                <span className={`text-xs font-semibold ${cfg.color}`}>{cfg.label}</span>
+                <span className="text-xs text-ink-400 ml-1">· {ev.client}</span>
               </div>
-              <span className={`text-xs px-1.5 py-0.5 rounded font-medium shrink-0 ${PAYMENT_COLORS[ev.payment]}`}>
+              <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium shrink-0 ${PAYMENT_COLORS[ev.payment]}`}>
                 {ev.payment}
               </span>
-              <span className="text-xs font-mono font-semibold text-ink-900 tabular-nums shrink-0 w-20 text-right">
+              <span className="text-xs font-mono font-bold text-ink-900 tabular-nums shrink-0 w-20 text-right">
                 {ev.amount.toLocaleString("fr-FR")} F
               </span>
             </div>

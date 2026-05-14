@@ -134,9 +134,11 @@ export default async function LandingPage() {
       <LiveTicker />
 
       {/* ── Hero ── */}
-      <section className="relative bg-gradient-to-br from-emerald-900 via-emerald-800 to-emerald-700 py-24 px-6 text-center overflow-hidden">
+      <section className="relative bg-gradient-to-br from-emerald-900 via-emerald-800 to-emerald-700 py-28 px-6 text-center overflow-hidden">
+        {/* animated gradient overlay */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(200,146,76,0.18)_0%,transparent_60%),radial-gradient(ellipse_at_bottom_right,rgba(21,128,61,0.35)_0%,transparent_60%)] pointer-events-none" />
         {/* dot pattern */}
-        <div className="absolute inset-0 opacity-[0.06] pointer-events-none">
+        <div className="absolute inset-0 opacity-[0.07] pointer-events-none">
           <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
             <defs>
               <pattern id="landing-dots" x="0" y="0" width="32" height="32" patternUnits="userSpaceOnUse">
@@ -147,34 +149,48 @@ export default async function LandingPage() {
           </svg>
         </div>
         {/* glow orbs */}
-        <div className="absolute top-1/2 left-1/4 -translate-y-1/2 w-72 h-72 bg-emerald-500/20 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute top-1/3 right-1/4 w-56 h-56 bg-gold-500/15 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute top-1/2 left-1/4 -translate-y-1/2 w-80 h-80 bg-emerald-500/20 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute top-1/3 right-1/4 w-64 h-64 bg-gold-500/20 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-96 h-32 bg-emerald-600/30 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="relative max-w-3xl mx-auto">
+        <div className="relative max-w-4xl mx-auto">
           <div className="inline-flex items-center gap-2 bg-gold-500/20 border border-gold-500/30 text-gold-300 rounded-full px-4 py-1.5 text-xs font-medium mb-6 animate-fade-in-up">
             <Zap className="w-3.5 h-3.5" />
             Tabaski dans 7 jours — surge IA × 1.4 prêt
           </div>
 
-          <h1 className="text-5xl md:text-6xl font-display font-bold text-white leading-tight animate-fade-in-up" style={{ animationDelay: "80ms" }}>
+          <h1 className="text-5xl md:text-7xl font-display font-bold text-white leading-[1.05] tracking-tight animate-fade-in-up" style={{ animationDelay: "80ms" }}>
             Livraison intelligente<br />
             <span className="text-gold-400">au cœur du Sénégal</span>
           </h1>
 
-          <p className="mt-6 text-emerald-200/80 text-lg max-w-xl mx-auto leading-relaxed animate-fade-in-up" style={{ animationDelay: "160ms" }}>
+          <p className="mt-6 text-emerald-200/80 text-lg md:text-xl max-w-xl mx-auto leading-relaxed animate-fade-in-up" style={{ animationDelay: "160ms" }}>
             La plateforme qui connecte commerçants, livreurs et clients à Dakar — suivi GPS en direct, IA embarquée, partage WhatsApp en un clic.
           </p>
 
-          <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center animate-fade-in-up" style={{ animationDelay: "240ms" }}>
+          {/* Chip pills */}
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-2 animate-fade-in-up" style={{ animationDelay: "220ms" }}>
+            <span className="inline-flex items-center gap-1.5 bg-white/10 border border-white/15 text-white/90 rounded-full px-3.5 py-1.5 text-xs font-medium backdrop-blur-sm">
+              🛵 GPS temps réel
+            </span>
+            <span className="inline-flex items-center gap-1.5 bg-white/10 border border-white/15 text-white/90 rounded-full px-3.5 py-1.5 text-xs font-medium backdrop-blur-sm">
+              💳 Wave &amp; Orange
+            </span>
+            <span className="inline-flex items-center gap-1.5 bg-white/10 border border-white/15 text-white/90 rounded-full px-3.5 py-1.5 text-xs font-medium backdrop-blur-sm">
+              🕌 Adapté Dakar
+            </span>
+          </div>
+
+          <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center animate-fade-in-up" style={{ animationDelay: "300ms" }}>
             <Link
               href="/login"
-              className="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl px-7 py-3.5 font-display font-bold text-base transition-all shadow-glow-emerald hover:scale-105"
+              className="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl px-8 py-4 font-display font-bold text-base transition-all shadow-glow-emerald hover:scale-105 hover:shadow-lg"
             >
               Accéder à la plateforme <ChevronRight className="w-5 h-5" />
             </Link>
             <a
               href="#comment"
-              className="inline-flex items-center gap-2 bg-white/10 hover:bg-white/20 border border-white/20 text-white rounded-xl px-7 py-3.5 text-base transition-all backdrop-blur-sm"
+              className="inline-flex items-center gap-2 bg-white/10 hover:bg-white/20 border border-white/20 text-white rounded-xl px-8 py-4 text-base transition-all backdrop-blur-sm"
             >
               Comment ça marche
             </a>
@@ -224,17 +240,17 @@ export default async function LandingPage() {
               <Link
                 key={role}
                 href="/login"
-                className={`group rounded-xl border ${accent} bg-white p-6 hover:shadow-lg hover:-translate-y-1 transition-all duration-200 block`}
+                className={`group rounded-2xl border-2 ${accent} bg-white p-7 hover:shadow-lg hover:-translate-y-1 transition-all duration-200 block`}
               >
-                <div className={`w-11 h-11 rounded-xl ${iconBg} flex items-center justify-center mb-4`}>
-                  <Icon className="w-5 h-5" />
+                <div className={`w-13 h-13 rounded-2xl ${iconBg} flex items-center justify-center mb-5 p-3`}>
+                  <Icon className="w-6 h-6" />
                 </div>
                 <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-display font-semibold text-ink-900">{role}</h3>
-                  <ChevronRight className="w-4 h-4 text-ink-300 group-hover:text-ink-600 transition-colors" />
+                  <h3 className="font-display font-bold text-lg text-ink-900">{role}</h3>
+                  <ChevronRight className="w-4 h-4 text-ink-300 group-hover:text-ink-600 group-hover:translate-x-0.5 transition-all" />
                 </div>
                 <p className="text-sm text-ink-500 leading-relaxed">{desc}</p>
-                <div className={`mt-4 inline-block text-xs px-2.5 py-1 rounded-full font-medium ${pill}`}>
+                <div className={`mt-5 inline-block text-xs px-3 py-1.5 rounded-full font-semibold ${pill}`}>
                   Accéder →
                 </div>
               </Link>
@@ -250,12 +266,27 @@ export default async function LandingPage() {
           <h2 className="text-3xl font-display font-bold text-ink-900">Pourquoi choisir YONNE ?</h2>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {FEATURES.map(f => (
-            <div key={f} className="flex items-start gap-3 p-4 rounded-xl bg-white border border-cream-200 shadow-card hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200">
-              <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
-              <span className="text-sm text-ink-700 leading-snug">{f}</span>
-            </div>
-          ))}
+          {FEATURES.map((f, i) => {
+            const featureAccents = [
+              "text-emerald-600 bg-emerald-500/10",
+              "text-gold-500 bg-gold-500/10",
+              "text-blue-600 bg-blue-500/10",
+              "text-emerald-600 bg-emerald-500/10",
+              "text-gold-500 bg-gold-500/10",
+              "text-blue-600 bg-blue-500/10",
+              "text-emerald-600 bg-emerald-500/10",
+              "text-gold-500 bg-gold-500/10",
+            ];
+            const accent = featureAccents[i % featureAccents.length];
+            return (
+              <div key={f} className="flex items-start gap-3 p-5 rounded-xl bg-white border border-cream-200 shadow-card hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200">
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${accent}`}>
+                  <CheckCircle2 className="w-4 h-4" />
+                </div>
+                <span className="text-sm text-ink-700 leading-snug pt-1.5">{f}</span>
+              </div>
+            );
+          })}
         </div>
       </section>
 
@@ -286,18 +317,21 @@ export default async function LandingPage() {
       </section>
 
       {/* ── Footer CTA ── */}
-      <section className="bg-ink-900 py-16 px-6 text-center">
-        <div className="max-w-lg mx-auto">
-          <h2 className="text-3xl font-display font-bold text-white mb-3">
-            Prêt à transformer vos livraisons ?
+      <section className="bg-ink-900 py-20 px-6 text-center relative overflow-hidden">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[200px] bg-gold-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="relative max-w-lg mx-auto">
+          <div className="text-xs font-medium uppercase tracking-widest text-gold-400/70 mb-4">Rejoindre YONNE</div>
+          <h2 className="text-4xl font-display font-bold text-white mb-4 leading-tight">
+            Prêt à transformer<br />vos livraisons ?
           </h2>
-          <p className="text-ink-500 text-sm mb-8">Rejoignez les commerçants et livreurs qui font confiance à YONNE à Dakar.</p>
+          <p className="text-ink-500 text-base mb-10 max-w-sm mx-auto">Rejoignez les commerçants et livreurs qui font confiance à YONNE partout à Dakar.</p>
           <Link
             href="/login"
-            className="inline-flex items-center gap-2 bg-gold-500 hover:bg-gold-600 text-ink-900 rounded-xl px-8 py-4 font-display font-bold text-base transition-all hover:scale-105 shadow-glow"
+            className="inline-flex items-center gap-3 bg-gold-500 hover:bg-gold-600 text-ink-900 rounded-xl px-10 py-4 font-display font-bold text-lg transition-all hover:scale-105 shadow-glow"
           >
             Commencer maintenant <ChevronRight className="w-5 h-5" />
           </Link>
+          <p className="mt-5 text-xs text-ink-500/50">Aucun abonnement requis · Accès démo immédiat</p>
         </div>
       </section>
 
