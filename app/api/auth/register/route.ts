@@ -67,14 +67,13 @@ export async function POST(req: NextRequest) {
 
   if (role === "merchant") {
     const { error: mErr } = await supabase.from("merchants").insert({
-      id:              "mch-" + shortId(),
+      id:     "mch-" + shortId(),
       name,
       email,
       phone,
       city,
-      plan:            "Standard",
-      status:          "actif",
-      onboarding_done: false,
+      plan:   "Standard",
+      status: "actif",
     });
     if (mErr)
       return NextResponse.json({ error: "Erreur lors de la création du profil marchand" }, { status: 500 });
