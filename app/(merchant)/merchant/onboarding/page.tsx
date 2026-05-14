@@ -33,7 +33,7 @@ const LANDMARK_ICONS: Record<string, string> = {
 export default function OnboardingPage() {
   const router  = useRouter();
   const session = useSession();
-  const { merchants } = useMerchantsStore();
+  const { merchants, markOnboardingDone } = useMerchantsStore();
 
   const merchant = merchants.find(m =>
     session?.role === "merchant" && m.name === session.displayName
@@ -60,8 +60,9 @@ export default function OnboardingPage() {
     );
   }
 
-  function finish() {
-    localStorage.setItem("yonne_merchant_onboarding_done", "1");
+  async function finish() {
+    if (merchant?.id) await markOnboardingDone(merchant.id);
+    else { try { localStorage.setItem("yonne_merchant_onboarding_done", "1"); } catch { /* ignore */ } }
     toast.success("Configuration terminée ! Bienvenue sur YONNE 🎉");
     router.push("/merchant");
   }

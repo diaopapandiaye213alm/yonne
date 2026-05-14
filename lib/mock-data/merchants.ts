@@ -14,6 +14,7 @@ export interface Merchant {
   ordersLastMonth: number;
   revenueLastMonth: number;
   joinedAt: string;
+  onboardingDone: boolean;
 }
 
 function r(seed: number, min: number, max: number) {
@@ -43,4 +44,5 @@ export const merchants: Merchant[] = shopNames.map((name, i) => ({
   revenueLastMonth: Math.floor(r(i + 17, 150_000,  1_800_000) / 1000) * 1000,
   joinedAt: new Date(2025, Math.floor(r(i + 11, 0, 12)), Math.floor(r(i + 13, 1, 28)) + 1)
     .toISOString().split("T")[0],
+  onboardingDone: false,
 }));

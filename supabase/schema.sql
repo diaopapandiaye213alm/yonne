@@ -44,6 +44,7 @@ create table if not exists merchants (
   orders_last_month    integer     default 0,
   revenue_last_month   integer     default 0,
   joined_at            date        default current_date,
+  onboarding_done      boolean     default false,
   created_at           timestamptz default now()
 );
 
@@ -60,7 +61,7 @@ create table if not exists orders (
   amount          integer     not null check (amount > 0),
   payment_method  text        check (payment_method in ('wave','orange','cash')),
   insurance       boolean     default false,
-  status          text        check (status in ('créée','assignée','collecte','en route','livrée')) default 'créée',
+  status          text        check (status in ('créée','assignée','collecte','en route','livrée','annulée')) default 'créée',
   active          boolean     default false,
   created_at      timestamptz default now()
 );

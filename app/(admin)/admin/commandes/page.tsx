@@ -16,6 +16,7 @@ const STATUS_COLORS: Record<OrderStatus, string> = {
   "collecte": "bg-amber-100 text-amber-700",
   "en route": "bg-gold-500/20 text-ink-900",
   "livrée":   "bg-emerald-500/20 text-emerald-700",
+  "annulée":  "bg-red-100 text-red-600",
 };
 
 const PAYMENT_FILTERS: FilterDef[] = [

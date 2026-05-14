@@ -16,6 +16,7 @@ const STATUS_COLORS: Record<OrderStatus, string> = {
   "collecte": "bg-amber-100 text-amber-700",
   "en route": "bg-gold-500/20 text-ink-900",
   "livrée":   "bg-emerald-500/20 text-emerald-700",
+  "annulée":  "bg-red-100 text-red-600",
 };
 
 const FILTERS: FilterDef[] = [
@@ -26,6 +27,7 @@ const FILTERS: FilterDef[] = [
     { label: "Collecte",  value: "collecte" },
     { label: "En route",  value: "en route" },
     { label: "Livrée",    value: "livrée" },
+    { label: "Annulée",   value: "annulée" },
   ]},
 ];
 
@@ -36,6 +38,7 @@ const STATUS_QUICK: { label: string; value: OrderStatus | ""; color: string }[] 
   { label: "Créée",     value: "créée",     color: "bg-gray-100 text-gray-700" },
   { label: "Collecte",  value: "collecte",  color: "bg-amber-100 text-amber-700" },
   { label: "Assignée",  value: "assignée",  color: "bg-blue-100 text-blue-700" },
+  { label: "Annulée",   value: "annulée",   color: "bg-red-100 text-red-600" },
 ];
 
 export default function MesCommandesPage() {
@@ -88,7 +91,7 @@ export default function MesCommandesPage() {
     { key: "amount",        label: "Montant",  render: o => `${o.amount.toLocaleString("fr-FR")} F` },
     { key: "createdAt",     label: "Date",     render: o => new Date(o.createdAt).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) },
     {
-      key: "id" as keyof Order,
+      key: "suivi",
       label: "Suivi",
       render: o => {
         const isActive = ["assignée", "collecte", "en route"].includes(o.status);
@@ -119,7 +122,7 @@ export default function MesCommandesPage() {
       },
     },
     {
-      key: "id" as keyof Order,
+      key: "actions",
       label: "Actions",
       render: o => (
         <div onClick={e => e.stopPropagation()}>

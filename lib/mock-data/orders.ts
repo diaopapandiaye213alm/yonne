@@ -2,7 +2,7 @@
 import { drivers } from "./drivers";
 import { landmarks } from "./landmarks";
 
-export type OrderStatus = "créée" | "assignée" | "collecte" | "en route" | "livrée";
+export type OrderStatus = "créée" | "assignée" | "collecte" | "en route" | "livrée" | "annulée";
 export type PaymentMethod = "wave" | "orange" | "cash";
 
 export interface Order {

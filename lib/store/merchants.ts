@@ -8,6 +8,7 @@ interface MerchantsState {
   fetchMerchants: () => Promise<void>;
   updateStatus: (id: string, status: Merchant["status"]) => Promise<void>;
   updateMerchant: (id: string, fields: Partial<Pick<Merchant, "email" | "phone" | "city">>) => Promise<void>;
+  markOnboardingDone: (id: string) => Promise<void>;
 }
 
 function rowToMerchant(row: Record<string, unknown>): Merchant {
@@ -24,6 +25,7 @@ function rowToMerchant(row: Record<string, unknown>): Merchant {
     ordersLastMonth:    (row.orders_last_month as number) ?? 0,
     revenueLastMonth:   (row.revenue_last_month as number) ?? 0,
     joinedAt:           (row.joined_at as string) ?? new Date().toISOString().split("T")[0],
+    onboardingDone:     (row.onboarding_done as boolean) ?? false,
   };
 }
 
@@ -54,5 +56,11 @@ export const useMerchantsStore = create<MerchantsState>((set, get) => ({
     if (fields.city  !== undefined) patch.city  = fields.city;
     await supabase.from("merchants").update(patch).eq("id", id);
     set(s => ({ merchants: s.merchants.map(m => m.id === id ? { ...m, ...fields } : m) }));
+  },
+
+  markOnboardingDone: async (id) => {
+    await supabase.from("merchants").update({ onboarding_done: true }).eq("id", id);
+    set(s => ({ merchants: s.merchants.map(m => m.id === id ? { ...m, onboardingDone: true } : m) }));
+    try { localStorage.setItem("yonne_merchant_onboarding_done", "1"); } catch { /* ignore */ }
   },
 }));

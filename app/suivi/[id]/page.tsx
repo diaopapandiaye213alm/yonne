@@ -21,6 +21,7 @@ const STATUS_STAGE: Record<OrderStatus, "created" | "assigned" | "enroute" | "de
   "collecte": "assigned",
   "en route": "enroute",
   "livrée":   "delivered",
+  "annulée":  "created",
 };
 
 const STATUS_COLORS: Record<OrderStatus, string> = {
@@ -29,6 +30,7 @@ const STATUS_COLORS: Record<OrderStatus, string> = {
   "collecte": "bg-amber-100 text-amber-700",
   "en route": "bg-gold-500 text-ink-900",
   "livrée":   "bg-emerald-500/20 text-emerald-700",
+  "annulée":  "bg-red-100 text-red-600",
 };
 
 const STATUS_LABELS: Record<OrderStatus, string> = {
@@ -37,6 +39,7 @@ const STATUS_LABELS: Record<OrderStatus, string> = {
   "collecte": "Collecte en cours",
   "en route": "En route vers vous",
   "livrée":   "Livrée avec succès 🎉",
+  "annulée":  "Commande annulée",
 };
 
 function StarRating({ onRate }: { onRate: (n: number) => void }) {

@@ -19,6 +19,7 @@ const STATUS_STAGE: Record<OrderStatus, "created" | "assigned" | "enroute" | "de
   "collecte": "assigned",
   "en route": "enroute",
   "livrée":   "delivered",
+  "annulée":  "created",
 };
 
 const STATUS_COLORS: Record<OrderStatus, string> = {
@@ -27,6 +28,7 @@ const STATUS_COLORS: Record<OrderStatus, string> = {
   "collecte": "bg-amber-100 text-amber-700",
   "en route": "bg-gold-500 text-ink-900",
   "livrée":   "bg-emerald-500/20 text-emerald-700",
+  "annulée":  "bg-red-100 text-red-600",
 };
 
 const DakarMap = dynamic(() => import("@/components/map/DakarMap"), { ssr: false });
@@ -35,8 +37,8 @@ export default function TrackingPage({ params }: { params: { id: string } }) {
   const { orders, cancelOrder } = useOrdersStore();
   const order = orders.find(o => o.id === params.id);
   const status: OrderStatus = order?.status ?? "en route";
-  const isCancelled = order ? order.active === false : false;
-  const canCancel   = order ? order.active && order.status !== "livrée" : false;
+  const isCancelled = order?.status === "annulée";
+  const canCancel   = order ? order.status !== "livrée" && order.status !== "annulée" : false;
 
   const [showConfirm, setShowConfirm] = useState(false);
   const [cancelling, setCancelling]   = useState(false);

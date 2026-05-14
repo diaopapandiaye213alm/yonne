@@ -84,16 +84,15 @@ export const useOrdersStore = create<OrdersState>((set, get) => ({
   },
 
   cancelOrder: async (id) => {
-    // Set active=false; status stays as-is so we can identify cancelled orders by active=false
     const { error } = await supabase
       .from("orders")
-      .update({ active: false, status: "créée" })
+      .update({ active: false, status: "annulée" })
       .eq("id", id)
       .not("status", "eq", "livrée");
     if (!error)
       set((s) => ({
         orders: s.orders.map((o) =>
-          o.id === id && o.status !== "livrée" ? { ...o, active: false, status: "créée" as OrderStatus } : o
+          o.id === id && o.status !== "livrée" ? { ...o, active: false, status: "annulée" as OrderStatus } : o
         ),
       }));
   },
