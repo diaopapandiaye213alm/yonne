@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useT } from "@/lib/i18n";
 import { Plus, Pencil, Trash2, X, Check, PackageSearch } from "lucide-react";
@@ -35,11 +35,24 @@ const INITIAL: Article[] = [
   { id: "a6", name: "Paracétamol 500mg",      price: 800,   category: "Pharmacie",    available: true,  stock: 50 },
 ];
 
+const STORAGE_KEY = "yonne_catalogue";
+
+function saveCatalogue(articles: Article[]) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(articles)); } catch { /* ignore */ }
+}
+
 type EditState = { id: string; name: string; price: string; category: Category; stock: string } | null;
 
 export default function CataloguePage() {
   const t                             = useT();
   const [articles,    setArticles]    = useState<Article[]>(INITIAL);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) setArticles(JSON.parse(raw));
+    } catch { /* ignore */ }
+  }, []);
   const [catFilter,   setCatFilter]   = useState<Category | "Tous">("Tous");
   const [editState,   setEditState]   = useState<EditState>(null);
   const [showAddForm, setShowAddForm] = useState(false);

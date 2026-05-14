@@ -12,7 +12,8 @@ import { toast } from "sonner";
 import { useT } from "@/lib/i18n";
 import { PushNotifBanner } from "@/components/driver/PushNotifBanner";
 import { cn } from "@/lib/utils";
-import { LogOut, Moon, Pencil, Check, X, Star, Award } from "lucide-react";
+import Link from "next/link";
+import { LogOut, Moon, Pencil, Check, X, Star, Award, History } from "lucide-react";
 
 // demo resolved in component from store
 
@@ -33,14 +34,7 @@ const tierStyle: Record<string, string> = {
   Or:     "bg-gold-500/20 text-ink-900 border-gold-500/50",
 };
 
-const monthlyEarnings = [
-  { month: "Jan", amount: 145000 },
-  { month: "Fév", amount: 168000 },
-  { month: "Mar", amount: 152000 },
-  { month: "Avr", amount: 187000 },
-  { month: "Mai", amount: 210000 },
-];
-const maxMonth = Math.max(...monthlyEarnings.map(m => m.amount));
+const MONTH_LABELS = ["Jan","Fév","Mar","Avr","Mai","Juin","Juil","Aoû","Sep","Oct","Nov","Déc"];
 
 const DRIVER_FALLBACK = { id: "drv-001", name: "—", phone: "", vehicle: "Moto Yamaha" as const, rating: 5, tier: "Bronze" as const, badges: [] as string[], ordersToday: 0, earningsToday: 0, avatarSeed: "" };
 
@@ -59,7 +53,39 @@ export default function ProfilPage() {
   const [editPhone,   setEditPhone]   = useState(demo.phone);
   const [editVehicle, setEditVehicle] = useState(demo.vehicle);
 
-  const totalOrders = orders.filter(o => o.driverId === demo.id).length || demo.ordersToday * 14;
+  const myOrders = useMemo(() => orders.filter(o => o.driverId === demo.id && o.status === "livrée"), [orders, demo.id]);
+  const totalOrders = myOrders.length || demo.ordersToday * 14;
+
+  // Monthly earnings from real orders (last 5 months)
+  const monthlyEarnings = useMemo(() => {
+    const grouped: Record<string, number> = {};
+    for (const o of myOrders) {
+      const m = MONTH_LABELS[new Date(o.createdAt).getMonth()];
+      grouped[m] = (grouped[m] ?? 0) + Math.round(o.amount * 0.25);
+    }
+    const result = [];
+    for (let i = 4; i >= 0; i--) {
+      const d = new Date(); d.setMonth(d.getMonth() - i);
+      const m = MONTH_LABELS[d.getMonth()];
+      result.push({ month: m, amount: grouped[m] ?? 0 });
+    }
+    return result;
+  }, [myOrders]);
+  const maxMonth = Math.max(...monthlyEarnings.map(m => m.amount), 1);
+
+  // Dynamic badge calculation
+  const earnedBadges = useMemo(() => {
+    const badges: string[] = [...(demo.badges as string[])];
+    if (demo.rating >= 4.8 && !badges.includes("Top noté"))   badges.push("Top noté");
+    if (totalOrders >= 50  && !badges.includes("50 courses"))  badges.push("50 courses");
+    if (demo.vehicle === "Vélo électrique" && !badges.includes("Eco")) badges.push("Eco");
+    // 10 consecutive days: check if orders span ≥ 10 unique days
+    const uniqueDays = new Set(myOrders.map(o => o.createdAt.slice(0, 10))).size;
+    if (uniqueDays >= 10 && !badges.includes("10 jours")) badges.push("10 jours");
+    // Précis: approximated as having 20+ orders (no error tracking in DB)
+    if (totalOrders >= 20 && !badges.includes("Précis")) badges.push("Précis");
+    return badges;
+  }, [demo.badges, demo.rating, demo.vehicle, totalOrders, myOrders]);
 
   async function saveEdit() {
     const { error } = await supabase
@@ -200,7 +226,7 @@ export default function ProfilPage() {
         </h2>
         <div className="space-y-2">
           {ALL_BADGES.map(badge => {
-            const earned = (demo.badges as readonly string[]).includes(badge);
+            const earned = earnedBadges.includes(badge);
             return (
               <div key={badge} className={`flex items-center gap-3 p-2.5 rounded-lg border transition-colors ${
                 earned ? "bg-gold-500/5 border-gold-500/20" : "border-transparent opacity-40"
@@ -220,6 +246,12 @@ export default function ProfilPage() {
           })}
         </div>
       </div>
+
+      {/* Historique */}
+      <Link href="/driver/historique"
+        className="flex items-center gap-2 text-sm text-ink-500 hover:text-ink-900 transition-colors">
+        <History className="w-4 h-4" /> Historique de livraisons
+      </Link>
 
       {/* Logout */}
       <form action="/api/auth/logout" method="POST">

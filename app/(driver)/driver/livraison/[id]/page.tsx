@@ -73,12 +73,14 @@ export default function LivraisonPage({ params }: { params: { id: string } }) {
   async function handleIncidentSubmit() {
     if (!incidentType) return;
     setSubmitting(true);
-    await supabase.from("tickets").insert({
-      order_id:    order.id,
+    await supabase.from("sav_tickets").insert({
+      order_ref:   order.id,
       type:        incidentType,
-      note:        incidentNote,
-      reported_at: new Date().toISOString(),
-    }).select(); // insert may fail silently if table absent; that's acceptable
+      description: incidentNote || incidentType,
+      status:      "ouvert" as const,
+      responsable: "—",
+      delay:       "—",
+    });
     setSubmitting(false);
     setSubmitted(true);
     setTimeout(() => { setShowIncident(false); setSubmitted(false); setIncidentType(""); setIncidentNote(""); }, 1500);

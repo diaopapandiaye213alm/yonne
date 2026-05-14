@@ -79,8 +79,8 @@ create table if not exists users (
 );
 
 alter table users enable row level security;
-create policy "anon read users"  on users for select using (true);
-create policy "anon write users" on users for all    using (true) with check (true);
+create policy if not exists "anon read users"  on users for select using (true);
+create policy if not exists "anon write users" on users for all    using (true) with check (true);
 
 -- ────────────────────────────────────────────────────────────
 -- TICKETS SAV
@@ -115,20 +115,20 @@ alter table sav_tickets enable row level security;
 alter table sav_messages enable row level security;
 
 -- Policies permissives MVP (à restreindre en production)
-create policy "anon read drivers"      on drivers      for select using (true);
-create policy "anon write drivers"     on drivers      for all    using (true) with check (true);
+create policy if not exists "anon read drivers"      on drivers      for select using (true);
+create policy if not exists "anon write drivers"     on drivers      for all    using (true) with check (true);
 
-create policy "anon read merchants"    on merchants    for select using (true);
-create policy "anon write merchants"   on merchants    for all    using (true) with check (true);
+create policy if not exists "anon read merchants"    on merchants    for select using (true);
+create policy if not exists "anon write merchants"   on merchants    for all    using (true) with check (true);
 
-create policy "anon read orders"       on orders       for select using (true);
-create policy "anon write orders"      on orders       for all    using (true) with check (true);
+create policy if not exists "anon read orders"       on orders       for select using (true);
+create policy if not exists "anon write orders"      on orders       for all    using (true) with check (true);
 
-create policy "anon read sav_tickets"  on sav_tickets  for select using (true);
-create policy "anon write sav_tickets" on sav_tickets  for all    using (true) with check (true);
+create policy if not exists "anon read sav_tickets"  on sav_tickets  for select using (true);
+create policy if not exists "anon write sav_tickets" on sav_tickets  for all    using (true) with check (true);
 
-create policy "anon read sav_messages" on sav_messages for select using (true);
-create policy "anon write sav_messages" on sav_messages for all   using (true) with check (true);
+create policy if not exists "anon read sav_messages" on sav_messages for select using (true);
+create policy if not exists "anon write sav_messages" on sav_messages for all   using (true) with check (true);
 
 -- ────────────────────────────────────────────────────────────
 -- INDEX utiles

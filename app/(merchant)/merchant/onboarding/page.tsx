@@ -61,6 +61,7 @@ export default function OnboardingPage() {
   }
 
   function finish() {
+    localStorage.setItem("yonne_merchant_onboarding_done", "1");
     toast.success("Configuration terminée ! Bienvenue sur YONNE 🎉");
     router.push("/merchant");
   }

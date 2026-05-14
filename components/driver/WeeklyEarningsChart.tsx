@@ -1,15 +1,8 @@
 "use client";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
+import type { Order } from "@/lib/mock-data/orders";
 
-const DAYS = [
-  { day: "Mer", amount: 18500 },
-  { day: "Jeu", amount: 22000 },
-  { day: "Ven", amount: 31000 },
-  { day: "Sam", amount: 45000 },
-  { day: "Dim", amount: 28000 },
-  { day: "Lun", amount: 19500 },
-  { day: "Auj", amount: 24000 },
-];
+const DAY_LABELS = ["Dim","Lun","Mar","Mer","Jeu","Ven","Sam"];
 
 function CustomTooltip({ active, payload, label }: { active?: boolean; payload?: { value: number }[]; label?: string }) {
   if (!active || !payload?.length) return null;
@@ -21,16 +14,30 @@ function CustomTooltip({ active, payload, label }: { active?: boolean; payload?:
   );
 }
 
-export function WeeklyEarningsChart() {
+export function WeeklyEarningsChart({ orders, driverId }: { orders: Order[]; driverId: string }) {
+  const today = new Date();
+  const data = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(today);
+    d.setDate(today.getDate() - (6 - i));
+    const dayStart = new Date(d); dayStart.setHours(0, 0, 0, 0);
+    const dayEnd   = new Date(d); dayEnd.setHours(23, 59, 59, 999);
+    const gain = orders
+      .filter(o => o.status === "livrée" && o.driverId === driverId)
+      .filter(o => { const t = new Date(o.createdAt); return t >= dayStart && t <= dayEnd; })
+      .reduce((s, o) => s + Math.round(o.amount * 0.25), 0);
+    const isToday = i === 6;
+    return { day: DAY_LABELS[d.getDay()], amount: gain, isToday };
+  });
+
   return (
     <ResponsiveContainer width="100%" height={140}>
-      <BarChart data={DAYS} barSize={24} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
+      <BarChart data={data} barSize={24} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
         <XAxis dataKey="day" tick={{ fontSize: 11, fill: "#8B7363" }} axisLine={false} tickLine={false} />
         <YAxis hide />
         <Tooltip content={<CustomTooltip />} cursor={false} />
         <Bar dataKey="amount" radius={[4, 4, 0, 0]}>
-          {DAYS.map((entry, i) => (
-            <Cell key={i} fill={entry.day === "Auj" ? "#15803D" : "rgba(200,146,76,0.45)"} />
+          {data.map((entry, i) => (
+            <Cell key={i} fill={entry.isToday ? "#15803D" : "rgba(200,146,76,0.45)"} />
           ))}
         </Bar>
       </BarChart>

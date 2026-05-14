@@ -34,11 +34,7 @@ export default function GainsPage() {
       new Date(o.createdAt).toDateString() === todayStr
     );
 
-    const source = real.length > 0
-      ? real
-      : orders
-          .filter(o => o.status === "livrée" && o.driverId === demo.id)
-          .slice(0, 5);
+    const source = real;
 
     return source.map(o => {
       const d = new Date(o.createdAt);
@@ -192,7 +188,7 @@ export default function GainsPage() {
       {/* Weekly chart */}
       <div className="bg-white rounded-lg border border-cream-200 p-4">
         <h2 className="font-display font-semibold text-ink-900 mb-3">{t("thisWeek")}</h2>
-        <WeeklyEarningsChart />
+        <WeeklyEarningsChart orders={orders} driverId={demo.id ?? ""} />
       </div>
 
       {/* Badge */}

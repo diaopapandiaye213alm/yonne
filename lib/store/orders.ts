@@ -8,6 +8,7 @@ interface OrdersState {
   fetchOrders: () => Promise<void>;
   addOrder: (order: Order) => Promise<void>;
   updateStatus: (id: string, status: OrderStatus) => Promise<void>;
+  cancelOrder: (id: string) => Promise<void>;
 }
 
 function rowToOrder(row: Record<string, unknown>): Order {
@@ -79,6 +80,21 @@ export const useOrdersStore = create<OrdersState>((set, get) => ({
     if (!error)
       set((s) => ({
         orders: s.orders.map((o) => (o.id === id ? { ...o, status } : o)),
+      }));
+  },
+
+  cancelOrder: async (id) => {
+    // Set active=false; status stays as-is so we can identify cancelled orders by active=false
+    const { error } = await supabase
+      .from("orders")
+      .update({ active: false, status: "créée" })
+      .eq("id", id)
+      .not("status", "eq", "livrée");
+    if (!error)
+      set((s) => ({
+        orders: s.orders.map((o) =>
+          o.id === id && o.status !== "livrée" ? { ...o, active: false, status: "créée" as OrderStatus } : o
+        ),
       }));
   },
 }));

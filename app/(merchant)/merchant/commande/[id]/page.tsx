@@ -11,7 +11,7 @@ import { ChatBubble } from "@/components/tracking/ChatBubble";
 import { EtaBadge } from "@/components/tracking/EtaBadge";
 import { DriverCard } from "@/components/tracking/DriverCard";
 import { Button } from "@/components/ui/button";
-import { Share2 } from "lucide-react";
+import { Share2, XCircle, AlertTriangle } from "lucide-react";
 
 const STATUS_STAGE: Record<OrderStatus, "created" | "assigned" | "enroute" | "delivered"> = {
   "créée":    "created",
@@ -32,9 +32,21 @@ const STATUS_COLORS: Record<OrderStatus, string> = {
 const DakarMap = dynamic(() => import("@/components/map/DakarMap"), { ssr: false });
 
 export default function TrackingPage({ params }: { params: { id: string } }) {
-  const { orders } = useOrdersStore();
+  const { orders, cancelOrder } = useOrdersStore();
   const order = orders.find(o => o.id === params.id);
   const status: OrderStatus = order?.status ?? "en route";
+  const isCancelled = order ? order.active === false : false;
+  const canCancel   = order ? order.active && order.status !== "livrée" : false;
+
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [cancelling, setCancelling]   = useState(false);
+
+  async function handleCancel() {
+    setCancelling(true);
+    await cancelOrder(params.id);
+    setCancelling(false);
+    setShowConfirm(false);
+  }
 
   const { drivers } = useDriversStore();
   const seed = params.id.charCodeAt(params.id.length - 1);
@@ -95,7 +107,52 @@ export default function TrackingPage({ params }: { params: { id: string } }) {
             <Share2 className="w-4 h-4" /> Partager le suivi par WhatsApp
           </Button>
         </a>
+
+        {isCancelled && (
+          <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+            <XCircle className="w-4 h-4 shrink-0" />
+            <span>Commande annulée</span>
+          </div>
+        )}
+
+        {canCancel && (
+          <Button
+            variant="outline"
+            className="w-full border-red-300 text-red-600 hover:bg-red-50 gap-2"
+            onClick={() => setShowConfirm(true)}
+          >
+            <XCircle className="w-4 h-4" /> Annuler la commande
+          </Button>
+        )}
       </aside>
+
+      {showConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-sm w-full p-6 space-y-4">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="w-6 h-6 text-amber-500 shrink-0 mt-0.5" />
+              <div>
+                <h3 className="font-display font-bold text-ink-900">Annuler la commande ?</h3>
+                <p className="text-sm text-ink-500 mt-1">
+                  Cette action est irréversible. La commande {params.id} sera annulée et le livreur en sera informé.
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <Button variant="outline" className="flex-1" onClick={() => setShowConfirm(false)}>
+                Garder
+              </Button>
+              <Button
+                className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+                disabled={cancelling}
+                onClick={handleCancel}
+              >
+                {cancelling ? "Annulation…" : "Confirmer"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

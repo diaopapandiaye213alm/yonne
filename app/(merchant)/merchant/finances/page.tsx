@@ -8,14 +8,7 @@ import { TrendingUp, Percent, Wallet, Download } from "lucide-react";
 import { downloadCsv } from "@/lib/utils/csv";
 import type { PaymentMethod } from "@/lib/mock-data/orders";
 
-const MONTHLY = [
-  { month: "Déc",  brut: 185000, net: 162000 },
-  { month: "Jan",  brut: 212000, net: 186000 },
-  { month: "Fév",  brut: 198000, net: 174000 },
-  { month: "Mar",  brut: 245000, net: 215000 },
-  { month: "Avr",  brut: 267000, net: 235000 },
-  { month: "Mai",  brut: 310000, net: 272000 },
-];
+const MONTH_NAMES = ["Jan","Fév","Mar","Avr","Mai","Juin","Juil","Aoû","Sep","Oct","Nov","Déc"];
 
 function fmt(n: number) { return `${(n / 1000).toFixed(0)}k`; }
 
@@ -29,22 +22,57 @@ export default function FinancesPage() {
   }, [merchants, session?.email]);
   const commissionRate = merchant.plan === "Premium" ? 0.12 : 0.15;
   const commissionPct  = Math.round(commissionRate * 100);
-  const revenuBrut     = merchant.revenueThisMonth;
-  const commission     = Math.round(revenuBrut * commissionRate);
-  const net            = revenuBrut - commission;
-  const total          = orders.length;
+
+  // Filter orders for this merchant
+  const myOrders = useMemo(() =>
+    merchant.id ? orders.filter(o => o.merchantId === merchant.id || !o.merchantId) : orders,
+    [orders, merchant]
+  );
+
+  // KPIs from real orders (current month)
+  const currentMonth = new Date().getMonth();
+  const currentYear  = new Date().getFullYear();
+  const thisMonthOrders = useMemo(() =>
+    myOrders.filter(o => {
+      const d = new Date(o.createdAt);
+      return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+    }), [myOrders, currentMonth, currentYear]
+  );
+  const revenuBrut = useMemo(() => thisMonthOrders.reduce((s, o) => s + o.amount, 0), [thisMonthOrders]);
+  const commission = Math.round(revenuBrut * commissionRate);
+  const net        = revenuBrut - commission;
+  const total      = myOrders.length;
+
+  // Monthly chart from real data
+  const monthlyData = useMemo(() => {
+    const grouped: Record<string, {brut: number, net: number}> = {};
+    for (const o of myOrders) {
+      const m = MONTH_NAMES[new Date(o.createdAt).getMonth()];
+      if (!grouped[m]) grouped[m] = { brut: 0, net: 0 };
+      grouped[m].brut += o.amount;
+      grouped[m].net  += o.amount - Math.round(o.amount * commissionRate);
+    }
+    // Keep last 6 months in calendar order
+    const last6 = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(); d.setMonth(d.getMonth() - i);
+      const m = MONTH_NAMES[d.getMonth()];
+      last6.push({ month: m, ...(grouped[m] ?? { brut: 0, net: 0 }) });
+    }
+    return last6;
+  }, [myOrders, commissionRate]);
 
   const [filterMethod, setFilterMethod] = useState<PaymentMethod | "">("");
 
   const byMethod = (method: PaymentMethod) =>
-    orders.filter(o => o.paymentMethod === method).length;
-  const wavePct   = Math.round(byMethod("wave")   / total * 100);
-  const orangePct = Math.round(byMethod("orange") / total * 100);
-  const cashPct   = Math.round(byMethod("cash")   / total * 100);
+    myOrders.filter(o => o.paymentMethod === method).length;
+  const wavePct   = total > 0 ? Math.round(byMethod("wave")   / total * 100) : 0;
+  const orangePct = total > 0 ? Math.round(byMethod("orange") / total * 100) : 0;
+  const cashPct   = total > 0 ? Math.round(byMethod("cash")   / total * 100) : 0;
 
-  const transactions = orders
+  const transactions = myOrders
     .filter(o => !filterMethod || o.paymentMethod === filterMethod)
-    .slice(0, 15);
+    .slice(0, 20);
 
   function handleExport() {
     downloadCsv("transactions-yonne.csv", transactions.map(o => {
@@ -88,7 +116,7 @@ export default function FinancesPage() {
       <div className="bg-white rounded-lg border border-cream-200 shadow-card p-5">
         <h2 className="font-semibold text-ink-900 mb-4">Revenus 6 derniers mois</h2>
         <ResponsiveContainer width="100%" height={180}>
-          <BarChart data={MONTHLY} margin={{ top: 5, right: 20, left: 0, bottom: 5 }} barCategoryGap="30%">
+          <BarChart data={monthlyData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }} barCategoryGap="30%">
             <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#8B7363" }} />
             <YAxis tickFormatter={fmt} tick={{ fontSize: 11, fill: "#8B7363" }} width={36} />
             <Tooltip formatter={(v: unknown) => [`${Number(v).toLocaleString("fr-FR")} F`, ""]} />

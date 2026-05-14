@@ -5,7 +5,8 @@ import Image from "next/image";
 import { useDriversStore, avatarUrl } from "@/lib/store/drivers";
 import { useOrdersStore } from "@/lib/store/orders";
 import { useSession } from "@/lib/hooks/useSession";
-import { Trophy, Star } from "lucide-react";
+import Link from "next/link";
+import { Trophy, Star, History } from "lucide-react";
 
 const TIER_STYLE: Record<string, string> = {
   Bronze: "bg-amber-700/15 text-amber-800 border-amber-700/30",
@@ -217,6 +218,10 @@ export default function ClassementPage() {
           </div>
         </div>
       )}
+      <Link href="/driver/historique"
+        className="flex items-center justify-center gap-2 text-xs text-ink-400 hover:text-ink-700 py-2 transition-colors">
+        <History className="w-3.5 h-3.5" /> Voir mon historique complet
+      </Link>
     </div>
   );
 }
