@@ -3,8 +3,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import { useT } from "@/lib/i18n";
-import { useMerchantsStore } from "@/lib/store/merchants";
-import { useSession } from "@/lib/hooks/useSession";
 import { useSupabaseAuthed } from "@/components/providers/SupabaseProvider";
 import { Plus, Pencil, Trash2, X, Check, PackageSearch } from "lucide-react";
 
@@ -48,10 +46,15 @@ type EditState = { id: string; name: string; price: string; category: Category; 
 
 export default function CataloguePage() {
   const supabase = useSupabaseAuthed();
-  const t                             = useT();
-  const session                       = useSession();
-  const { merchants }                 = useMerchantsStore();
-  const merchantId = merchants.find(m => m.email === session?.email)?.id ?? merchants[0]?.id ?? null;
+  const t        = useT();
+
+  const [merchantId, setMerchantId] = useState<string | null>(null);
+
+  useEffect(() => {
+    // RLS "merchant read own row" ensures this returns only the current user's merchant
+    supabase.from("merchants").select("id").limit(1).maybeSingle()
+      .then(({ data }) => { if (data) setMerchantId(data.id); });
+  }, [supabase]);
 
   const [articles,    setArticles]    = useState<Article[]>(INITIAL);
   const [, setSupaLoaded]  = useState(false);

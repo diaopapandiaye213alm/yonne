@@ -4,6 +4,7 @@
 // dans localStorage, jamais exposé à XSS (cookie httpOnly conservé).
 import { createContext, useContext, useMemo } from "react";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { setGlobalAuthToken } from "@/lib/supabase";
 
 const Ctx = createContext<SupabaseClient | null>(null);
 
@@ -14,6 +15,10 @@ export function SupabaseProvider({
   token: string;
   children: React.ReactNode;
 }) {
+  // Set synchronously during render so Zustand stores (drivers, merchants, orders)
+  // already have the authed client before child components run their useEffects.
+  if (token) setGlobalAuthToken(token);
+
   const client = useMemo(
     () =>
       createClient(

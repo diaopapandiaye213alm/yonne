@@ -35,8 +35,11 @@ const DakarMap = dynamic(() => import("@/components/map/DakarMap"), { ssr: false
 
 export default function TrackingPage({ params }: { params: { id: string } }) {
   const supabase = useSupabaseAuthed();
-  const { orders, cancelOrder } = useOrdersStore();
+  const { orders, cancelOrder, loading } = useOrdersStore();
   const order = orders.find(o => o.id === params.id);
+  // RLS filters orders to only the current merchant's — if not found after load, it's not theirs
+  const notFound = !loading && orders.length > 0 && !order;
+
   const status: OrderStatus = order?.status ?? "en route";
   const isCancelled = order?.status === "annulée";
   const canCancel   = order ? order.status !== "livrée" && order.status !== "annulée" : false;
@@ -121,6 +124,16 @@ export default function TrackingPage({ params }: { params: { id: string } }) {
   const waText = encodeURIComponent(
     `Suis ta livraison YONNE en temps réel 🛵 ${typeof window !== "undefined" ? `${window.location.origin}/suivi/${params.id}` : ""}`
   );
+
+  if (notFound) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full gap-3 text-center p-8">
+        <XCircle className="w-12 h-12 text-red-400" />
+        <h2 className="text-lg font-display font-bold text-ink-900">Commande introuvable</h2>
+        <p className="text-sm text-ink-500">Cette commande n&apos;existe pas ou ne vous appartient pas.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] h-full">

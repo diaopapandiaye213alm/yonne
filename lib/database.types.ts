@@ -18,6 +18,7 @@ export interface DriverRow {
   in_prayer: boolean;
   lat: number | null;
   lng: number | null;
+  user_id: string | null;
   created_at: string;
 }
 
@@ -34,6 +35,7 @@ export interface MerchantRow {
   orders_last_month: number;
   revenue_last_month: number;
   joined_at: string | null;
+  user_id: string | null;
   created_at: string;
 }
 
