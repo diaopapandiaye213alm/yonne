@@ -29,11 +29,11 @@ export default function MerchantAccueilPage() {
     return byEmail ?? merchants[0] ?? { name: "—", plan: "Standard", ordersThisMonth: 0, revenueThisMonth: 0, ordersLastMonth: 1, revenueLastMonth: 1 };
   }, [merchants, session?.email]);
   const delivered = orders.filter(o => o.status === "livrée").length;
-  const tauxLivre = Math.round(delivered / orders.length * 100);
+  const tauxLivre = orders.length > 0 ? Math.round(delivered / orders.length * 100) : 0;
   const recent    = [...orders].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5);
 
-  const deltaOrders  = Math.round((merchant.ordersThisMonth  - merchant.ordersLastMonth)  / merchant.ordersLastMonth  * 100);
-  const deltaRevenue = Math.round((merchant.revenueThisMonth - merchant.revenueLastMonth) / merchant.revenueLastMonth * 100);
+  const deltaOrders  = merchant.ordersLastMonth  > 0 ? Math.round((merchant.ordersThisMonth  - merchant.ordersLastMonth)  / merchant.ordersLastMonth  * 100) : 0;
+  const deltaRevenue = merchant.revenueLastMonth > 0 ? Math.round((merchant.revenueThisMonth - merchant.revenueLastMonth) / merchant.revenueLastMonth * 100) : 0;
 
   // Notifier le marchand quand une nouvelle commande arrive en temps réel
   const prevCountRef = useRef(orders.length);

@@ -11,6 +11,7 @@ import { useDriverStore } from "@/lib/store/driver";
 import { DeliveryStepperCard } from "@/components/driver/DeliveryStepperCard";
 import { Button } from "@/components/ui/button";
 import { Phone, QrCode, Navigation2, AlertTriangle, X } from "lucide-react";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import type { Pin } from "@/components/map/DakarMap";
 import { QrScannerModal } from "@/components/driver/QrScannerModal";
@@ -96,7 +97,7 @@ export default function LivraisonPage({ params }: { params: { id: string } }) {
   async function handleIncidentSubmit() {
     if (!incidentType) return;
     setSubmitting(true);
-    await supabase.from("sav_tickets").insert({
+    const { error } = await supabase.from("sav_tickets").insert({
       order_ref:   order.id,
       type:        incidentType,
       description: incidentNote || incidentType,
@@ -105,6 +106,10 @@ export default function LivraisonPage({ params }: { params: { id: string } }) {
       delay:       "—",
     });
     setSubmitting(false);
+    if (error) {
+      toast.error("Impossible de signaler l'incident");
+      return;
+    }
     setSubmitted(true);
     setTimeout(() => { setShowIncident(false); setSubmitted(false); setIncidentType(""); setIncidentNote(""); }, 1500);
   }

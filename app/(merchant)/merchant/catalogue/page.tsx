@@ -62,8 +62,7 @@ export default function CataloguePage() {
   // Sync article list to Supabase
   const syncToSupabase = useCallback(async (next: Article[]) => {
     if (!merchantId) return;
-    // Upsert all articles for this merchant
-    await supabase.from("catalogue_items").upsert(
+    const { error } = await supabase.from("catalogue_items").upsert(
       next.map(a => ({
         id: a.id,
         merchant_id: merchantId,
@@ -75,6 +74,7 @@ export default function CataloguePage() {
       })),
       { onConflict: "id" }
     );
+    if (error) toast.error("Synchronisation échouée — données non sauvegardées");
   }, [merchantId, supabase]);
 
   // Save helper: localStorage + Supabase
@@ -132,10 +132,13 @@ export default function CataloguePage() {
   }
 
   async function deleteArticle(id: string) {
+    if (merchantId) {
+      const { error } = await supabase.from("catalogue_items").delete().eq("id", id);
+      if (error) { toast.error("Impossible de supprimer l'article"); return; }
+    }
     const next = articles.filter(a => a.id !== id);
     setArticles(next);
     saveLocal(next);
-    if (merchantId) await supabase.from("catalogue_items").delete().eq("id", id);
     toast.success("Article supprimé");
   }
 
