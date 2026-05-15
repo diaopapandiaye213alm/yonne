@@ -5,6 +5,7 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useOrdersStore } from "@/lib/store/orders";
 import { useDriversStore } from "@/lib/store/drivers";
+import { useSupabaseAuthed } from "@/components/providers/SupabaseProvider";
 import type { OrderStatus } from "@/lib/mock-data/orders";
 import { landmarks } from "@/lib/mock-data/landmarks";
 import { GlovoTimeline } from "@/components/tracking/GlovoTimeline";
@@ -45,14 +46,16 @@ const NEXT_STATUS: Record<OrderStatus, OrderStatus | null> = {
 };
 
 export default function CommandeDetailPage({ params }: { params: { id: string } }) {
+  const supabase = useSupabaseAuthed();
   const { orders, updateStatus } = useOrdersStore();
   const { drivers } = useDriversStore();
   const order = orders.find(o => o.id === params.id);
   const onlineDrivers = drivers.filter(d => d.online && !d.inPrayer).sort((a, b) => b.scoreIA - a.scoreIA);
 
-  const [showDispatch,    setShowDispatch]    = useState(false);
-  const [driverSearch,    setDriverSearch]    = useState("");
-  const [selectedDriver,  setSelectedDriver]  = useState<string | null>(null);
+  const [showDispatch,       setShowDispatch]       = useState(false);
+  const [driverSearch,       setDriverSearch]       = useState("");
+  const [selectedDriver,     setSelectedDriver]     = useState<string | null>(null);
+  const [dispatchSubmitting, setDispatchSubmitting] = useState(false);
 
   if (!order) return <div className="p-6 text-ink-500">Commande introuvable.</div>;
 
@@ -60,10 +63,21 @@ export default function CommandeDetailPage({ params }: { params: { id: string } 
     !driverSearch || d.name.toLowerCase().includes(driverSearch.toLowerCase())
   );
 
-  function confirmDispatch() {
-    if (!selectedDriver) return;
+  async function confirmDispatch() {
+    if (!selectedDriver || !order) return;
     const d = drivers.find(dr => dr.id === selectedDriver);
-    toast.success(`Livreur ${d?.name ?? selectedDriver} assigné à ${order!.id}`);
+    setDispatchSubmitting(true);
+    const { error } = await supabase
+      .from("orders")
+      .update({ driver_id: selectedDriver, status: "assignée" })
+      .eq("id", order.id);
+    setDispatchSubmitting(false);
+    if (error) {
+      toast.error("Impossible d'assigner le livreur");
+      return;
+    }
+    updateStatus(order.id, "assignée");
+    toast.success(`Livreur ${d?.name ?? selectedDriver} assigné à ${order.id}`);
     setShowDispatch(false);
     setSelectedDriver(null);
   }
@@ -207,9 +221,9 @@ export default function CommandeDetailPage({ params }: { params: { id: string } 
               className="px-4 py-2 rounded-lg border border-cream-200 text-sm text-ink-600 hover:bg-cream-50 transition-colors">
               Annuler
             </button>
-            <button type="button" onClick={confirmDispatch} disabled={!selectedDriver}
+            <button type="button" onClick={confirmDispatch} disabled={!selectedDriver || dispatchSubmitting}
               className="px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-medium transition-colors">
-              Confirmer l&apos;assignation
+              {dispatchSubmitting ? "Assignation…" : "Confirmer l’assignation"}
             </button>
           </div>
         </div>

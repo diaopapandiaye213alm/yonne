@@ -33,11 +33,12 @@ export default function SinistrePage() {
   const [tickets, setTickets] = useState<SavTicketRow[]>([]);
 
   const fetchTickets = useCallback(async () => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("sav_tickets")
       .select("*")
       .order("created_at", { ascending: false })
       .limit(10);
+    if (error) { toast.error("Impossible de charger vos déclarations"); return; }
     if (data) setTickets(data);
   }, [supabase]);
 

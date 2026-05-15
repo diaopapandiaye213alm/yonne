@@ -92,7 +92,8 @@ export default function TrackingPage({ params }: { params: { id: string } }) {
       .select("*")
       .eq("order_id", params.id)
       .order("sent_at")
-      .then(({ data }) => {
+      .then(({ data, error }) => {
+        if (error) { toast.error("Impossible de charger les messages"); return; }
         if (data) setMessages(data as { id: number; from_role: "merchant" | "driver"; text: string; sent_at: string }[]);
       });
 

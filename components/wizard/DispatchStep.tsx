@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useWizard } from "@/lib/store/wizard";
 import { useOrdersStore } from "@/lib/store/orders";
 import { useDriversStore, avatarUrl } from "@/lib/store/drivers";
+import { useMerchantsStore } from "@/lib/store/merchants";
 import type { Driver } from "@/lib/mock-data/drivers";
 import { landmarks } from "@/lib/mock-data/landmarks";
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,7 @@ export function DispatchStep() {
   const router = useRouter();
   const { addOrder } = useOrdersStore();
   const { drivers } = useDriversStore();
+  const { merchants } = useMerchantsStore();
   const [phase, setPhase] = useState<"dispatching" | "assigned">("dispatching");
   const [assignedDriver, setAssignedDriver] = useState<Driver | null>(null);
   const [orderId] = useState(
@@ -42,9 +44,12 @@ export function DispatchStep() {
   }
 
   function handleConfirm() {
+    // RLS guarantees merchants[0] is the current user's merchant
+    const merchantId = merchants[0]?.id;
     addOrder({
       id: orderId,
       driverId: assignedDriver!.id,
+      merchantId,
       landmarkId: w.landmarkId ?? "",
       clientName: w.clientName,
       clientPhone: w.clientPhone,

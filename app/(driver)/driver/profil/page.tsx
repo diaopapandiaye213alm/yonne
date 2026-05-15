@@ -93,12 +93,12 @@ export default function ProfilPage() {
       .from("drivers")
       .update({ phone: editPhone, vehicle: editVehicle })
       .eq("id", demo.id);
-    setEditing(false);
     if (error) {
       toast.error("Erreur lors de la mise à jour");
-    } else {
-      toast.success("Profil mis à jour");
+      return;
     }
+    setEditing(false);
+    toast.success("Profil mis à jour");
   }
 
   return (

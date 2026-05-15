@@ -123,7 +123,7 @@ export const useDriversStore = create<DriversState>((set, get) => ({
   },
 
   setOnline: async (id, online) => {
-    // Optimistic update
+    const prev = get().drivers.find((d) => d.id === id);
     set((s) => ({
       drivers: s.drivers.map((d) => (d.id === id ? { ...d, online } : d)),
     }));
@@ -134,16 +134,17 @@ export const useDriversStore = create<DriversState>((set, get) => ({
         .eq("id", id);
       if (error) throw new Error(error.message);
     } catch (err) {
-      // Rollback
       set((s) => ({
-        drivers: s.drivers.map((d) => (d.id === id ? { ...d, online: !online } : d)),
+        drivers: s.drivers.map((d) =>
+          d.id === id ? { ...d, online: prev?.online ?? !online } : d
+        ),
         error: err instanceof Error ? err.message : "Erreur mise à jour disponibilité",
       }));
     }
   },
 
   setInPrayer: async (id, inPrayer) => {
-    // Optimistic update
+    const prev = get().drivers.find((d) => d.id === id);
     set((s) => ({
       drivers: s.drivers.map((d) =>
         d.id === id ? { ...d, inPrayer, online: !inPrayer } : d
@@ -152,14 +153,15 @@ export const useDriversStore = create<DriversState>((set, get) => ({
     try {
       const { error } = await supabase
         .from("drivers")
-        .update({ in_prayer: inPrayer, online: inPrayer ? false : true })
+        .update({ in_prayer: inPrayer, online: !inPrayer })
         .eq("id", id);
       if (error) throw new Error(error.message);
     } catch (err) {
-      // Rollback
       set((s) => ({
         drivers: s.drivers.map((d) =>
-          d.id === id ? { ...d, inPrayer: !inPrayer, online: inPrayer } : d
+          d.id === id
+            ? { ...d, inPrayer: prev?.inPrayer ?? !inPrayer, online: prev?.online ?? !inPrayer }
+            : d
         ),
         error: err instanceof Error ? err.message : "Erreur mode prière",
       }));
