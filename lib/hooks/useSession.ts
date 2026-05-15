@@ -15,20 +15,51 @@ function notify(s: SessionState) {
 }
 
 let _fetchPromise: Promise<void> | null = null;
+let _retryCount = 0;
+const MAX_RETRIES = 3;
+let _retryTimeoutId: ReturnType<typeof setTimeout> | null = null;
+
+function scheduleRetry(delayMs: number) {
+  _retryTimeoutId = setTimeout(() => {
+    _retryTimeoutId = null;
+    _fetchPromise = null;
+    ensureFetched();
+  }, delayMs);
+}
 
 function ensureFetched() {
   if (_resolved || _fetchPromise) return;
   _fetchPromise = fetch("/api/auth/me")
     .then(r => (r.ok ? r.json() : null))
-    .then(data => { _resolved = true; notify(data as SessionState); })
-    .catch(() => { _resolved = true; notify(null); });
+    .then(data => {
+      _resolved = true;
+      _retryCount = 0;
+      notify(data as SessionState);
+    })
+    .catch(() => {
+      _fetchPromise = null;
+      if (_retryCount < MAX_RETRIES) {
+        const delay = Math.min(1000 * 2 ** _retryCount, 8000);
+        _retryCount++;
+        scheduleRetry(delay);
+      } else {
+        _resolved = true;
+        _retryCount = 0;
+        notify(null);
+      }
+    });
 }
 
 // Call on logout so that the next login gets a fresh session fetch.
 export function clearSession() {
+  if (_retryTimeoutId !== null) {
+    clearTimeout(_retryTimeoutId);
+    _retryTimeoutId = null;
+  }
   _resolved = false;
   _session = null;
   _fetchPromise = null;
+  _retryCount = 0;
   notify(null);
 }
 

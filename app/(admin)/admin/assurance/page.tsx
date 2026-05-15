@@ -5,6 +5,7 @@ import { Shield, AlertTriangle, TrendingUp, Banknote, ExternalLink, CheckCircle2
 import { useOrdersStore } from "@/lib/store/orders";
 import { useT } from "@/lib/i18n";
 import { useSupabaseAuthed } from "@/components/providers/SupabaseProvider";
+import { toast } from "sonner";
 import type { SavTicketRow } from "@/lib/database.types";
 
 const INSURANCE_RATE = 0.005;
@@ -30,7 +31,10 @@ export default function AssurancePage() {
       .select("*")
       .order("created_at", { ascending: false })
       .limit(20)
-      .then(({ data }) => { if (data) setSinistres(data); });
+      .then(
+        ({ data }) => { if (data) setSinistres(data); },
+        () => toast.error("Impossible de charger les sinistres")
+      );
   }, [supabase]);
 
   const stats = useMemo(() => {

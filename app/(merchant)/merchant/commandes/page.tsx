@@ -111,7 +111,9 @@ export default function MesCommandesPage() {
               title="Copier le lien tracking"
               onClick={() => {
                 const url = `${trackingBase}/suivi/${o.id}`;
-                navigator.clipboard.writeText(url).then(() => toast.success("Lien copié !"));
+                navigator.clipboard.writeText(url)
+                  .then(() => toast.success("Lien copié !"))
+                  .catch(() => toast.error("Impossible de copier le lien"));
               }}
               className="p-1.5 rounded-md text-ink-300 hover:text-emerald-600 hover:bg-emerald-50 transition-colors"
             >

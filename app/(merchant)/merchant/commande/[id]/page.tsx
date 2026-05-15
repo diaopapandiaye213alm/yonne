@@ -92,6 +92,7 @@ export default function TrackingPage({ params }: { params: { id: string } }) {
 
   const [messages, setMessages] = useState<{ id: number; from_role: "merchant" | "driver"; text: string; sent_at: string }[]>([]);
   const [chatInput, setChatInput] = useState("");
+  const [sendingMsg, setSendingMsg] = useState(false);
 
   useEffect(() => {
     supabase
@@ -99,10 +100,13 @@ export default function TrackingPage({ params }: { params: { id: string } }) {
       .select("*")
       .eq("order_id", params.id)
       .order("sent_at")
-      .then(({ data, error }) => {
-        if (error) { toast.error("Impossible de charger les messages"); return; }
-        if (data) setMessages(data as { id: number; from_role: "merchant" | "driver"; text: string; sent_at: string }[]);
-      });
+      .then(
+        ({ data, error }) => {
+          if (error) { toast.error("Impossible de charger les messages"); return; }
+          if (data) setMessages(data as { id: number; from_role: "merchant" | "driver"; text: string; sent_at: string }[]);
+        },
+        () => toast.error("Impossible de charger les messages")
+      );
 
     const channel = supabase
       .channel(`order_messages_${params.id}`)
@@ -120,13 +124,15 @@ export default function TrackingPage({ params }: { params: { id: string } }) {
 
   async function sendMessage() {
     const text = chatInput.trim();
-    if (!text) return;
-    setChatInput("");
+    if (!text || sendingMsg) return;
+    setSendingMsg(true);
     const { error } = await supabase.from("order_messages").insert({ order_id: params.id, from_role: "merchant", text });
+    setSendingMsg(false);
     if (error) {
-      setChatInput(text);
       toast.error("Impossible d'envoyer le message");
+      return;
     }
+    setChatInput("");
   }
 
   const pins = [
@@ -191,9 +197,9 @@ export default function TrackingPage({ params }: { params: { id: string } }) {
                 placeholder="Envoyer un message…"
                 className="flex-1 border border-cream-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-emerald-400"
               />
-              <button type="button" onClick={sendMessage} disabled={!chatInput.trim()}
+              <button type="button" onClick={sendMessage} disabled={!chatInput.trim() || sendingMsg}
                 className="bg-emerald-500 hover:bg-emerald-600 disabled:opacity-40 text-white rounded-lg px-3 py-2">
-                <Send className="w-3.5 h-3.5" />
+                {sendingMsg ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
               </button>
             </div>
           </div>

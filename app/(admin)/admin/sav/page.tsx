@@ -7,7 +7,7 @@ import { useSupabaseAuthed } from "@/components/providers/SupabaseProvider";
 
 type Status = "ouvert" | "en cours" | "résolu";
 type MsgFrom = "client" | "admin";
-type Msg = { from: MsgFrom; text: string; time: string };
+type Msg = { id: number; from: MsgFrom; text: string; time: string };
 
 type Ticket = {
   id: string; ref: string; type: string; description: string;
@@ -66,7 +66,7 @@ function TicketCard({ ticket, supabase, onTake, onResolve }: {
       toast.error("Impossible d'envoyer la réponse");
       return;
     }
-    setMsgs(prev => [...prev, { from: "admin", text, time: now() }]);
+    setMsgs(prev => [...prev, { id: -(Date.now()), from: "admin", text, time: now() }]);
     toast.success("Réponse envoyée au client via WhatsApp");
   }
 
@@ -122,8 +122,8 @@ function TicketCard({ ticket, supabase, onTake, onResolve }: {
       {open && (
         <div className="border-t border-cream-100 bg-[#E5DDD5]">
           <div className="max-h-64 overflow-y-auto p-4 space-y-3">
-            {msgs.map((m, i) => (
-              <div key={i} className={`flex gap-2 ${m.from === "admin" ? "flex-row-reverse" : ""}`}>
+            {msgs.map((m) => (
+              <div key={m.id} className={`flex gap-2 ${m.from === "admin" ? "flex-row-reverse" : ""}`}>
                 <div className="shrink-0 mt-0.5">
                   {m.from === "client"
                     ? <UserCircle className="w-7 h-7 text-ink-400" />
@@ -175,7 +175,7 @@ export default function SavPage() {
       const { data: trows } = await supabase.from("sav_tickets").select("*").order("created_at", { ascending: false });
       const { data: mrows } = await supabase.from("sav_messages").select("*").order("sent_at");
       if (!trows) return;
-      const msgs = (mrows ?? []) as { ticket_id: string; from_role: string; text: string; sent_at: string }[];
+      const msgs = (mrows ?? []) as { id: number; ticket_id: string; from_role: string; text: string; sent_at: string }[];
       setTickets(trows.map(r => ({
         id: r.id as string,
         ref: (r.order_ref as string) ?? "—",
@@ -186,13 +186,14 @@ export default function SavPage() {
         date: fmtDate(r.created_at as string),
         delay: (r.delay as string) ?? "—",
         messages: msgs.filter(m => m.ticket_id === r.id).map(m => ({
+          id: m.id as number,
           from: m.from_role as MsgFrom,
           text: m.text,
           time: fmtTime(m.sent_at),
         })),
       })));
     }
-    load();
+    load().catch(() => toast.error("Impossible de charger les tickets SAV"));
   }, [supabase]);
 
   const visible = filter === "tous" ? tickets : tickets.filter(tk => tk.status === filter);

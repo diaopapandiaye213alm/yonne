@@ -78,7 +78,10 @@ export default function CataloguePage() {
   useEffect(() => {
     // RLS "merchant read own row" ensures this returns only the current user's merchant
     supabase.from("merchants").select("id").limit(1).maybeSingle()
-      .then(({ data }) => { if (data) setMerchantId(data.id); });
+      .then(
+        ({ data }) => { if (data) setMerchantId(data.id); },
+        () => toast.error("Impossible de charger le catalogue")
+      );
   }, [supabase]);
 
   const [articles,    setArticles]    = useState<Article[]>(INITIAL);

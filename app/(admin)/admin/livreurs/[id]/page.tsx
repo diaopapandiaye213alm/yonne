@@ -9,6 +9,7 @@ import type { Tier } from "@/lib/mock-data/drivers";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { useSupabaseAuthed } from "@/components/providers/SupabaseProvider";
+import { REALTIME_SUBSCRIBE_STATES } from "@supabase/supabase-js";
 import {
   ArrowLeft, Star, Bike, Package,
   Edit2, Check, X, MessageSquare, Send, Phone,
@@ -79,10 +80,13 @@ export default function LivreurDetailPage({ params }: { params: { id: string } }
       .eq("subject_type", "driver")
       .eq("subject_id", params.id)
       .order("sent_at")
-      .then(({ data, error }) => {
-        if (error) { toast.error("Impossible de charger les messages"); return; }
-        if (data) setChat(data as ChatMessage[]);
-      });
+      .then(
+        ({ data, error }) => {
+          if (error) { toast.error("Impossible de charger les messages"); return; }
+          if (data) setChat(data as ChatMessage[]);
+        },
+        () => toast.error("Impossible de charger les messages")
+      );
 
     const channel = supabase
       .channel(`admin_messages_driver_${params.id}`)
@@ -92,7 +96,11 @@ export default function LivreurDetailPage({ params }: { params: { id: string } }
       }, (payload) => {
         setChat(prev => [...prev, payload.new as ChatMessage]);
       })
-      .subscribe();
+      .subscribe((status) => {
+        if (status === REALTIME_SUBSCRIBE_STATES.CHANNEL_ERROR) {
+          console.error("[Realtime] admin_messages subscription failed — driver:", params.id);
+        }
+      });
 
     return () => { supabase.removeChannel(channel); };
   }, [params.id, supabase]);

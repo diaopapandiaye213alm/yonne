@@ -147,10 +147,18 @@ export default function CartePage() {
         if (now - lastGpsSend.current > 10000 && demo?.id) {
           lastGpsSend.current = now;
           void supabase.from("drivers").update({ lat, lng }).eq("id", demo.id)
-            .then(({ error }) => { if (error) console.error("[GPS] update failed:", error.message); });
+            .then(
+              ({ error }) => { if (error) console.error("[GPS] update failed:", error.message); },
+              (err: unknown) => console.error("[GPS] network error:", err)
+            );
         }
       },
-      () => { setGpsActive(false); },
+      (err) => {
+        setGpsActive(false);
+        if (err.code !== err.PERMISSION_DENIED) {
+          toast.error("GPS indisponible — position approximative utilisée");
+        }
+      },
       { enableHighAccuracy: true, maximumAge: 5000 }
     );
     return () => {
@@ -170,13 +178,13 @@ export default function CartePage() {
   const currentOrder = allOrders[Math.min(orderIndex, allOrders.length - 1)] ?? allOrders[0];
   const driverPos: [number, number] = gpsActive ? gpsPos : defaultPos;
 
-  const pins: Pin[] = [
+  const pins = useMemo<Pin[]>(() => [
     { id: "driver", lat: driverPos[0], lng: driverPos[1], kind: "driver" },
     ...allOrders.map((o) => {
       const lm = landmarks.find((l) => l.id === o.pickupLandmarkId) ?? landmarks[0];
       return { id: o.id, lat: lm.lat, lng: lm.lng, kind: "order" as const };
     }),
-  ];
+  ], [driverPos, allOrders]);
 
   function handlePinClick(pinId: string) {
     const idx = allOrders.findIndex((o) => o.id === pinId);

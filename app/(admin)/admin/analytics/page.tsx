@@ -65,14 +65,16 @@ export default function AnalyticsPage() {
 
   useEffect(() => { setLiveCount(ordersToday); }, [ordersToday]);
 
-  // Deterministic per-cell noise based on (day, hour) hash — no random per render.
+  // Deterministic per-cell noise using Mulberry32 PRNG — consistent with engine.ts pattern.
   const heatmap = useMemo(() => {
-    function deterministicNoise(seed: number): number {
-      let h = seed;
-      h = (h ^ (h >>> 16)) * 0x45d9f3b;
-      h = (h ^ (h >>> 16)) * 0x45d9f3b;
-      h = h ^ (h >>> 16);
-      return ((h >>> 0) % 100) / 100; // [0, 1)
+    function mulberry32(seed: number): () => number {
+      let s = seed >>> 0;
+      return function() {
+        s = (s + 0x6D2B79F5) >>> 0;
+        let t = Math.imul(s ^ (s >>> 15), 1 | s);
+        t = t + Math.imul(t ^ (t >>> 7), 61 | t) ^ t;
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
     }
     return Array.from({ length: 7 }, (_, d) =>
       Array.from({ length: 24 }, (_, h) => {
@@ -80,7 +82,7 @@ export default function AnalyticsPage() {
         const weekend = d >= 5;
         const base    = active ? (weekend ? 0.4 : 0.3) : 0.02;
         const peak    = (h >= 11 && h <= 13) || (h >= 18 && h <= 20) ? 0.5 : 0;
-        const noise   = deterministicNoise(d * 24 + h) * 0.2;
+        const noise   = mulberry32(d * 24 + h)() * 0.2;
         const intensity = Math.min(1, base + peak + noise);
         return Math.round(intensity * 9) / 9;
       })

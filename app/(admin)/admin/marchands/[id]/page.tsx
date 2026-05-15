@@ -8,6 +8,7 @@ import { useOrdersStore } from "@/lib/store/orders";
 import { ArrowLeft, FileText, TrendingUp, TrendingDown, MessageSquare, Send, Download, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { useSupabaseAuthed } from "@/components/providers/SupabaseProvider";
+import { REALTIME_SUBSCRIBE_STATES } from "@supabase/supabase-js";
 
 const PLAN_COLORS = {
   Standard: "bg-cream-200 text-ink-700",
@@ -37,10 +38,13 @@ export default function MarchandDetailPage({ params }: { params: { id: string } 
       .eq("subject_type", "merchant")
       .eq("subject_id", params.id)
       .order("sent_at")
-      .then(({ data, error }) => {
-        if (error) { toast.error("Impossible de charger les messages"); return; }
-        if (data) setChat(data as ChatMessage[]);
-      });
+      .then(
+        ({ data, error }) => {
+          if (error) { toast.error("Impossible de charger les messages"); return; }
+          if (data) setChat(data as ChatMessage[]);
+        },
+        () => toast.error("Impossible de charger les messages")
+      );
 
     const channel = supabase
       .channel(`admin_messages_merchant_${params.id}`)
@@ -50,7 +54,11 @@ export default function MarchandDetailPage({ params }: { params: { id: string } 
       }, (payload) => {
         setChat(prev => [...prev, payload.new as ChatMessage]);
       })
-      .subscribe();
+      .subscribe((status) => {
+        if (status === REALTIME_SUBSCRIBE_STATES.CHANNEL_ERROR) {
+          console.error("[Realtime] admin_messages subscription failed — merchant:", params.id);
+        }
+      });
 
     return () => { supabase.removeChannel(channel); };
   }, [params.id, supabase]);

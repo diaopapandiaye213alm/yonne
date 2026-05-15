@@ -10,6 +10,7 @@ import { WeeklyEarningsChart } from "@/components/driver/WeeklyEarningsChart";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
+import { toast } from "sonner";
 import { useT } from "@/lib/i18n";
 import { Smartphone, Banknote, ChevronRight, Star, MapPin, Target, X, CheckCircle2, Loader2 } from "lucide-react";
 
@@ -81,29 +82,37 @@ export default function GainsPage() {
   const [withdrawPhone, setWithdrawPhone] = useState("");
   const [withdrawStep, setWithdrawStep] = useState<"form" | "processing" | "done">("form");
   const [retraitHistory, setRetraitHistory] = useState<RetraitEntry[]>([]);
+  const [historyLoaded, setHistoryLoaded] = useState(false);
   useEffect(() => {
-    // Load from localStorage immediately (instant)
+    // Load from localStorage immediately (instant, no layout shift)
     setRetraitHistory(loadLocalHistory());
-    // Then hydrate from Supabase if driver ID is known
-    if (!demo.id) return;
+    if (!demo.id) { setHistoryLoaded(true); return; }
     supabase
       .from("driver_withdrawals")
       .select("id, amount, phone, provider, created_at")
       .eq("driver_id", demo.id)
       .order("created_at", { ascending: false })
       .limit(10)
-      .then(({ data }) => {
-        if (!data || data.length === 0) return;
-        const entries: RetraitEntry[] = data.map(r => ({
-          id: r.id as string,
-          amount: r.amount as number,
-          phone: r.phone as string,
-          provider: r.provider as "wave" | "orange",
-          date: new Date(r.created_at as string).toLocaleDateString("fr-FR"),
-        }));
-        setRetraitHistory(entries);
-        try { localStorage.setItem(RETRAIT_KEY, JSON.stringify(entries)); } catch { /* ignore */ }
-      });
+      .then(
+        ({ data }) => {
+          if (data && data.length > 0) {
+            const entries: RetraitEntry[] = data.map(r => ({
+              id: r.id as string,
+              amount: r.amount as number,
+              phone: r.phone as string,
+              provider: r.provider as "wave" | "orange",
+              date: new Date(r.created_at as string).toLocaleDateString("fr-FR"),
+            }));
+            setRetraitHistory(entries);
+            try { localStorage.setItem(RETRAIT_KEY, JSON.stringify(entries)); } catch { /* ignore */ }
+          }
+          setHistoryLoaded(true);
+        },
+        () => {
+          toast.error("Impossible de charger l'historique des retraits");
+          setHistoryLoaded(true);
+        }
+      );
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [demo.id]);
 
@@ -130,6 +139,7 @@ export default function GainsPage() {
     });
     if (error) {
       setWithdrawStep("form");
+      toast.error("Impossible d'effectuer le virement. Réessayez.");
       return;
     }
     const entry: RetraitEntry = {
@@ -334,7 +344,7 @@ export default function GainsPage() {
         </div>
       </div>
 
-      {retraitHistory.length > 0 && (
+      {historyLoaded && retraitHistory.length > 0 && (
         <div className="bg-white rounded-lg border border-cream-200 p-4 space-y-3">
           <h2 className="font-display font-semibold text-ink-900 text-sm">Historique des retraits</h2>
           <div className="divide-y divide-cream-50">
