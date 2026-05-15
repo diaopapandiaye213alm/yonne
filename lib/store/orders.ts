@@ -6,6 +6,7 @@ import { sendSms } from "@/lib/sms";
 interface OrdersState {
   orders: Order[];
   loading: boolean;
+  error: string | null;
   fetchOrders: () => Promise<void>;
   addOrder: (order: Order) => Promise<void>;
   updateStatus: (id: string, status: OrderStatus) => Promise<void>;
@@ -20,13 +21,18 @@ function rowToOrder(row: Record<string, unknown>): Order {
     landmarkId:    (row.landmark_id as string) ?? "",
     clientName:    (row.client_name as string) ?? "",
     clientPhone:   (row.client_phone as string) ?? "",
-    amount:        row.amount as number,
+    amount:        (row.amount as number) ?? 0,
     paymentMethod: (row.payment_method as Order["paymentMethod"]) ?? "cash",
-    insurance:     row.insurance as boolean,
-    status:        row.status as OrderStatus,
-    active:        row.active as boolean,
-    createdAt:     row.created_at as string,
+    insurance:     (row.insurance as boolean) ?? false,
+    status:        (row.status as OrderStatus) ?? "créée",
+    active:        (row.active as boolean) ?? false,
+    createdAt:     (row.created_at as string) ?? new Date().toISOString(),
   };
+}
+
+// Guard: rejects null / non-object payloads before rowToOrder is called
+function isValidRow(row: unknown): row is Record<string, unknown> {
+  return typeof row === "object" && row !== null && "id" in (row as object);
 }
 
 let realtimeSubscribed = false;
@@ -34,22 +40,31 @@ let realtimeSubscribed = false;
 export const useOrdersStore = create<OrdersState>((set, get) => ({
   orders: [],
   loading: false,
+  error: null,
 
   fetchOrders: async () => {
     if (get().loading) return;
-    set({ loading: true });
-    const { data, error } = await supabase
-      .from("orders")
-      .select("*")
-      .order("created_at", { ascending: false });
-    if (!error && data) set({ orders: data.map(rowToOrder) });
-    set({ loading: false });
+    set({ loading: true, error: null });
+    try {
+      const { data, error } = await supabase
+        .from("orders")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) throw new Error(error.message);
+      set({ orders: (data ?? []).map(rowToOrder) });
+    } catch (err) {
+      set({ error: err instanceof Error ? err.message : "Erreur réseau" });
+    } finally {
+      set({ loading: false });
+    }
 
     if (!realtimeSubscribed) {
       realtimeSubscribed = true;
       supabase
         .channel("orders-rt")
         .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => {
+          // Any change → refetch. No payload processing = no crash from malformed rows.
           get().fetchOrders();
         })
         .subscribe();
@@ -57,60 +72,97 @@ export const useOrdersStore = create<OrdersState>((set, get) => ({
   },
 
   addOrder: async (order) => {
-    const { error } = await supabase.from("orders").insert({
-      id:             order.id,
-      driver_id:      order.driverId,
-      landmark_id:    order.landmarkId,
-      client_name:    order.clientName,
-      client_phone:   order.clientPhone,
-      amount:         order.amount,
-      payment_method: order.paymentMethod,
-      insurance:      order.insurance,
-      status:         order.status,
-      active:         order.active,
-      created_at:     order.createdAt,
-    });
-    if (!error) {
+    try {
+      const { error } = await supabase.from("orders").insert({
+        id:             order.id,
+        driver_id:      order.driverId || null,
+        merchant_id:    order.merchantId ?? null,
+        landmark_id:    order.landmarkId,
+        client_name:    order.clientName,
+        client_phone:   order.clientPhone,
+        amount:         order.amount,
+        payment_method: order.paymentMethod,
+        insurance:      order.insurance,
+        status:         order.status,
+        active:         order.active,
+        created_at:     order.createdAt,
+      });
+
+      if (error) throw new Error(error.message);
+
+      // Optimistic: prepend to local list
       set((s) => ({ orders: [order, ...s.orders] }));
-      // Notify driver via SMS if assigned
+
+      // Non-blocking SMS to driver (fire-and-forget)
       if (order.driverId) {
-        const { data: driverData } = await supabase
-          .from("drivers")
-          .select("phone,name")
-          .eq("id", order.driverId)
-          .single();
-        if (driverData?.phone) {
-          await sendSms(
-            driverData.phone,
-            `Nouvelle commande YONNE 📦 ${order.id} — ${order.clientName} — ${order.amount.toLocaleString("fr-FR")} F. Connectez-vous pour accepter.`
-          );
-        }
+        void (async () => {
+          try {
+            const { data: d } = await supabase
+              .from("drivers")
+              .select("phone,name")
+              .eq("id", order.driverId)
+              .single();
+            if (d?.phone) {
+              await sendSms(
+                d.phone,
+                `Nouvelle commande YONNE 📦 ${order.id} — ${order.clientName} — ${order.amount.toLocaleString("fr-FR")} F. Connectez-vous pour accepter.`
+              );
+            }
+          } catch {/* non-critical */}
+        })();
       }
+    } catch (err) {
+      set({ error: err instanceof Error ? err.message : "Impossible de créer la commande" });
     }
   },
 
   updateStatus: async (id, status) => {
-    const { error } = await supabase
-      .from("orders")
-      .update({ status })
-      .eq("id", id);
-    if (!error)
-      set((s) => ({
-        orders: s.orders.map((o) => (o.id === id ? { ...o, status } : o)),
-      }));
+    // Optimistic update first for snappy UI, rollback on error
+    const previous = get().orders.find((o) => o.id === id);
+    set((s) => ({
+      orders: s.orders.map((o) => (o.id === id ? { ...o, status } : o)),
+    }));
+    try {
+      const { error } = await supabase
+        .from("orders")
+        .update({ status })
+        .eq("id", id);
+      if (error) throw new Error(error.message);
+    } catch (err) {
+      // Rollback
+      if (previous) {
+        set((s) => ({
+          orders: s.orders.map((o) => (o.id === id ? previous : o)),
+          error: err instanceof Error ? err.message : "Erreur mise à jour statut",
+        }));
+      }
+    }
   },
 
   cancelOrder: async (id) => {
-    const { error } = await supabase
-      .from("orders")
-      .update({ active: false, status: "annulée" })
-      .eq("id", id)
-      .not("status", "eq", "livrée");
-    if (!error)
-      set((s) => ({
-        orders: s.orders.map((o) =>
-          o.id === id && o.status !== "livrée" ? { ...o, active: false, status: "annulée" as OrderStatus } : o
-        ),
-      }));
+    const previous = get().orders.find((o) => o.id === id);
+    set((s) => ({
+      orders: s.orders.map((o) =>
+        o.id === id && o.status !== "livrée"
+          ? { ...o, active: false, status: "annulée" as OrderStatus }
+          : o
+      ),
+    }));
+    try {
+      const { error } = await supabase
+        .from("orders")
+        .update({ active: false, status: "annulée" })
+        .eq("id", id)
+        .not("status", "eq", "livrée");
+      if (error) throw new Error(error.message);
+    } catch (err) {
+      // Rollback
+      if (previous) {
+        set((s) => ({
+          orders: s.orders.map((o) => (o.id === id ? previous : o)),
+          error: err instanceof Error ? err.message : "Impossible d'annuler la commande",
+        }));
+      }
+    }
   },
 }));
