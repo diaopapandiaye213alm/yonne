@@ -1,13 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
-import { createClient } from "@supabase/supabase-js";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 import { signToken } from "@/lib/auth";
 import { sendSms } from "@/lib/sms";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
 
 function shortId(): string {
   return crypto.randomUUID().slice(0, 8);
@@ -42,7 +37,7 @@ export async function POST(req: NextRequest) {
   if (role !== "merchant" && role !== "driver")
     return NextResponse.json({ error: "Rôle invalide" }, { status: 400 });
 
-  const { data: existing } = await supabase
+  const { data: existing } = await supabaseAdmin
     .from("users")
     .select("email")
     .eq("email", email)
@@ -54,31 +49,39 @@ export async function POST(req: NextRequest) {
   const password_hash = await bcrypt.hash(password, 10);
   const redirectUrl   = role === "merchant" ? "/merchant/onboarding" : "/driver/carte";
 
-  const { error: userErr } = await supabase.from("users").insert({
-    email,
-    password_hash,
-    role,
-    display_name: name,
-    redirect_url: redirectUrl,
-  });
+  // Insérer l'utilisateur et récupérer son UUID (devient le `sub` du JWT)
+  const { data: newUser, error: userErr } = await supabaseAdmin
+    .from("users")
+    .insert({
+      email,
+      password_hash,
+      role,
+      display_name: name,
+      redirect_url: redirectUrl,
+    })
+    .select("id")
+    .single();
 
-  if (userErr)
+  if (userErr || !newUser)
     return NextResponse.json({ error: "Erreur lors de la création du compte" }, { status: 500 });
 
+  const userId = newUser.id as string;
+
   if (role === "merchant") {
-    const { error: mErr } = await supabase.from("merchants").insert({
-      id:     "mch-" + shortId(),
+    const { error: mErr } = await supabaseAdmin.from("merchants").insert({
+      id:      "mch-" + shortId(),
       name,
       email,
       phone,
       city,
-      plan:   "Standard",
-      status: "actif",
+      plan:    "Standard",
+      status:  "actif",
+      user_id: userId,   // FK → users.id pour les RLS
     });
     if (mErr)
       return NextResponse.json({ error: "Erreur lors de la création du profil marchand" }, { status: 500 });
   } else {
-    const { error: dErr } = await supabase.from("drivers").insert({
+    const { error: dErr } = await supabaseAdmin.from("drivers").insert({
       id:             "drv-" + shortId(),
       name,
       phone,
@@ -93,12 +96,13 @@ export async function POST(req: NextRequest) {
       in_prayer:      false,
       lat:            14.6928,
       lng:            -17.4467,
+      user_id:        userId,   // FK → users.id pour les RLS
     });
     if (dErr)
       return NextResponse.json({ error: "Erreur lors de la création du profil livreur" }, { status: 500 });
   }
 
-  // Send welcome SMS (non-blocking)
+  // SMS de bienvenue (non-bloquant)
   if (phone) {
     const welcomeMsg = role === "driver"
       ? `Bienvenue sur YONNE ${name} ! Votre compte livreur est actif. Connectez-vous sur yonne-sigma.vercel.app 🛵`
@@ -106,7 +110,12 @@ export async function POST(req: NextRequest) {
     void sendSms(phone, welcomeMsg);
   }
 
-  const token = await signToken({ email, role: role as "merchant" | "driver", displayName: name });
+  const token = await signToken({
+    userId,
+    email,
+    role: role as "merchant" | "driver",
+    displayName: name,
+  });
 
   const res = NextResponse.json({ ok: true, redirectUrl });
   res.cookies.set("yonne_session", token, {

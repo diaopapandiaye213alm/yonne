@@ -25,6 +25,7 @@ create table if not exists drivers (
   in_prayer       boolean     default false,
   lat             numeric(9,6),
   lng             numeric(9,6),
+  user_id         uuid        references users(id) on delete set null,
   created_at      timestamptz default now()
 );
 
@@ -45,6 +46,7 @@ create table if not exists merchants (
   revenue_last_month   integer     default 0,
   joined_at            date        default current_date,
   onboarding_done      boolean     default false,
+  user_id              uuid        references users(id) on delete set null,
   created_at           timestamptz default now()
 );
 

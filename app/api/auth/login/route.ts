@@ -1,12 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
-import { createClient } from "@supabase/supabase-js";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 import { signToken } from "@/lib/auth";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
 
 const ROLE_REDIRECTS: Record<string, string> = {
   admin:    "/admin",
@@ -27,9 +22,10 @@ export async function POST(req: NextRequest) {
   if (!email || !password)
     return NextResponse.json({ error: "Champs requis manquants" }, { status: 400 });
 
-  const { data, error } = await supabase
+  // Lire via le client admin pour bypasser RLS sur la table users
+  const { data, error } = await supabaseAdmin
     .from("users")
-    .select("email, password_hash, role, display_name, redirect_url")
+    .select("id, email, password_hash, role, display_name, redirect_url")
     .eq("email", email)
     .single();
 
@@ -40,11 +36,13 @@ export async function POST(req: NextRequest) {
   if (!valid)
     return NextResponse.json({ error: "Identifiants invalides" }, { status: 401 });
 
+  const userId      = data.id as string;
   const role        = data.role as "admin" | "merchant" | "driver";
   const displayName = (data.display_name as string) ?? email;
   const redirect    = (data.redirect_url as string) ?? ROLE_REDIRECTS[role] ?? "/";
 
-  const token = await signToken({ email: data.email as string, role, displayName });
+  // userId → claim `sub` du JWT → auth.uid() dans les policies RLS Postgres
+  const token = await signToken({ userId, email: data.email as string, role, displayName });
 
   const res = NextResponse.json({ role, redirect });
   res.cookies.set("yonne_session", token, {
