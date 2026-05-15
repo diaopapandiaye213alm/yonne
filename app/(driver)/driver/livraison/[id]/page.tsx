@@ -14,7 +14,7 @@ import { Phone, QrCode, Navigation2, AlertTriangle, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Pin } from "@/components/map/DakarMap";
 import { QrScannerModal } from "@/components/driver/QrScannerModal";
-import { supabase } from "@/lib/supabase";
+import { useSupabaseAuthed } from "@/components/providers/SupabaseProvider";
 
 const DakarMap = dynamic(() => import("@/components/map/DakarMap"), {
   ssr: false,
@@ -24,6 +24,7 @@ const DakarMap = dynamic(() => import("@/components/map/DakarMap"), {
 });
 
 export default function LivraisonPage({ params }: { params: { id: string } }) {
+  const supabase = useSupabaseAuthed();
   const router  = useRouter();
   const session = useSession();
   const { drivers } = useDriversStore();

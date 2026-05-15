@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { useT } from "@/lib/i18n";
 import { useMerchantsStore } from "@/lib/store/merchants";
 import { useSession } from "@/lib/hooks/useSession";
-import { supabase } from "@/lib/supabase";
+import { useSupabaseAuthed } from "@/components/providers/SupabaseProvider";
 import { Plus, Pencil, Trash2, X, Check, PackageSearch } from "lucide-react";
 
 type Category = "Nourriture" | "Textile" | "Électronique" | "Pharmacie" | "Autre";
@@ -47,6 +47,7 @@ function saveLocal(articles: Article[]) {
 type EditState = { id: string; name: string; price: string; category: Category; stock: string } | null;
 
 export default function CataloguePage() {
+  const supabase = useSupabaseAuthed();
   const t                             = useT();
   const session                       = useSession();
   const { merchants }                 = useMerchantsStore();

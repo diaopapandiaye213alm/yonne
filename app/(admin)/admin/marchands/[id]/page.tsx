@@ -7,7 +7,7 @@ import { useMerchantsStore } from "@/lib/store/merchants";
 import { useOrdersStore } from "@/lib/store/orders";
 import { ArrowLeft, FileText, TrendingUp, TrendingDown, MessageSquare, Send, Download } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/lib/supabase";
+import { useSupabaseAuthed } from "@/components/providers/SupabaseProvider";
 
 const PLAN_COLORS = {
   Standard: "bg-cream-200 text-ink-700",
@@ -26,6 +26,7 @@ const INIT_CHAT = [
 ];
 
 export default function MarchandDetailPage({ params }: { params: { id: string } }) {
+  const supabase = useSupabaseAuthed();
   const { merchants } = useMerchantsStore();
   const { orders }    = useOrdersStore();
   const merchant = merchants.find(m => m.id === params.id);

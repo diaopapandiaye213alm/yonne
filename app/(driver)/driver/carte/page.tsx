@@ -13,7 +13,7 @@ import type { Pin } from "@/components/map/DakarMap";
 import { triggerOrderNotification } from "@/components/driver/PushNotifBanner";
 import { simulationEngine } from "@/lib/simulation/engine";
 import { Navigation } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { useSupabaseAuthed } from "@/components/providers/SupabaseProvider";
 
 const DakarMap = dynamic(() => import("@/components/map/DakarMap"), {
   ssr: false,
@@ -23,6 +23,7 @@ const DakarMap = dynamic(() => import("@/components/map/DakarMap"), {
 });
 
 export default function CartePage() {
+  const supabase = useSupabaseAuthed();
   const router  = useRouter();
   const session = useSession();
   const { drivers } = useDriversStore();

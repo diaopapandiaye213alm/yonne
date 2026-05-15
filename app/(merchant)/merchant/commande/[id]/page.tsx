@@ -11,7 +11,7 @@ import { EtaBadge } from "@/components/tracking/EtaBadge";
 import { DriverCard } from "@/components/tracking/DriverCard";
 import { Button } from "@/components/ui/button";
 import { Share2, XCircle, AlertTriangle, FileText, Send } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { useSupabaseAuthed } from "@/components/providers/SupabaseProvider";
 
 const STATUS_STAGE: Record<OrderStatus, "created" | "assigned" | "enroute" | "delivered"> = {
   "créée":    "created",
@@ -34,6 +34,7 @@ const STATUS_COLORS: Record<OrderStatus, string> = {
 const DakarMap = dynamic(() => import("@/components/map/DakarMap"), { ssr: false });
 
 export default function TrackingPage({ params }: { params: { id: string } }) {
+  const supabase = useSupabaseAuthed();
   const { orders, cancelOrder } = useOrdersStore();
   const order = orders.find(o => o.id === params.id);
   const status: OrderStatus = order?.status ?? "en route";

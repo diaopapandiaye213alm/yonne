@@ -14,7 +14,16 @@ function getSecret(): Uint8Array {
 }
 
 export async function signToken(payload: SessionPayload): Promise<string> {
-  return new SignJWT({ ...payload })
+  return new SignJWT({
+    // "role" au niveau JWT top-level est réservé par PostgREST pour SET ROLE.
+    // On utilise "authenticated" (rôle DB Supabase standard) et on met le rôle
+    // applicatif sous "app_role" pour que yonne_role() puisse le lire en RLS.
+    role:        "authenticated",
+    app_role:    payload.role,
+    userId:      payload.userId,
+    email:       payload.email,
+    displayName: payload.displayName,
+  })
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(payload.userId)   // sub = userId → Supabase auth.uid() le lit pour les RLS
     .setExpirationTime("7d")
@@ -23,8 +32,14 @@ export async function signToken(payload: SessionPayload): Promise<string> {
 
 export async function verifyToken(token: string): Promise<SessionPayload | null> {
   try {
-    const { payload } = await jwtVerify<SessionPayload>(token, getSecret());
-    return payload;
+    const { payload } = await jwtVerify(token, getSecret());
+    const p = payload as Record<string, unknown>;
+    return {
+      userId:      (p.sub  ?? p.userId)  as string,
+      email:       p.email               as string,
+      role:        (p.app_role ?? p.role) as SessionPayload["role"],
+      displayName: p.displayName         as string,
+    };
   } catch {
     return null;
   }

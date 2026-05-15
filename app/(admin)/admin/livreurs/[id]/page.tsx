@@ -8,7 +8,7 @@ import { useOrdersStore } from "@/lib/store/orders";
 import type { Tier } from "@/lib/mock-data/drivers";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
-import { supabase } from "@/lib/supabase";
+import { useSupabaseAuthed } from "@/components/providers/SupabaseProvider";
 import {
   ArrowLeft, Star, Bike, Package,
   Edit2, Check, X, MessageSquare, Send, Phone,
@@ -50,6 +50,7 @@ function ScoreGauge({ value }: { value: number }) {
 }
 
 export default function LivreurDetailPage({ params }: { params: { id: string } }) {
+  const supabase = useSupabaseAuthed();
   const { drivers } = useDriversStore();
   const { orders }  = useOrdersStore();
   const driver = drivers.find(d => d.id === params.id);

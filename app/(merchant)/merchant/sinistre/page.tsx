@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { supabase } from "@/lib/supabase";
+import { useSupabaseAuthed } from "@/components/providers/SupabaseProvider";
 import { ShieldAlert, AlertCircle, CheckCircle2, Clock } from "lucide-react";
 import type { SavTicketRow } from "@/lib/database.types";
 
@@ -24,6 +24,7 @@ const STATUS_CONFIG: Record<TicketStatus, { label: string; className: string; ic
 };
 
 export default function SinistrePage() {
+  const supabase = useSupabaseAuthed();
   const [incidentType, setIncidentType] = useState("");
   const [orderId, setOrderId] = useState("");
   const [description, setDescription] = useState("");

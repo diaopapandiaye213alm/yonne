@@ -3,7 +3,7 @@ import { useState, useRef, useEffect } from "react";
 import { toast } from "sonner";
 import { AlertTriangle, CheckCircle2, Clock, XCircle, Filter, ChevronDown, ChevronUp, Send, UserCircle, Bot } from "lucide-react";
 import { useT } from "@/lib/i18n";
-import { supabase } from "@/lib/supabase";
+import { useSupabaseAuthed } from "@/components/providers/SupabaseProvider";
 
 type Status = "ouvert" | "en cours" | "résolu";
 type MsgFrom = "client" | "admin";
@@ -44,6 +44,7 @@ function TicketCard({ ticket, onTake, onResolve }: {
   onTake: (id: string) => void;
   onResolve: (id: string) => void;
 }) {
+  const supabase          = useSupabaseAuthed();
   const [open, setOpen]   = useState(false);
   const [msgs, setMsgs]   = useState<Msg[]>(ticket.messages);
   const [draft, setDraft] = useState("");
@@ -159,6 +160,7 @@ function TicketCard({ ticket, onTake, onResolve }: {
 }
 
 export default function SavPage() {
+  const supabase = useSupabaseAuthed();
   const t = useT();
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [filter,  setFilter]  = useState<Status | "tous">("tous");

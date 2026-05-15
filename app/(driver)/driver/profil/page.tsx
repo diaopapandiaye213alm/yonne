@@ -6,7 +6,7 @@ import { useDriversStore, avatarUrl } from "@/lib/store/drivers";
 import { useOrdersStore } from "@/lib/store/orders";
 import { useDriverStore } from "@/lib/store/driver";
 import { useSession } from "@/lib/hooks/useSession";
-import { supabase } from "@/lib/supabase";
+import { useSupabaseAuthed } from "@/components/providers/SupabaseProvider";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { useT } from "@/lib/i18n";
@@ -39,6 +39,7 @@ const MONTH_LABELS = ["Jan","Fév","Mar","Avr","Mai","Juin","Juil","Aoû","Sep",
 const DRIVER_FALLBACK = { id: "drv-001", name: "—", phone: "", vehicle: "Moto Yamaha" as const, rating: 5, tier: "Bronze" as const, badges: [] as string[], ordersToday: 0, earningsToday: 0, avatarSeed: "" };
 
 export default function ProfilPage() {
+  const supabase = useSupabaseAuthed();
   const t = useT();
   const session = useSession();
   const { online, inPrayer, setOnline, setInPrayer } = useDriverStore();

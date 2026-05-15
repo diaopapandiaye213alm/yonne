@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
+import { useSupabaseAuthed } from "@/components/providers/SupabaseProvider";
 import { ShieldCheck, AlertCircle, CheckCircle2, Clock } from "lucide-react";
 import type { SavTicketRow } from "@/lib/database.types";
 
@@ -14,6 +14,7 @@ const STATUS_CONFIG: Record<TicketStatus, { label: string; className: string; ic
 };
 
 export default function DriverTicketsPage() {
+  const supabase = useSupabaseAuthed();
   const [tickets, setTickets] = useState<SavTicketRow[]>([]);
   const [loading, setLoading] = useState(true);
 

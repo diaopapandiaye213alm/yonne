@@ -30,11 +30,6 @@ function rowToOrder(row: Record<string, unknown>): Order {
   };
 }
 
-// Guard: rejects null / non-object payloads before rowToOrder is called
-function isValidRow(row: unknown): row is Record<string, unknown> {
-  return typeof row === "object" && row !== null && "id" in (row as object);
-}
-
 let realtimeSubscribed = false;
 
 export const useOrdersStore = create<OrdersState>((set, get) => ({

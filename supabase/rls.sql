@@ -22,14 +22,39 @@
 
 -- ── Helpers ───────────────────────────────────────────────────────────────────
 
--- Retourne le rôle contenu dans le JWT custom ('admin'|'merchant'|'driver')
+-- Diagnostic : retourne les policies actives + l'uid/role vu par Postgres pour le JWT courant.
+-- Appelable via supabase.rpc('yonne_debug') depuis le script de test ou Postman.
+create or replace function yonne_debug()
+  returns json
+  language sql stable security definer
+as $$
+  select json_build_object(
+    'auth_uid',   auth.uid(),
+    'app_role',   auth.jwt() ->> 'app_role',
+    'db_role',    current_user,
+    'policies',   (
+      select json_agg(json_build_object(
+        'table',      tablename,
+        'policy',     policyname,
+        'cmd',        cmd,
+        'permissive', permissive
+      ) order by tablename, policyname)
+      from pg_policies
+      where tablename in ('orders', 'drivers', 'merchants', 'sav_tickets', 'users')
+    )
+  );
+$$;
+
+-- Retourne le rôle applicatif contenu dans le JWT custom ('admin'|'merchant'|'driver').
+-- On lit "app_role" car "role" est réservé par PostgREST pour SET ROLE (rôle DB Postgres).
+-- Si "role" top-level valait "driver", Postgres lèverait : role "driver" does not exist.
 create or replace function yonne_role()
   returns text
   language sql stable
 as $$
   select coalesce(
-    auth.jwt() ->> 'role',
-    current_setting('request.jwt.claims', true)::json ->> 'role'
+    auth.jwt() ->> 'app_role',
+    current_setting('request.jwt.claims', true)::json ->> 'app_role'
   );
 $$;
 

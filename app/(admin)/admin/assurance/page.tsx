@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Shield, AlertTriangle, TrendingUp, Banknote, ExternalLink, CheckCircle2, Clock } from "lucide-react";
 import { useOrdersStore } from "@/lib/store/orders";
 import { useT } from "@/lib/i18n";
-import { supabase } from "@/lib/supabase";
+import { useSupabaseAuthed } from "@/components/providers/SupabaseProvider";
 import type { SavTicketRow } from "@/lib/database.types";
 
 const INSURANCE_RATE = 0.005;
@@ -18,6 +18,7 @@ const STATUT_STYLE: Record<"ouvert" | "en cours" | "résolu", string> = {
 };
 
 export default function AssurancePage() {
+  const supabase = useSupabaseAuthed();
   const t = useT();
   const { orders } = useOrdersStore();
   const [activeTab, setActiveTab] = useState<"stats" | "sinistres" | "info">("stats");
