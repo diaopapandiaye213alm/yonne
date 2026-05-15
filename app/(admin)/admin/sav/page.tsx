@@ -60,7 +60,12 @@ function TicketCard({ ticket, onTake, onResolve }: {
     if (!draft.trim()) return;
     const text = draft;
     setDraft("");
-    await supabase.from("sav_messages").insert({ ticket_id: ticket.id, from_role: "admin", text });
+    const { error } = await supabase.from("sav_messages").insert({ ticket_id: ticket.id, from_role: "admin", text });
+    if (error) {
+      setDraft(text);
+      toast.error("Impossible d'envoyer la réponse");
+      return;
+    }
     setMsgs(prev => [...prev, { from: "admin", text, time: now() }]);
     toast.success("Réponse envoyée au client via WhatsApp");
   }
@@ -197,12 +202,14 @@ export default function SavPage() {
   const rate    = tickets.length ? Math.round((solved / tickets.length) * 100) : 0;
 
   async function take(id: string) {
-    await supabase.from("sav_tickets").update({ status: "en cours", responsable: "Admin" }).eq("id", id);
+    const { error } = await supabase.from("sav_tickets").update({ status: "en cours", responsable: "Admin" }).eq("id", id);
+    if (error) { toast.error("Impossible de prendre en charge ce ticket"); return; }
     setTickets(prev => prev.map(tk => tk.id === id ? { ...tk, status: "en cours" as Status, responsable: "Admin" } : tk));
     toast.success(`Ticket ${id} pris en charge`);
   }
   async function resolve(id: string) {
-    await supabase.from("sav_tickets").update({ status: "résolu", delay: "—" }).eq("id", id);
+    const { error } = await supabase.from("sav_tickets").update({ status: "résolu", delay: "—" }).eq("id", id);
+    if (error) { toast.error("Impossible de résoudre ce ticket"); return; }
     setTickets(prev => prev.map(tk => tk.id === id ? { ...tk, status: "résolu" as Status, delay: "—" } : tk));
     toast.success(`Ticket ${id} marqué résolu`);
   }

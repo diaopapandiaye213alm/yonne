@@ -30,15 +30,24 @@ export async function signToken(payload: SessionPayload): Promise<string> {
     .sign(getSecret());
 }
 
+const VALID_ROLES = new Set<string>(["admin", "merchant", "driver"]);
+
 export async function verifyToken(token: string): Promise<SessionPayload | null> {
   try {
     const { payload } = await jwtVerify(token, getSecret());
     const p = payload as Record<string, unknown>;
+    const userId      = (p.sub ?? p.userId) as string | undefined;
+    const email       = p.email             as string | undefined;
+    const role        = (p.app_role ?? p.role) as string | undefined;
+    const displayName = p.displayName       as string | undefined;
+
+    if (!userId || !email || !role || !VALID_ROLES.has(role)) return null;
+
     return {
-      userId:      (p.sub  ?? p.userId)  as string,
-      email:       p.email               as string,
-      role:        (p.app_role ?? p.role) as SessionPayload["role"],
-      displayName: p.displayName         as string,
+      userId,
+      email,
+      role:        role as SessionPayload["role"],
+      displayName: displayName ?? email,
     };
   } catch {
     return null;

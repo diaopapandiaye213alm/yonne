@@ -13,6 +13,7 @@ interface DriversState {
   fetchDrivers: () => Promise<void>;
   setOnline: (id: string, online: boolean) => Promise<void>;
   setInPrayer: (id: string, inPrayer: boolean) => Promise<void>;
+  updateDriver: (id: string, fields: Partial<Pick<Driver, "name" | "phone" | "vehicle" | "tier" | "online">>) => void;
   updatePosition: (id: string, lat: number, lng: number) => void;
 }
 
@@ -163,6 +164,13 @@ export const useDriversStore = create<DriversState>((set, get) => ({
         error: err instanceof Error ? err.message : "Erreur mode prière",
       }));
     }
+  },
+
+  // Local-only store update after a successful admin edit saved to Supabase.
+  updateDriver: (id, fields) => {
+    set((s) => ({
+      drivers: s.drivers.map((d) => (d.id === id ? { ...d, ...fields } : d)),
+    }));
   },
 
   // Local-only position update used by the simulation engine.

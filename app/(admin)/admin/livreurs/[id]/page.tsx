@@ -51,7 +51,7 @@ function ScoreGauge({ value }: { value: number }) {
 
 export default function LivreurDetailPage({ params }: { params: { id: string } }) {
   const supabase = useSupabaseAuthed();
-  const { drivers } = useDriversStore();
+  const { drivers, updateDriver } = useDriversStore();
   const { orders }  = useOrdersStore();
   const driver = drivers.find(d => d.id === params.id);
   const [editing,     setEditing]     = useState(false);
@@ -87,13 +87,15 @@ export default function LivreurDetailPage({ params }: { params: { id: string } }
 
   async function saveEdit() {
     if (!driver) return;
-    await supabase.from("drivers").update({
+    const { error } = await supabase.from("drivers").update({
       name:    editName,
       phone:   editPhone,
       vehicle: editVehicle,
       tier:    editTier,
       online:  editOnline,
     }).eq("id", driver.id);
+    if (error) { toast.error("Impossible de sauvegarder les modifications"); return; }
+    updateDriver(driver.id, { name: editName, phone: editPhone, vehicle: editVehicle, tier: editTier, online: editOnline });
     setEditing(false);
     toast.success("Fiche livreur mise à jour");
   }

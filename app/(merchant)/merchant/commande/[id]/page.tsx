@@ -11,6 +11,7 @@ import { EtaBadge } from "@/components/tracking/EtaBadge";
 import { DriverCard } from "@/components/tracking/DriverCard";
 import { Button } from "@/components/ui/button";
 import { Share2, XCircle, AlertTriangle, FileText, Send } from "lucide-react";
+import { toast } from "sonner";
 import { useSupabaseAuthed } from "@/components/providers/SupabaseProvider";
 
 const STATUS_STAGE: Record<OrderStatus, "created" | "assigned" | "enroute" | "delivered"> = {
@@ -113,7 +114,11 @@ export default function TrackingPage({ params }: { params: { id: string } }) {
     const text = chatInput.trim();
     if (!text) return;
     setChatInput("");
-    await supabase.from("order_messages").insert({ order_id: params.id, from_role: "merchant", text });
+    const { error } = await supabase.from("order_messages").insert({ order_id: params.id, from_role: "merchant", text });
+    if (error) {
+      setChatInput(text);
+      toast.error("Impossible d'envoyer le message");
+    }
   }
 
   const pins = [

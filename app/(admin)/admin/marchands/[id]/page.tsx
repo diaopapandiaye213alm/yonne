@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { useMerchantsStore } from "@/lib/store/merchants";
 import { useOrdersStore } from "@/lib/store/orders";
-import { ArrowLeft, FileText, TrendingUp, TrendingDown, MessageSquare, Send, Download } from "lucide-react";
+import { ArrowLeft, FileText, TrendingUp, TrendingDown, MessageSquare, Send, Download, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { useSupabaseAuthed } from "@/components/providers/SupabaseProvider";
 
@@ -30,8 +30,9 @@ export default function MarchandDetailPage({ params }: { params: { id: string } 
   const { merchants } = useMerchantsStore();
   const { orders }    = useOrdersStore();
   const merchant = merchants.find(m => m.id === params.id);
-  const [chatMsg, setChatMsg] = useState("");
-  const [chat,    setChat]    = useState(INIT_CHAT);
+  const [chatMsg,    setChatMsg]    = useState("");
+  const [chat,       setChat]       = useState(INIT_CHAT);
+  const [upgrading,  setUpgrading]  = useState(false);
 
   if (merchants.length > 0 && !merchant) notFound();
   if (!merchant) return <div className="p-6 text-ink-500">Chargement…</div>;
@@ -47,10 +48,12 @@ export default function MarchandDetailPage({ params }: { params: { id: string } 
   const contractStart = new Date(merchant.joinedAt);
   const contractEnd   = new Date(contractStart);
   contractEnd.setFullYear(contractEnd.getFullYear() + 1);
-
   async function upgradeToPremium() {
-    if (!merchant) return;
-    await supabase.from("merchants").update({ plan: "Premium" }).eq("id", merchant.id);
+    if (!merchant || upgrading) return;
+    setUpgrading(true);
+    const { error } = await supabase.from("merchants").update({ plan: "Premium" }).eq("id", merchant.id);
+    setUpgrading(false);
+    if (error) { toast.error("Échec de l'upgrade Premium"); return; }
     toast.success("Marchand upgradé en Premium");
   }
 
@@ -123,7 +126,9 @@ export default function MarchandDetailPage({ params }: { params: { id: string } 
           {merchant.plan === "Standard" && (
             <button type="button"
               onClick={upgradeToPremium}
-              className="w-full mt-1 bg-gold-500 text-white rounded-lg py-2 text-sm font-medium hover:bg-gold-600 transition-colors">
+              disabled={upgrading}
+              className="w-full mt-1 bg-gold-500 text-white rounded-lg py-2 text-sm font-medium hover:bg-gold-600 disabled:opacity-60 transition-colors flex items-center justify-center gap-2">
+              {upgrading && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
               Passer en Premium (15 000 F/mois)
             </button>
           )}

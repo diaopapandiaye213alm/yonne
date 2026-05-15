@@ -29,7 +29,8 @@ export function OnboardingGuard() {
     if (!session) return; // still loading
     if (merchants.length === 0) return; // still loading
 
-    const merchant = merchants.find(m => m.name === session.displayName);
+    // RLS ensures the merchants store only contains the current user's merchant
+    const merchant = merchants[0];
     if (merchant?.onboardingDone) {
       // Sync back to localStorage so future checks are instant
       try { localStorage.setItem("yonne_merchant_onboarding_done", "1"); } catch { /* ignore */ }

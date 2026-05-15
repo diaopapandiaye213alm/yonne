@@ -45,7 +45,8 @@ export const useMerchantsStore = create<MerchantsState>((set, get) => ({
   },
 
   updateStatus: async (id, status) => {
-    await supabase.from("merchants").update({ status }).eq("id", id);
+    const { error } = await supabase.from("merchants").update({ status }).eq("id", id);
+    if (error) throw new Error(error.message);
     set(s => ({ merchants: s.merchants.map(m => m.id === id ? { ...m, status } : m) }));
   },
 
@@ -54,12 +55,14 @@ export const useMerchantsStore = create<MerchantsState>((set, get) => ({
     if (fields.email !== undefined) patch.email = fields.email;
     if (fields.phone !== undefined) patch.phone = fields.phone;
     if (fields.city  !== undefined) patch.city  = fields.city;
-    await supabase.from("merchants").update(patch).eq("id", id);
+    const { error } = await supabase.from("merchants").update(patch).eq("id", id);
+    if (error) throw new Error(error.message);
     set(s => ({ merchants: s.merchants.map(m => m.id === id ? { ...m, ...fields } : m) }));
   },
 
   markOnboardingDone: async (id) => {
-    await supabase.from("merchants").update({ onboarding_done: true }).eq("id", id);
+    const { error } = await supabase.from("merchants").update({ onboarding_done: true }).eq("id", id);
+    if (error) throw new Error(error.message);
     set(s => ({ merchants: s.merchants.map(m => m.id === id ? { ...m, onboardingDone: true } : m) }));
     try { localStorage.setItem("yonne_merchant_onboarding_done", "1"); } catch { /* ignore */ }
   },
