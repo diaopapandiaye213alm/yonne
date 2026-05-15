@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { supabase } from "@/lib/supabase";
+import { getSupabase } from "@/lib/supabase";
 import type { Merchant } from "@/lib/mock-data/merchants";
 
 interface MerchantsState {
@@ -36,16 +36,17 @@ export const useMerchantsStore = create<MerchantsState>((set, get) => ({
   fetchMerchants: async () => {
     if (get().loading) return;
     set({ loading: true });
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from("merchants")
       .select("*")
       .order("name");
-    if (!error && data) set({ merchants: data.map(rowToMerchant) });
     set({ loading: false });
+    if (error) throw new Error(error.message);
+    if (data) set({ merchants: data.map(rowToMerchant) });
   },
 
   updateStatus: async (id, status) => {
-    const { error } = await supabase.from("merchants").update({ status }).eq("id", id);
+    const { error } = await getSupabase().from("merchants").update({ status }).eq("id", id);
     if (error) throw new Error(error.message);
     set(s => ({ merchants: s.merchants.map(m => m.id === id ? { ...m, status } : m) }));
   },
@@ -55,13 +56,13 @@ export const useMerchantsStore = create<MerchantsState>((set, get) => ({
     if (fields.email !== undefined) patch.email = fields.email;
     if (fields.phone !== undefined) patch.phone = fields.phone;
     if (fields.city  !== undefined) patch.city  = fields.city;
-    const { error } = await supabase.from("merchants").update(patch).eq("id", id);
+    const { error } = await getSupabase().from("merchants").update(patch).eq("id", id);
     if (error) throw new Error(error.message);
     set(s => ({ merchants: s.merchants.map(m => m.id === id ? { ...m, ...fields } : m) }));
   },
 
   markOnboardingDone: async (id) => {
-    const { error } = await supabase.from("merchants").update({ onboarding_done: true }).eq("id", id);
+    const { error } = await getSupabase().from("merchants").update({ onboarding_done: true }).eq("id", id);
     if (error) throw new Error(error.message);
     set(s => ({ merchants: s.merchants.map(m => m.id === id ? { ...m, onboardingDone: true } : m) }));
     try { localStorage.setItem("yonne_merchant_onboarding_done", "1"); } catch { /* ignore */ }

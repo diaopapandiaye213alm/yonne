@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useDriversStore } from "@/lib/store/drivers";
 import { useOrdersStore } from "@/lib/store/orders";
 import { useSession } from "@/lib/hooks/useSession";
+import { useSupabaseAuthed } from "@/components/providers/SupabaseProvider";
 import { landmarks } from "@/lib/mock-data/landmarks";
 import { WeeklyEarningsChart } from "@/components/driver/WeeklyEarningsChart";
 import { Button } from "@/components/ui/button";
@@ -17,12 +18,13 @@ const DAILY_GOAL = 20000;
 type RetraitEntry = { id: string; amount: number; phone: string; provider: "wave" | "orange"; date: string };
 const RETRAIT_KEY = "yonne_retrait_history";
 
-function loadHistory(): RetraitEntry[] {
+function loadLocalHistory(): RetraitEntry[] {
   try { return JSON.parse(localStorage.getItem(RETRAIT_KEY) ?? "[]"); } catch { return []; }
 }
 
 export default function GainsPage() {
   const t = useT();
+  const supabase = useSupabaseAuthed();
   const session = useSession();
   const { drivers } = useDriversStore();
   const { orders } = useOrdersStore();
@@ -79,7 +81,31 @@ export default function GainsPage() {
   const [withdrawPhone, setWithdrawPhone] = useState("");
   const [withdrawStep, setWithdrawStep] = useState<"form" | "processing" | "done">("form");
   const [retraitHistory, setRetraitHistory] = useState<RetraitEntry[]>([]);
-  useEffect(() => { setRetraitHistory(loadHistory()); }, []);
+  useEffect(() => {
+    // Load from localStorage immediately (instant)
+    setRetraitHistory(loadLocalHistory());
+    // Then hydrate from Supabase if driver ID is known
+    if (!demo.id) return;
+    supabase
+      .from("driver_withdrawals")
+      .select("id, amount, phone, provider, created_at")
+      .eq("driver_id", demo.id)
+      .order("created_at", { ascending: false })
+      .limit(10)
+      .then(({ data }) => {
+        if (!data || data.length === 0) return;
+        const entries: RetraitEntry[] = data.map(r => ({
+          id: r.id as string,
+          amount: r.amount as number,
+          phone: r.phone as string,
+          provider: r.provider as "wave" | "orange",
+          date: new Date(r.created_at as string).toLocaleDateString("fr-FR"),
+        }));
+        setRetraitHistory(entries);
+        try { localStorage.setItem(RETRAIT_KEY, JSON.stringify(entries)); } catch { /* ignore */ }
+      });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [demo.id]);
 
   function openWithdraw(provider: "wave" | "orange") {
     setWithdrawProvider(provider);
@@ -87,25 +113,36 @@ export default function GainsPage() {
     setWithdrawStep("form");
   }
   function closeWithdraw() {
-    if (withdrawStep === "done" && withdrawProvider && withdrawPhone) {
-      const entry: RetraitEntry = {
-        id: `r${Date.now()}`,
-        amount: earningsToday,
-        phone: withdrawPhone,
-        provider: withdrawProvider,
-        date: new Date().toLocaleDateString("fr-FR"),
-      };
-      const next = [entry, ...retraitHistory].slice(0, 10);
-      setRetraitHistory(next);
-      try { localStorage.setItem(RETRAIT_KEY, JSON.stringify(next)); } catch { /* ignore */ }
-    }
     setWithdrawProvider(null);
     setWithdrawStep("form");
   }
-  function confirmWithdraw() {
-    if (!withdrawPhone.trim()) return;
+
+  async function confirmWithdraw() {
+    if (!withdrawPhone.trim() || !withdrawProvider) return;
     setWithdrawStep("processing");
-    setTimeout(() => setWithdrawStep("done"), 2500);
+    const withdrawId = crypto.randomUUID();
+    const { error } = await supabase.from("driver_withdrawals").insert({
+      id: withdrawId,
+      driver_id: demo.id || null,
+      amount: earningsToday,
+      phone: withdrawPhone,
+      provider: withdrawProvider,
+    });
+    if (error) {
+      setWithdrawStep("form");
+      return;
+    }
+    const entry: RetraitEntry = {
+      id: withdrawId,
+      amount: earningsToday,
+      phone: withdrawPhone,
+      provider: withdrawProvider,
+      date: new Date().toLocaleDateString("fr-FR"),
+    };
+    const next = [entry, ...retraitHistory].slice(0, 10);
+    setRetraitHistory(next);
+    try { localStorage.setItem(RETRAIT_KEY, JSON.stringify(next)); } catch { /* ignore */ }
+    setWithdrawStep("done");
   }
   const dateStr = new Date().toLocaleDateString("fr-FR", {
     weekday: "long", day: "numeric", month: "long",

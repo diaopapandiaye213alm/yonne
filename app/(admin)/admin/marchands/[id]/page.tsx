@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { useMerchantsStore } from "@/lib/store/merchants";
@@ -19,11 +19,7 @@ const STATUS_COLORS = {
   suspendu: "bg-red-100 text-red-600",
 } as const;
 
-const INIT_CHAT = [
-  { from: "merchant", text: "Bonjour, mes commandes n'apparaissent pas aujourd'hui." },
-  { from: "admin",    text: "Nous regardons ça, une mise à jour est en cours." },
-  { from: "merchant", text: "D'accord, merci pour la réactivité." },
-];
+type ChatMessage = { id: number; from_role: string; text: string; sent_at: string };
 
 export default function MarchandDetailPage({ params }: { params: { id: string } }) {
   const supabase = useSupabaseAuthed();
@@ -31,13 +27,38 @@ export default function MarchandDetailPage({ params }: { params: { id: string } 
   const { orders }    = useOrdersStore();
   const merchant = merchants.find(m => m.id === params.id);
   const [chatMsg,    setChatMsg]    = useState("");
-  const [chat,       setChat]       = useState(INIT_CHAT);
+  const [chat,       setChat]       = useState<ChatMessage[]>([]);
   const [upgrading,  setUpgrading]  = useState(false);
+
+  useEffect(() => {
+    supabase
+      .from("admin_messages")
+      .select("id, from_role, text, sent_at")
+      .eq("subject_type", "merchant")
+      .eq("subject_id", params.id)
+      .order("sent_at")
+      .then(({ data, error }) => {
+        if (error) { toast.error("Impossible de charger les messages"); return; }
+        if (data) setChat(data as ChatMessage[]);
+      });
+
+    const channel = supabase
+      .channel(`admin_messages_merchant_${params.id}`)
+      .on("postgres_changes", {
+        event: "INSERT", schema: "public", table: "admin_messages",
+        filter: `subject_id=eq.${params.id}`,
+      }, (payload) => {
+        setChat(prev => [...prev, payload.new as ChatMessage]);
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [params.id, supabase]);
 
   if (merchants.length > 0 && !merchant) notFound();
   if (!merchant) return <div className="p-6 text-ink-500">Chargement…</div>;
 
-  const recentOrders = orders.slice(0, 5);
+  const recentOrders = orders.filter(o => o.merchantId === params.id).slice(0, 5);
   const commission   = merchant.plan === "Premium" ? 0.12 : 0.15;
   const commAmt      = Math.round(merchant.revenueThisMonth * commission);
   const revDiff      = merchant.revenueThisMonth - merchant.revenueLastMonth;
@@ -57,14 +78,20 @@ export default function MarchandDetailPage({ params }: { params: { id: string } 
     toast.success("Marchand upgradé en Premium");
   }
 
-  function sendChat() {
+  async function sendChat() {
     const text = chatMsg.trim();
     if (!text) return;
-    setChat(c => [...c, { from: "admin", text }]);
     setChatMsg("");
-    setTimeout(() => {
-      setChat(c => [...c, { from: "merchant", text: "Merci pour le retour !" }]);
-    }, 1200);
+    const { error } = await supabase.from("admin_messages").insert({
+      subject_type: "merchant",
+      subject_id: params.id,
+      from_role: "admin",
+      text,
+    });
+    if (error) {
+      setChatMsg(text);
+      toast.error("Impossible d'envoyer le message");
+    }
   }
 
   return (
@@ -236,10 +263,13 @@ export default function MarchandDetailPage({ params }: { params: { id: string } 
           <MessageSquare className="w-4 h-4 text-emerald-500" /> Chat SAV
         </h2>
         <div className="space-y-3 max-h-56 overflow-y-auto pr-1 mb-4">
-          {chat.map((m, i) => (
-            <div key={i} className={`flex ${m.from === "admin" ? "justify-end" : "justify-start"}`}>
+          {chat.length === 0 && (
+            <div className="text-xs text-ink-400 text-center py-4">Aucun message pour le moment</div>
+          )}
+          {chat.map(m => (
+            <div key={m.id} className={`flex ${m.from_role === "admin" ? "justify-end" : "justify-start"}`}>
               <div className={`max-w-[70%] px-3 py-2 rounded-xl text-sm leading-relaxed ${
-                m.from === "admin"
+                m.from_role === "admin"
                   ? "bg-emerald-500 text-white rounded-br-none"
                   : "bg-cream-100 text-ink-900 rounded-bl-none"
               }`}>

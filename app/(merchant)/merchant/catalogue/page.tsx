@@ -37,6 +37,31 @@ const INITIAL: Article[] = [
 ];
 
 const STORAGE_KEY = "yonne_catalogue";
+const VALID_CATS = new Set<string>(["Nourriture", "Textile", "Électronique", "Pharmacie", "Autre"]);
+
+function isArticle(v: unknown): v is Article {
+  if (!v || typeof v !== "object") return false;
+  const a = v as Record<string, unknown>;
+  return (
+    typeof a.id === "string" &&
+    typeof a.name === "string" &&
+    typeof a.price === "number" &&
+    typeof a.category === "string" && VALID_CATS.has(a.category) &&
+    typeof a.available === "boolean" &&
+    typeof a.stock === "number"
+  );
+}
+
+function parseLocalArticles(raw: string): Article[] | null {
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return null;
+    const valid = parsed.filter(isArticle);
+    return valid.length > 0 ? valid : null;
+  } catch {
+    return null;
+  }
+}
 
 function saveLocal(articles: Article[]) {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(articles)); } catch { /* ignore */ }
@@ -105,10 +130,13 @@ export default function CataloguePage() {
           return;
         }
       }
-      // Fallback: localStorage
+      // Fallback: localStorage with schema validation
       try {
         const raw = localStorage.getItem(STORAGE_KEY);
-        if (raw) setArticles(JSON.parse(raw));
+        if (raw) {
+          const parsed = parseLocalArticles(raw);
+          if (parsed) setArticles(parsed);
+        }
       } catch { /* ignore */ }
     }
     load();
@@ -162,7 +190,7 @@ export default function CataloguePage() {
   function addArticle() {
     if (!newName.trim() || !newPrice) return;
     const article: Article = {
-      id:        `a${Date.now()}`,
+      id:        crypto.randomUUID(),
       name:      newName.trim(),
       price:     Number(newPrice),
       category:  newCat,

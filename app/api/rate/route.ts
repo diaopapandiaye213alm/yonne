@@ -1,17 +1,46 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
-// Simple in-memory rate limiter: max 3 ratings per IP per hour
-const _rateMap = new Map<string, { count: number; resetAt: number }>();
-function isRateLimited(ip: string): boolean {
-  const now = Date.now();
-  const entry = _rateMap.get(ip);
-  if (!entry || now > entry.resetAt) {
-    _rateMap.set(ip, { count: 1, resetAt: now + 3_600_000 });
+const WINDOW_MS  = 3_600_000; // 1 hour
+const MAX_HITS   = 3;
+
+async function isRateLimited(ip: string): Promise<boolean> {
+  const now    = new Date();
+  const resetAt = new Date(now.getTime() + WINDOW_MS).toISOString();
+
+  // Upsert: if no row exists, insert with count=1 and future reset_at.
+  // If row exists and reset_at is past, reset; otherwise increment.
+  const { data, error } = await supabaseAdmin
+    .from("api_rate_limits")
+    .upsert(
+      { key: ip, count: 1, reset_at: resetAt },
+      { onConflict: "key", ignoreDuplicates: false }
+    )
+    .select("count, reset_at")
+    .single();
+
+  if (error || !data) {
+    // On DB error, fail open to avoid blocking legitimate requests.
     return false;
   }
-  if (entry.count >= 3) return true;
-  entry.count++;
+
+  const resetAtDate = new Date(data.reset_at as string);
+  if (now > resetAtDate) {
+    // Window expired — reset counter.
+    await supabaseAdmin
+      .from("api_rate_limits")
+      .update({ count: 1, reset_at: resetAt })
+      .eq("key", ip);
+    return false;
+  }
+
+  if ((data.count as number) > MAX_HITS) return true;
+
+  await supabaseAdmin
+    .from("api_rate_limits")
+    .update({ count: (data.count as number) + 1 })
+    .eq("key", ip);
+
   return false;
 }
 
@@ -19,7 +48,7 @@ function isRateLimited(ip: string): boolean {
 // Utilise le service role car /suivi est une page sans session auth.
 export async function POST(req: NextRequest) {
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
-  if (isRateLimited(ip)) {
+  if (await isRateLimited(ip)) {
     return NextResponse.json({ error: "Trop de tentatives. Réessayez plus tard." }, { status: 429 });
   }
   let driverId = "", rating = 0;

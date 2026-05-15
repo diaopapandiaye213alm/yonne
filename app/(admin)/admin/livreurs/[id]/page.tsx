@@ -22,11 +22,7 @@ const TIER_COLORS: Record<Tier, string> = {
 
 const ALL_BADGES = ["Rapide","Top noté","Précis","10 jours","50 courses","Eco"] as const;
 
-const INIT_CHAT = [
-  { from: "driver", text: "Bonjour, problème sur la livraison #YN-0042." },
-  { from: "admin",  text: "Je vérifie ça immédiatement, patience." },
-  { from: "driver", text: "Merci, le client attend depuis 20 min." },
-];
+type ChatMessage = { id: number; from_role: string; text: string; sent_at: string };
 
 function ScoreGauge({ value }: { value: number }) {
   const r = 36;
@@ -73,7 +69,33 @@ export default function LivreurDetailPage({ params }: { params: { id: string } }
   }, [driver?.id]); // intentionally keyed on id to avoid re-running on unrelated re-renders
 
   const [chatMsg, setChatMsg] = useState("");
-  const [chat,    setChat]    = useState(INIT_CHAT);
+  const [chat,    setChat]    = useState<ChatMessage[]>([]);
+
+  useEffect(() => {
+    if (!params.id) return;
+    supabase
+      .from("admin_messages")
+      .select("id, from_role, text, sent_at")
+      .eq("subject_type", "driver")
+      .eq("subject_id", params.id)
+      .order("sent_at")
+      .then(({ data, error }) => {
+        if (error) { toast.error("Impossible de charger les messages"); return; }
+        if (data) setChat(data as ChatMessage[]);
+      });
+
+    const channel = supabase
+      .channel(`admin_messages_driver_${params.id}`)
+      .on("postgres_changes", {
+        event: "INSERT", schema: "public", table: "admin_messages",
+        filter: `subject_id=eq.${params.id}`,
+      }, (payload) => {
+        setChat(prev => [...prev, payload.new as ChatMessage]);
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [params.id, supabase]);
 
   if (drivers.length > 0 && !driver) notFound();
   if (!driver) return <div className="p-6 text-ink-500">Chargement…</div>;
@@ -100,14 +122,20 @@ export default function LivreurDetailPage({ params }: { params: { id: string } }
     toast.success("Fiche livreur mise à jour");
   }
 
-  function sendChat() {
+  async function sendChat() {
     const text = chatMsg.trim();
     if (!text) return;
-    setChat(c => [...c, { from: "admin", text }]);
     setChatMsg("");
-    setTimeout(() => {
-      setChat(c => [...c, { from: "driver", text: "Message reçu, merci !" }]);
-    }, 1200);
+    const { error } = await supabase.from("admin_messages").insert({
+      subject_type: "driver",
+      subject_id: params.id,
+      from_role: "admin",
+      text,
+    });
+    if (error) {
+      setChatMsg(text);
+      toast.error("Impossible d'envoyer le message");
+    }
   }
 
   return (
@@ -309,10 +337,13 @@ export default function LivreurDetailPage({ params }: { params: { id: string } }
           <MessageSquare className="w-4 h-4 text-emerald-500" /> Chat SAV
         </h2>
         <div className="space-y-3 max-h-56 overflow-y-auto pr-1 mb-4">
-          {chat.map((m, i) => (
-            <div key={i} className={`flex ${m.from === "admin" ? "justify-end" : "justify-start"}`}>
+          {chat.length === 0 && (
+            <div className="text-xs text-ink-400 text-center py-4">Aucun message pour le moment</div>
+          )}
+          {chat.map(m => (
+            <div key={m.id} className={`flex ${m.from_role === "admin" ? "justify-end" : "justify-start"}`}>
               <div className={`max-w-[70%] px-3 py-2 rounded-xl text-sm leading-relaxed ${
-                m.from === "admin"
+                m.from_role === "admin"
                   ? "bg-emerald-500 text-white rounded-br-none"
                   : "bg-cream-100 text-ink-900 rounded-bl-none"
               }`}>

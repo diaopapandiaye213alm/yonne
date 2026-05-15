@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import dynamic from "next/dynamic";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { hourlyRevenue, zoneActivity, weeklyMerchants } from "@/lib/mock-data/analytics";
@@ -65,9 +65,26 @@ export default function AnalyticsPage() {
 
   useEffect(() => { setLiveCount(ordersToday); }, [ordersToday]);
 
-  useEffect(() => {
-    const t = setInterval(() => setLiveCount(c => c + (Math.random() < 0.3 ? 1 : 0)), 4000);
-    return () => clearInterval(t);
+  // Deterministic per-cell noise based on (day, hour) hash — no random per render.
+  const heatmap = useMemo(() => {
+    function deterministicNoise(seed: number): number {
+      let h = seed;
+      h = (h ^ (h >>> 16)) * 0x45d9f3b;
+      h = (h ^ (h >>> 16)) * 0x45d9f3b;
+      h = h ^ (h >>> 16);
+      return ((h >>> 0) % 100) / 100; // [0, 1)
+    }
+    return Array.from({ length: 7 }, (_, d) =>
+      Array.from({ length: 24 }, (_, h) => {
+        const active  = h >= 7 && h <= 22;
+        const weekend = d >= 5;
+        const base    = active ? (weekend ? 0.4 : 0.3) : 0.02;
+        const peak    = (h >= 11 && h <= 13) || (h >= 18 && h <= 20) ? 0.5 : 0;
+        const noise   = deterministicNoise(d * 24 + h) * 0.2;
+        const intensity = Math.min(1, base + peak + noise);
+        return Math.round(intensity * 9) / 9;
+      })
+    );
   }, []);
 
   const zonePins = zoneActivity.map(z => ({
@@ -111,21 +128,13 @@ export default function AnalyticsPage() {
             {["Lun","Mar","Mer","Jeu","Ven","Sam","Dim"].map((day, d) => (
               <>
                 <div key={`label-${d}`} className="text-[10px] text-ink-500 flex items-center">{day}</div>
-                {Array.from({ length: 24 }, (_, h) => {
-                  const active = h >= 7 && h <= 22;
-                  const weekend = d >= 5;
-                  const base = active ? (weekend ? 0.4 : 0.3) : 0.02;
-                  const peak  = (h >= 11 && h <= 13) || (h >= 18 && h <= 20) ? 0.5 : 0;
-                  const intensity = Math.min(1, base + peak + Math.random() * 0.2);
-                  const opacity   = Math.round(intensity * 9) / 9;
-                  return (
-                    <div key={`cell-${d}-${h}`}
-                      className="h-5 rounded-sm bg-emerald-500 transition-opacity"
-                      style={{ opacity }}
-                      title={`${day} ${String(h).padStart(2, "0")}h`}
-                    />
-                  );
-                })}
+                {Array.from({ length: 24 }, (_, h) => (
+                  <div key={`cell-${d}-${h}`}
+                    className="h-5 rounded-sm bg-emerald-500 transition-opacity"
+                    style={{ opacity: heatmap[d][h] }}
+                    title={`${day} ${String(h).padStart(2, "0")}h`}
+                  />
+                ))}
               </>
             ))}
           </div>

@@ -39,12 +39,12 @@ const STATUS_CONFIG: Record<Status, { label: string; color: string; icon: React.
 
 function now() { return new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }); }
 
-function TicketCard({ ticket, onTake, onResolve }: {
+function TicketCard({ ticket, supabase, onTake, onResolve }: {
   ticket: Ticket;
+  supabase: ReturnType<typeof useSupabaseAuthed>;
   onTake: (id: string) => void;
   onResolve: (id: string) => void;
 }) {
-  const supabase          = useSupabaseAuthed();
   const [open, setOpen]   = useState(false);
   const [msgs, setMsgs]   = useState<Msg[]>(ticket.messages);
   const [draft, setDraft] = useState("");
@@ -246,7 +246,7 @@ export default function SavPage() {
 
       <div className="space-y-3">
         {visible.map(ticket => (
-          <TicketCard key={ticket.id} ticket={ticket} onTake={take} onResolve={resolve} />
+          <TicketCard key={ticket.id} ticket={ticket} supabase={supabase} onTake={take} onResolve={resolve} />
         ))}
       </div>
     </div>

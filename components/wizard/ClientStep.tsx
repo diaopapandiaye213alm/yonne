@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useWizard } from "@/lib/store/wizard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,6 +18,7 @@ export function ClientStep() {
   const w = useWizard();
   const [query, setQuery] = useState("");
   const [recentClients, setRecentClients] = useState<RecentClient[]>([]);
+  const prefillApplied = useRef(false);
   const selected = landmarks.find(l => l.id === w.landmarkId) ?? null;
   const suggestions = searchLandmarks(query);
   const canNext = w.clientName.trim() && w.clientPhone.trim() && w.landmarkId;
@@ -35,8 +36,12 @@ export function ClientStep() {
     }
   }, []);
 
-  // Read prefill from "Re-commander" action
+  // Read prefill from "Re-commander" action — only apply once per mount.
+  // Removal is deferred to handleNext() so that navigating away and back
+  // still shows the prefill (it's only cleared after the user confirms).
   useEffect(() => {
+    if (prefillApplied.current) return;
+    prefillApplied.current = true;
     try {
       const raw = localStorage.getItem("yonne_prefill_order");
       if (raw) {
@@ -45,7 +50,6 @@ export function ClientStep() {
         if (prefill.clientPhone) w.set("clientPhone", prefill.clientPhone);
         if (prefill.landmarkId) w.set("landmarkId", prefill.landmarkId);
         if (prefill.amount) w.set("amount", prefill.amount);
-        localStorage.removeItem("yonne_prefill_order");
       }
     } catch {
       // ignore parse errors
@@ -138,7 +142,14 @@ export function ClientStep() {
       </div>
 
       <div className="flex justify-end">
-        <Button onClick={w.next} disabled={!canNext} className="bg-emerald-500 hover:bg-emerald-600">
+        <Button
+          onClick={() => {
+            try { localStorage.removeItem("yonne_prefill_order"); } catch { /* ignore */ }
+            w.next();
+          }}
+          disabled={!canNext}
+          className="bg-emerald-500 hover:bg-emerald-600"
+        >
           Suivant
         </Button>
       </div>

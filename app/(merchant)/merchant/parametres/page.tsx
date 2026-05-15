@@ -91,14 +91,14 @@ export default function ParametresPage() {
           {merchant.plan === "Premium" ? (
             <>
               <li>✓ Commandes illimitées</li>
-              <li>✓ Commission 15%</li>
+              <li>✓ Commission 12%</li>
               <li>✓ Support prioritaire</li>
               <li>✓ Analytics avancés</li>
             </>
           ) : (
             <>
               <li>✓ Jusqu&apos;à 200 commandes/mois</li>
-              <li>✓ Commission 12%</li>
+              <li>✓ Commission 15%</li>
               <li>✓ Support email</li>
             </>
           )}

@@ -31,13 +31,13 @@ export function OnboardingGuard() {
 
     // RLS ensures the merchants store only contains the current user's merchant
     const merchant = merchants[0];
+    checked.current = true;
     if (merchant?.onboardingDone) {
       // Sync back to localStorage so future checks are instant
       try { localStorage.setItem("yonne_merchant_onboarding_done", "1"); } catch { /* ignore */ }
       return;
     }
 
-    checked.current = true;
     router.replace("/merchant/onboarding");
   }, [pathname, router, session, merchants]);
 

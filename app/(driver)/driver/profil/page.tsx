@@ -55,7 +55,7 @@ export default function ProfilPage() {
   const [editVehicle, setEditVehicle] = useState(demo.vehicle);
 
   const myOrders = useMemo(() => orders.filter(o => o.driverId === demo.id && o.status === "livrée"), [orders, demo.id]);
-  const totalOrders = myOrders.length || demo.ordersToday * 14;
+  const totalOrders = myOrders.length;
 
   // Monthly earnings from real orders (last 5 months)
   const monthlyEarnings = useMemo(() => {

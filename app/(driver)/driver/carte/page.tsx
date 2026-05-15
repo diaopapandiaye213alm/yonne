@@ -14,6 +14,7 @@ import { triggerOrderNotification } from "@/components/driver/PushNotifBanner";
 import { simulationEngine } from "@/lib/simulation/engine";
 import { Navigation } from "lucide-react";
 import { useSupabaseAuthed } from "@/components/providers/SupabaseProvider";
+import { toast } from "sonner";
 
 const DakarMap = dynamic(() => import("@/components/map/DakarMap"), {
   ssr: false,
@@ -48,15 +49,26 @@ export default function CartePage() {
   const watchIdRef    = useRef<number | null>(null);
   const lastGpsSend   = useRef<number>(0);
 
+  // Deterministic index into landmarks array, based on a string hash.
+  function deterministicIndex(str: string, max: number): number {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      hash = (hash * 31 + str.charCodeAt(i)) >>> 0;
+    }
+    return hash % max;
+  }
+
   // Convert a Supabase order row to IncomingOrder format
   const rowToIncoming = useCallback((row: Record<string, unknown>): IncomingOrder => {
     const destLm = landmarks.find(l => l.id === (row.landmark_id as string)) ?? landmarks[0];
-    const pickupLm = landmarks[Math.floor(Math.random() * Math.min(5, landmarks.length))];
+    const orderId = row.id as string;
+    const pickupIdx = deterministicIndex(orderId, Math.min(5, landmarks.length));
+    const pickupLm = landmarks[pickupIdx];
     const dLat = destLm.lat - (demo?.lat ?? 14.6928);
     const dLng = destLm.lng - (demo?.lng ?? -17.4467);
     const dist = Math.round(Math.sqrt(dLat * dLat + dLng * dLng) * 111 * 10) / 10;
     return {
-      id: row.id as string,
+      id: orderId,
       clientName: (row.client_name as string) ?? "Client",
       clientPhone: (row.client_phone as string) ?? "",
       pickupLandmarkId: pickupLm.id,
@@ -134,7 +146,8 @@ export default function CartePage() {
         const now = Date.now();
         if (now - lastGpsSend.current > 10000 && demo?.id) {
           lastGpsSend.current = now;
-          supabase.from("drivers").update({ lat, lng }).eq("id", demo.id);
+          void supabase.from("drivers").update({ lat, lng }).eq("id", demo.id)
+            .then(({ error }) => { if (error) console.error("[GPS] update failed:", error.message); });
         }
       },
       () => { setGpsActive(false); },
@@ -170,14 +183,20 @@ export default function CartePage() {
     if (idx !== -1) { setOrderIndex(idx); setSecondsLeft(30); }
   }
 
-  function handleAccept() {
+  async function handleAccept() {
     if (!currentOrder) return;
-    acceptOrder(currentOrder.id);
-    // Update Supabase order status to "collecte" for real orders
     if (realOrders.some(o => o.id === currentOrder.id)) {
-      supabase.from("orders").update({ status: "collecte", active: true }).eq("id", currentOrder.id);
+      const { error } = await supabase
+        .from("orders")
+        .update({ status: "collecte", active: true })
+        .eq("id", currentOrder.id);
+      if (error) {
+        toast.error("Impossible d'accepter la commande");
+        return;
+      }
       setRealOrders(prev => prev.filter(o => o.id !== currentOrder.id));
     }
+    acceptOrder(currentOrder.id);
     router.push(`/driver/livraison/${currentOrder.id}`);
   }
 

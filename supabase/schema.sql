@@ -166,12 +166,53 @@ create policy if not exists "anon read order_messages"  on order_messages for se
 create policy if not exists "anon write order_messages" on order_messages for all    using (true) with check (true);
 
 -- ────────────────────────────────────────────────────────────
+-- RATE LIMITING (serverless-safe, replaces in-memory Map)
+-- ────────────────────────────────────────────────────────────
+create table if not exists api_rate_limits (
+  key       text        primary key,
+  count     integer     not null default 1,
+  reset_at  timestamptz not null
+);
+
+-- ────────────────────────────────────────────────────────────
+-- ADMIN MESSAGES (chat admin ↔ marchand/livreur)
+-- ────────────────────────────────────────────────────────────
+create table if not exists admin_messages (
+  id           bigserial   primary key,
+  subject_type text        not null check (subject_type in ('merchant', 'driver')),
+  subject_id   text        not null,
+  from_role    text        not null check (from_role in ('admin', 'merchant', 'driver')),
+  text         text        not null,
+  sent_at      timestamptz not null default now()
+);
+alter table admin_messages enable row level security;
+create policy if not exists "admin read admin_messages"  on admin_messages for select using (true);
+create policy if not exists "admin write admin_messages" on admin_messages for all    using (true) with check (true);
+
+-- ────────────────────────────────────────────────────────────
+-- DRIVER WITHDRAWALS (retrait Wave / Orange Money)
+-- ────────────────────────────────────────────────────────────
+create table if not exists driver_withdrawals (
+  id          text        primary key default gen_random_uuid()::text,
+  driver_id   text        references drivers(id) on delete set null,
+  amount      integer     not null,
+  phone       text        not null,
+  provider    text        not null check (provider in ('wave', 'orange')),
+  created_at  timestamptz not null default now()
+);
+alter table driver_withdrawals enable row level security;
+create policy if not exists "driver read own withdrawals"  on driver_withdrawals for select using (true);
+create policy if not exists "driver write own withdrawals" on driver_withdrawals for all    using (true) with check (true);
+
+-- ────────────────────────────────────────────────────────────
 -- INDEX utiles
 -- ────────────────────────────────────────────────────────────
-create index if not exists idx_orders_status     on orders(status);
-create index if not exists idx_orders_driver     on orders(driver_id);
-create index if not exists idx_orders_merchant   on orders(merchant_id);
-create index if not exists idx_orders_created    on orders(created_at desc);
-create index if not exists idx_orders_client     on orders(client_phone);
-create index if not exists idx_sav_messages_tick on sav_messages(ticket_id);
-create index if not exists idx_order_messages_order on order_messages(order_id);
+create index if not exists idx_orders_status          on orders(status);
+create index if not exists idx_orders_driver          on orders(driver_id);
+create index if not exists idx_orders_merchant        on orders(merchant_id);
+create index if not exists idx_orders_created         on orders(created_at desc);
+create index if not exists idx_orders_client          on orders(client_phone);
+create index if not exists idx_sav_messages_tick      on sav_messages(ticket_id);
+create index if not exists idx_order_messages_order   on order_messages(order_id);
+create index if not exists idx_admin_messages_subject on admin_messages(subject_type, subject_id);
+create index if not exists idx_driver_withdrawals_drv on driver_withdrawals(driver_id);

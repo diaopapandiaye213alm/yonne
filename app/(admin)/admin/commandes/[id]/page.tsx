@@ -5,7 +5,6 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useOrdersStore } from "@/lib/store/orders";
 import { useDriversStore } from "@/lib/store/drivers";
-import { useSupabaseAuthed } from "@/components/providers/SupabaseProvider";
 import type { OrderStatus } from "@/lib/mock-data/orders";
 import { landmarks } from "@/lib/mock-data/landmarks";
 import { GlovoTimeline } from "@/components/tracking/GlovoTimeline";
@@ -46,8 +45,7 @@ const NEXT_STATUS: Record<OrderStatus, OrderStatus | null> = {
 };
 
 export default function CommandeDetailPage({ params }: { params: { id: string } }) {
-  const supabase = useSupabaseAuthed();
-  const { orders, updateStatus } = useOrdersStore();
+  const { orders, updateStatus, assignDriver } = useOrdersStore();
   const { drivers } = useDriversStore();
   const order = orders.find(o => o.id === params.id);
   const onlineDrivers = drivers.filter(d => d.online && !d.inPrayer).sort((a, b) => b.scoreIA - a.scoreIA);
@@ -67,19 +65,16 @@ export default function CommandeDetailPage({ params }: { params: { id: string } 
     if (!selectedDriver || !order) return;
     const d = drivers.find(dr => dr.id === selectedDriver);
     setDispatchSubmitting(true);
-    const { error } = await supabase
-      .from("orders")
-      .update({ driver_id: selectedDriver, status: "assignée" })
-      .eq("id", order.id);
-    setDispatchSubmitting(false);
-    if (error) {
+    try {
+      await assignDriver(order.id, selectedDriver);
+      toast.success(`Livreur ${d?.name ?? selectedDriver} assigné à ${order.id}`);
+      setShowDispatch(false);
+      setSelectedDriver(null);
+    } catch {
       toast.error("Impossible d'assigner le livreur");
-      return;
+    } finally {
+      setDispatchSubmitting(false);
     }
-    updateStatus(order.id, "assignée");
-    toast.success(`Livreur ${d?.name ?? selectedDriver} assigné à ${order.id}`);
-    setShowDispatch(false);
-    setSelectedDriver(null);
   }
 
   const driver   = order ? drivers.find(d => d.id === order.driverId) : undefined;

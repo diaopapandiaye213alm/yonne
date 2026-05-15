@@ -22,6 +22,9 @@ export async function POST(req: NextRequest) {
   if (!email || !password)
     return NextResponse.json({ error: "Champs requis manquants" }, { status: 400 });
 
+  // Dummy hash ensures bcrypt always runs, preventing email-enumeration via timing.
+  const DUMMY_HASH = "$2b$12$invalidhashpaddingtomatch60charsXXXXXXXXXXXXXXXXXXXXXX";
+
   // Lire via le client admin pour bypasser RLS sur la table users
   const { data, error } = await supabaseAdmin
     .from("users")
@@ -29,11 +32,10 @@ export async function POST(req: NextRequest) {
     .eq("email", email)
     .single();
 
-  if (error || !data)
-    return NextResponse.json({ error: "Identifiants invalides" }, { status: 401 });
+  const hashToCompare = (data?.password_hash as string | undefined) ?? DUMMY_HASH;
+  const valid = await bcrypt.compare(password, hashToCompare);
 
-  const valid = await bcrypt.compare(password, data.password_hash as string);
-  if (!valid)
+  if (error || !data || !valid)
     return NextResponse.json({ error: "Identifiants invalides" }, { status: 401 });
 
   const userId      = data.id as string;

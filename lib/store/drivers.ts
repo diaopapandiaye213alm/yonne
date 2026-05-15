@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { supabase } from "@/lib/supabase";
+import { getSupabase } from "@/lib/supabase";
 import type { Driver } from "@/lib/mock-data/drivers";
 
 export function avatarUrl(driver: { avatarSeed: string }) {
@@ -15,6 +15,7 @@ interface DriversState {
   setInPrayer: (id: string, inPrayer: boolean) => Promise<void>;
   updateDriver: (id: string, fields: Partial<Pick<Driver, "name" | "phone" | "vehicle" | "tier" | "online">>) => void;
   updatePosition: (id: string, lat: number, lng: number) => void;
+  cleanup: () => void;
 }
 
 function rowToDriver(row: Record<string, unknown>): Driver {
@@ -37,7 +38,6 @@ function rowToDriver(row: Record<string, unknown>): Driver {
   };
 }
 
-// Guard: reject null / non-object payloads before rowToDriver is called
 function isValidRow(row: unknown): row is Record<string, unknown> {
   return (
     typeof row === "object" &&
@@ -48,8 +48,6 @@ function isValidRow(row: unknown): row is Record<string, unknown> {
 }
 
 // ── Position-update throttle ──────────────────────────────────────────────────
-// Realtime can fire many driver UPDATEs in quick succession (e.g. GPS bursts).
-// We buffer them and flush to the store at most every THROTTLE_MS.
 const THROTTLE_MS = 3000;
 let positionBuffer = new Map<string, Driver>();
 let flushTimer: ReturnType<typeof setTimeout> | null = null;
@@ -59,14 +57,12 @@ function enqueueDriverUpdate(
   storeSet: (fn: (s: DriversState) => Partial<DriversState>) => void
 ) {
   positionBuffer.set(driver.id, driver);
-
-  if (flushTimer !== null) return; // already scheduled
+  if (flushTimer !== null) return;
   flushTimer = setTimeout(() => {
     flushTimer = null;
     const snapshot = new Map(positionBuffer);
     positionBuffer = new Map();
     if (snapshot.size === 0) return;
-
     storeSet((s) => ({
       drivers: s.drivers.map((d) => snapshot.get(d.id) ?? d),
     }));
@@ -74,7 +70,8 @@ function enqueueDriverUpdate(
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
-let driversRealtimeSubscribed = false;
+// Channel reference outside state to prevent serialization issues.
+let _driversChannel: ReturnType<ReturnType<typeof getSupabase>["channel"]> | null = null;
 
 export const useDriversStore = create<DriversState>((set, get) => ({
   drivers: [],
@@ -85,7 +82,7 @@ export const useDriversStore = create<DriversState>((set, get) => ({
     if (get().loading) return;
     set({ loading: true, error: null });
     try {
-      const { data, error } = await supabase
+      const { data, error } = await getSupabase()
         .from("drivers")
         .select("*")
         .order("score_ia", { ascending: false });
@@ -98,27 +95,32 @@ export const useDriversStore = create<DriversState>((set, get) => ({
       set({ loading: false });
     }
 
-    if (!driversRealtimeSubscribed) {
-      driversRealtimeSubscribed = true;
-      supabase
+    if (!_driversChannel) {
+      _driversChannel = getSupabase()
         .channel("drivers-rt")
         .on(
           "postgres_changes",
           { event: "UPDATE", schema: "public", table: "drivers" },
           (payload) => {
-            // Validate before touching state — malformed payload = silent skip
             if (!isValidRow(payload.new)) return;
-
             try {
               const updated = rowToDriver(payload.new);
-              // Enqueue for batched flush (max one re-render per THROTTLE_MS)
               enqueueDriverUpdate(updated, set);
-            } catch {
-              // Corrupt row: skip silently rather than crashing
-            }
+            } catch { /* corrupt row: skip silently */ }
           }
         )
         .subscribe();
+    }
+  },
+
+  cleanup: () => {
+    if (_driversChannel) {
+      getSupabase().removeChannel(_driversChannel);
+      _driversChannel = null;
+    }
+    if (flushTimer !== null) {
+      clearTimeout(flushTimer);
+      flushTimer = null;
     }
   },
 
@@ -128,7 +130,7 @@ export const useDriversStore = create<DriversState>((set, get) => ({
       drivers: s.drivers.map((d) => (d.id === id ? { ...d, online } : d)),
     }));
     try {
-      const { error } = await supabase
+      const { error } = await getSupabase()
         .from("drivers")
         .update({ online })
         .eq("id", id);
@@ -151,7 +153,7 @@ export const useDriversStore = create<DriversState>((set, get) => ({
       ),
     }));
     try {
-      const { error } = await supabase
+      const { error } = await getSupabase()
         .from("drivers")
         .update({ in_prayer: inPrayer, online: !inPrayer })
         .eq("id", id);
@@ -168,15 +170,12 @@ export const useDriversStore = create<DriversState>((set, get) => ({
     }
   },
 
-  // Local-only store update after a successful admin edit saved to Supabase.
   updateDriver: (id, fields) => {
     set((s) => ({
       drivers: s.drivers.map((d) => (d.id === id ? { ...d, ...fields } : d)),
     }));
   },
 
-  // Local-only position update used by the simulation engine.
-  // Bypasses throttle and Supabase to avoid write spam.
   updatePosition: (id, lat, lng) => {
     set((s) => ({
       drivers: s.drivers.map((d) => (d.id === id ? { ...d, lat, lng } : d)),

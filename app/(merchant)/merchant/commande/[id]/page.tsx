@@ -10,7 +10,7 @@ import { ChatBubble } from "@/components/tracking/ChatBubble";
 import { EtaBadge } from "@/components/tracking/EtaBadge";
 import { DriverCard } from "@/components/tracking/DriverCard";
 import { Button } from "@/components/ui/button";
-import { Share2, XCircle, AlertTriangle, FileText, Send } from "lucide-react";
+import { Share2, XCircle, AlertTriangle, FileText, Send, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useSupabaseAuthed } from "@/components/providers/SupabaseProvider";
 
@@ -41,7 +41,7 @@ export default function TrackingPage({ params }: { params: { id: string } }) {
   // RLS filters orders to only the current merchant's — if not found after load, it's not theirs
   const notFound = !loading && orders.length > 0 && !order;
 
-  const status: OrderStatus = order?.status ?? "en route";
+  const status: OrderStatus = order?.status ?? "créée";
   const isCancelled = order?.status === "annulée";
   const canCancel   = order ? order.status !== "livrée" && order.status !== "annulée" : false;
 
@@ -56,14 +56,20 @@ export default function TrackingPage({ params }: { params: { id: string } }) {
   }
 
   const { drivers } = useDriversStore();
-  const seed = params.id.charCodeAt(params.id.length - 1);
-  const onlineDrivers = useMemo(() => drivers.filter(d => d.online && !d.inPrayer), [drivers]);
-  const driver = useMemo(() => onlineDrivers[seed % Math.max(1, onlineDrivers.length)] ?? drivers[seed % Math.max(1, drivers.length)], [seed, onlineDrivers, drivers]);
-  const destination = useMemo(() => landmarks[seed % landmarks.length], [seed]);
+  const driver = useMemo(
+    () => order?.driverId ? drivers.find(d => d.id === order.driverId) ?? null : null,
+    [order?.driverId, drivers]
+  );
+  const destination = useMemo(
+    () => order?.landmarkId ? landmarks.find(l => l.id === order.landmarkId) ?? null : null,
+    [order?.landmarkId]
+  );
 
-  const [pos, setPos] = useState<[number, number]>([14.6928, -17.4467]);
+  const DAKAR: [number, number] = [14.6928, -17.4467];
+  const [pos, setPos] = useState<[number, number]>(DAKAR);
 
   useEffect(() => {
+    if (!driver || !destination) return;
     const total = 30;
     let i = 0;
     const id = setInterval(() => {
@@ -78,6 +84,7 @@ export default function TrackingPage({ params }: { params: { id: string } }) {
   }, [driver, destination]);
 
   const distanceKm = useMemo(() => {
+    if (!destination) return null;
     const dLat = destination.lat - pos[0];
     const dLng = destination.lng - pos[1];
     return Math.round(Math.sqrt(dLat * dLat + dLng * dLng) * 111 * 10) / 10;
@@ -124,12 +131,21 @@ export default function TrackingPage({ params }: { params: { id: string } }) {
 
   const pins = [
     { id: "drv", lat: pos[0], lng: pos[1], kind: "driver" as const },
-    { id: "dst", lat: destination.lat, lng: destination.lng, kind: "dest" as const },
+    ...(destination ? [{ id: "dst", lat: destination.lat, lng: destination.lng, kind: "dest" as const }] : []),
   ];
 
   const waText = encodeURIComponent(
     `Suis ta livraison YONNE en temps réel 🛵 ${typeof window !== "undefined" ? `${window.location.origin}/suivi/${params.id}` : ""}`
   );
+
+  if (loading && !order) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full gap-3">
+        <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
+        <p className="text-sm text-ink-500">Chargement de la commande…</p>
+      </div>
+    );
+  }
 
   if (notFound) {
     return (
@@ -144,7 +160,7 @@ export default function TrackingPage({ params }: { params: { id: string } }) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] h-full">
       <div className="relative">
-        <DakarMap pins={pins} trail={{ from: pos, to: [destination.lat, destination.lng] }} center={pos} zoom={14} height="100%" />
+        <DakarMap pins={pins} trail={destination ? { from: pos, to: [destination.lat, destination.lng] } : undefined} center={pos} zoom={14} height="100%" />
       </div>
       <aside className="bg-white border-l border-cream-200 p-5 space-y-5 overflow-y-auto animate-fade-in-up">
         <div>
@@ -152,8 +168,8 @@ export default function TrackingPage({ params }: { params: { id: string } }) {
           <div className="font-mono text-sm text-ink-900">{params.id}</div>
           <span className={`inline-block mt-2 text-xs px-2 py-0.5 rounded-sm font-bold ${STATUS_COLORS[status]}`}>{status}</span>
         </div>
-        <DriverCard driver={driver} />
-        <EtaBadge distanceKm={distanceKm} />
+        {driver && <DriverCard driver={driver} />}
+        {distanceKm !== null && <EtaBadge distanceKm={distanceKm} />}
         <div>
           <h3 className="font-display font-semibold text-ink-900 mb-3">Suivi</h3>
           <GlovoTimeline activeStage={STATUS_STAGE[status]} />

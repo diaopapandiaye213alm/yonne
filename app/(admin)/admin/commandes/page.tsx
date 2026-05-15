@@ -131,7 +131,7 @@ export default function CommandesPage() {
         <select value={driverId} onChange={e => setDriverId(e.target.value)}
           className="border border-cream-200 rounded-lg px-3 py-2 text-sm bg-white text-ink-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 h-10 max-w-[180px]">
           <option value="">Tous livreurs</option>
-          {drivers.slice(0, 20).map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+          {drivers.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
         </select>
 
         {/* Date range */}

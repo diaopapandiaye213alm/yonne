@@ -24,6 +24,14 @@ function ensureFetched() {
     .catch(() => { _resolved = true; notify(null); });
 }
 
+// Call on logout so that the next login gets a fresh session fetch.
+export function clearSession() {
+  _resolved = false;
+  _session = null;
+  _fetchPromise = null;
+  notify(null);
+}
+
 export function useSession(): SessionPayload | null {
   const [session, setSession] = useState<SessionState>(_resolved ? _session : null);
 
