@@ -1,4 +1,5 @@
 "use client";
+import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { KpiCard } from "@/components/kpi/KpiCard";
 import { DriverLeaderboard } from "@/components/kpi/DriverLeaderboard";
@@ -10,10 +11,23 @@ import { useLiveKpis } from "@/lib/hooks/useLiveKpis";
 import { useT, useLang } from "@/lib/i18n";
 import { LiveFeed } from "@/components/admin/LiveFeed";
 import { SimulationControls } from "@/components/admin/SimulationControls";
+import { useSimulationStore } from "@/lib/store/simulation";
 import { Sparkles, ChevronRight } from "lucide-react";
 
 export default function AdminHomePage() {
   const kpis = useLiveKpis(10000);
+  const { running, start } = useSimulationStore();
+  const autoStarted = useRef(false);
+
+  // Auto-start simulation 3s after admin dashboard loads (demo mode)
+  useEffect(() => {
+    if (running || autoStarted.current) return;
+    autoStarted.current = true;
+    const t = setTimeout(() => {
+      if (!useSimulationStore.getState().running) start(1);
+    }, 3000);
+    return () => clearTimeout(t);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const t    = useT();
   const lang = useLang(s => s.lang);
   const { drivers } = useDriversStore();
