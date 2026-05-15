@@ -72,7 +72,7 @@ export default function CataloguePage() {
       })),
       { onConflict: "id" }
     );
-  }, [merchantId]);
+  }, [merchantId, supabase]);
 
   // Save helper: localStorage + Supabase
   const saveAll = useCallback((next: Article[]) => {
@@ -109,7 +109,7 @@ export default function CataloguePage() {
       } catch { /* ignore */ }
     }
     load();
-  }, [merchantId]);
+  }, [merchantId, supabase]);
   const [catFilter,   setCatFilter]   = useState<Category | "Tous">("Tous");
   const [editState,   setEditState]   = useState<EditState>(null);
   const [showAddForm, setShowAddForm] = useState(false);

@@ -277,6 +277,90 @@ create policy "users read own sav_messages"
     )
   );
 
+-- ── Table : catalogue_items ──────────────────────────────────────────────────
+
+-- Remplace les policies MVP permissives (anon tout-autorisé)
+drop policy if exists "anon read catalogue"  on catalogue_items;
+drop policy if exists "anon write catalogue" on catalogue_items;
+
+-- Lecture publique : tout le monde peut parcourir le catalogue
+create policy "public read catalogue"
+  on catalogue_items for select
+  using (true);
+
+-- Marchand : gérer uniquement son propre catalogue
+create policy "merchant manage own catalogue"
+  on catalogue_items for all
+  using (
+    yonne_role() = 'merchant'
+    and merchant_id in (select id from merchants where user_id = auth.uid())
+  )
+  with check (
+    merchant_id in (select id from merchants where user_id = auth.uid())
+  );
+
+-- Admin : accès total
+create policy "admin full catalogue"
+  on catalogue_items for all
+  using      (yonne_role() = 'admin')
+  with check (yonne_role() = 'admin');
+
+-- ── Table : order_messages ────────────────────────────────────────────────────
+
+-- Remplace les policies MVP permissives
+drop policy if exists "anon read order_messages"  on order_messages;
+drop policy if exists "anon write order_messages" on order_messages;
+
+-- Admin : accès total
+create policy "admin full order_messages"
+  on order_messages for all
+  using      (yonne_role() = 'admin')
+  with check (yonne_role() = 'admin');
+
+-- Marchand : lire les messages de ses commandes
+create policy "merchant read own order_messages"
+  on order_messages for select
+  using (
+    yonne_role() = 'merchant'
+    and order_id in (
+      select id from orders
+      where merchant_id in (select id from merchants where user_id = auth.uid())
+    )
+  );
+
+-- Livreur : lire les messages de ses commandes assignées
+create policy "driver read own order_messages"
+  on order_messages for select
+  using (
+    yonne_role() = 'driver'
+    and order_id in (
+      select id from orders
+      where driver_id in (select id from drivers where user_id = auth.uid())
+    )
+  );
+
+-- Marchand : envoyer un message sur ses commandes
+create policy "merchant insert order_messages"
+  on order_messages for insert
+  with check (
+    yonne_role() = 'merchant'
+    and order_id in (
+      select id from orders
+      where merchant_id in (select id from merchants where user_id = auth.uid())
+    )
+  );
+
+-- Livreur : envoyer un message sur ses commandes assignées
+create policy "driver insert order_messages"
+  on order_messages for insert
+  with check (
+    yonne_role() = 'driver'
+    and order_id in (
+      select id from orders
+      where driver_id in (select id from drivers where user_id = auth.uid())
+    )
+  );
+
 -- ── Table : users (auth interne) ──────────────────────────────────────────────
 
 -- Personne ne lit la table users via la clé anon (mots de passe en clair)

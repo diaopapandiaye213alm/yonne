@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import { useSupabaseAuthed } from "@/components/providers/SupabaseProvider";
 import { ShieldAlert, AlertCircle, CheckCircle2, Clock } from "lucide-react";
@@ -32,16 +32,16 @@ export default function SinistrePage() {
   const [submitting, setSubmitting] = useState(false);
   const [tickets, setTickets] = useState<SavTicketRow[]>([]);
 
-  async function fetchTickets() {
+  const fetchTickets = useCallback(async () => {
     const { data } = await supabase
       .from("sav_tickets")
       .select("*")
       .order("created_at", { ascending: false })
       .limit(10);
     if (data) setTickets(data);
-  }
+  }, [supabase]);
 
-  useEffect(() => { fetchTickets(); }, []);
+  useEffect(() => { fetchTickets(); }, [fetchTickets]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

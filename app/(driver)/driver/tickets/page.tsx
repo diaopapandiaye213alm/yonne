@@ -29,7 +29,7 @@ export default function DriverTicketsPage() {
       setLoading(false);
     }
     fetchTickets();
-  }, []);
+  }, [supabase]);
 
   return (
     <div className="pb-24 px-4 pt-6 space-y-5">

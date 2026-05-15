@@ -11,7 +11,6 @@ import { EtaBadge } from "@/components/tracking/EtaBadge";
 import { Wordmark } from "@/components/brand/Wordmark";
 import { Share2, Phone, MessageCircle, Star, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/lib/supabase";
 
 const DakarMap = dynamic(() => import("@/components/map/DakarMap"), { ssr: false });
 
@@ -216,8 +215,11 @@ export default function PublicTrackingPage({ params }: { params: { id: string } 
             <StarRating onRate={async (n) => {
               toast.success(`Note ${n}★ envoyée — merci !`);
               if (driver?.id) {
-                const newRating = Math.round((driver.rating * 0.9 + n * 0.1) * 10) / 10;
-                await supabase.from("drivers").update({ rating: newRating }).eq("id", driver.id);
+                await fetch("/api/rate", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ driverId: driver.id, rating: n }),
+                });
               }
             }} />
           </div>

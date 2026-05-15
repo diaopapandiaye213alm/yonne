@@ -112,7 +112,7 @@ export default function CartePage() {
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [demo?.id, rowToIncoming]);
+  }, [demo?.id, rowToIncoming, supabase]);
 
   // Enregistrer ce livreur dans le moteur de simulation
   useEffect(() => {
@@ -143,7 +143,7 @@ export default function CartePage() {
     return () => {
       if (watchIdRef.current !== null) navigator.geolocation.clearWatch(watchIdRef.current);
     };
-  }, [demo?.id]);
+  }, [demo?.id, supabase]);
 
   // Countdown for real orders
   useEffect(() => {

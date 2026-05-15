@@ -104,7 +104,7 @@ export default function TrackingPage({ params }: { params: { id: string } }) {
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [params.id]);
+  }, [params.id, supabase]);
 
   async function sendMessage() {
     const text = chatInput.trim();

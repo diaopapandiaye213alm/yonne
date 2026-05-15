@@ -31,7 +31,7 @@ export default function AssurancePage() {
       .order("created_at", { ascending: false })
       .limit(20)
       .then(({ data }) => { if (data) setSinistres(data); });
-  }, []);
+  }, [supabase]);
 
   const stats = useMemo(() => {
     const assuredOrders = orders.filter(o => o.insurance);

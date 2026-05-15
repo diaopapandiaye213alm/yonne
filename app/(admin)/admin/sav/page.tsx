@@ -188,7 +188,7 @@ export default function SavPage() {
       })));
     }
     load();
-  }, []);
+  }, [supabase]);
 
   const visible = filter === "tous" ? tickets : tickets.filter(tk => tk.status === filter);
   const open    = tickets.filter(tk => tk.status === "ouvert").length;
