@@ -429,7 +429,7 @@ export default function TrackingPage({ params }: { params: { id: string } }) {
               `💳 Paiement : ${order?.paymentMethod ?? "—"}\n` +
               `✅ Statut : Livrée\n` +
               `📅 Date : ${order ? new Date(order.createdAt).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" }) : "—"}\n\n` +
-              `Merci de votre confiance — YONNE Dakar 🇸🇳`
+              `Merci de votre confiance — YONNE Sénégal 🇸🇳`
             )}`}
             target="_blank"
             rel="noopener noreferrer"

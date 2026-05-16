@@ -3,6 +3,8 @@ import { useState, useEffect } from "react";
 import { useOrdersStore } from "@/lib/store/orders";
 import { useDriversStore } from "@/lib/store/drivers";
 
+const IS_PROD = process.env.NEXT_PUBLIC_APP_ENV === "production";
+
 interface LiveKpis {
   revenue: number;
   orders: number;
@@ -32,10 +34,10 @@ export function useLiveKpis(intervalMs = 10000): LiveKpis {
   const { orders }  = useOrdersStore();
   const { drivers } = useDriversStore();
 
-  const realOrders      = orders.length || 147;
-  const realOnline      = drivers.filter(d => d.online).length || 28;
-  const realRevenue     = orders.reduce((s, o) => s + o.amount, 0) || 847200;
-  const realRating      = drivers.length > 0
+  const realOrders  = orders.length;
+  const realOnline  = drivers.filter(d => d.online).length;
+  const realRevenue = orders.reduce((s, o) => s + o.amount, 0);
+  const realRating  = drivers.length > 0
     ? Math.round((drivers.reduce((s, d) => s + d.rating, 0) / drivers.length) * 10) / 10
     : 4.7;
 
@@ -64,12 +66,14 @@ export function useLiveKpis(intervalMs = 10000): LiveKpis {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orders.length, drivers.length]);
 
+  // Simulate live activity only in demo/dev mode — never in production
   useEffect(() => {
+    if (IS_PROD) return;
     const id = setInterval(() => {
       setKpis(prev => {
         const newOrders  = prev.orders + randInt(0, 2);
         const newRevenue = prev.revenue + randInt(2000, 10000);
-        const newOnline  = Math.max(0, Math.min(41, prev.onlineDrivers + randInt(-1, 2)));
+        const newOnline  = Math.max(0, Math.min(drivers.length || 41, prev.onlineDrivers + randInt(-1, 2)));
 
         return {
           revenue:       newRevenue,
@@ -83,7 +87,8 @@ export function useLiveKpis(intervalMs = 10000): LiveKpis {
     }, intervalMs);
 
     return () => clearInterval(id);
-  }, [intervalMs]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [intervalMs, IS_PROD]);
 
   return kpis;
 }

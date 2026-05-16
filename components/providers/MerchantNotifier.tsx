@@ -25,8 +25,9 @@ export function MerchantNotifier({ merchantId }: { merchantId?: string }) {
 
   useEffect(() => {
     let errorToastShown = false;
+    const channelName = merchantId ? `merchant-orders-${merchantId}` : "merchant-order-updates";
     const channel = supabase
-      .channel("merchant-order-updates")
+      .channel(channelName)
       .on(
         "postgres_changes",
         {
