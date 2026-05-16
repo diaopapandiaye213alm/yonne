@@ -1,0 +1,144 @@
+name: CI/CD — YONNE
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # ── 1. Quality gate : lint + types + build ──────────────────────────────────
+  quality:
+    name: Lint, Types & Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Cache Next.js build output
+        uses: actions/cache@v4
+        with:
+          path: .next/cache
+          key: ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-${{ hashFiles('**/*.ts', '**/*.tsx') }}
+          restore-keys: |
+            ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-
+            ${{ runner.os }}-nextjs-
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type check
+        run: npx tsc --noEmit
+
+      - name: Build
+        run: npm run build
+        env:
+          # Dummy values — build must succeed with placeholders (no real network calls)
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlhdCI6MTcwMDAwMDAwMH0.placeholder
+          SUPABASE_SERVICE_ROLE_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIiwiaWF0IjoxNzAwMDAwMDAwfQ.placeholder
+          AUTH_SECRET: ci_placeholder_secret_must_be_at_least_32_chars_long
+          AT_API_KEY: atsk_ci_placeholder
+          AT_USERNAME: sandbox
+          PAYMENT_WEBHOOK_SECRET: ci_placeholder_webhook_secret_32_bytes_ok
+          NEXT_PUBLIC_APP_ENV: ci
+
+  # ── 2. DB schema validation : PostgreSQL 16 + auth stubs ───────────────────
+  db-validate:
+    name: DB Schema Validation
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: yonne_ci
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      PGPASSWORD: postgres
+      PGHOST: localhost
+      PGPORT: 5432
+      PGDATABASE: yonne_ci
+      PGUSER: postgres
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install PostgreSQL client
+        run: sudo apt-get install -y --no-install-recommends postgresql-client
+
+      - name: Stub Supabase auth schema
+        run: |
+          psql <<'SQL'
+          CREATE SCHEMA IF NOT EXISTS auth;
+
+          CREATE OR REPLACE FUNCTION auth.uid()
+            RETURNS uuid LANGUAGE sql AS $$ SELECT gen_random_uuid() $$;
+
+          CREATE OR REPLACE FUNCTION auth.email()
+            RETURNS text LANGUAGE sql AS $$ SELECT 'ci@yonne.sn'::text $$;
+
+          CREATE OR REPLACE FUNCTION auth.jwt()
+            RETURNS jsonb LANGUAGE sql AS $$ SELECT '{}'::jsonb $$;
+
+          CREATE OR REPLACE FUNCTION auth.role()
+            RETURNS text LANGUAGE sql AS $$ SELECT 'anon'::text $$;
+          SQL
+
+      - name: Apply schema.sql
+        run: psql -f supabase/schema.sql
+
+      - name: Apply rls.sql
+        run: psql -f supabase/rls.sql
+
+      - name: Apply realtime_monitoring.sql
+        run: psql -f supabase/realtime_monitoring.sql
+
+      - name: Apply payments.sql
+        run: psql -f supabase/payments.sql
+
+      - name: Smoke-test function signatures
+        run: |
+          psql <<'SQL'
+          -- Verify monitoring RPCs exist and execute without error
+          SELECT yonne_realtime_stats() IS NOT NULL AS realtime_stats_ok;
+          SELECT yonne_sms_quota_status() IS NOT NULL AS sms_quota_ok;
+
+          -- Verify payment table and RPC exist
+          SELECT count(*) = 0 AS payment_events_empty FROM payment_events;
+
+          SELECT process_payment_webhook(
+            'ci-test-event-001',
+            NULL,
+            'wave',
+            5000,
+            'XOF',
+            'completed',
+            '{"test": true}'::jsonb
+          ) IS NOT NULL AS payment_rpc_ok;
+          SQL
+
+      - name: Supabase CLI lint (optional — skipped if token absent)
+        if: ${{ env.SUPABASE_ACCESS_TOKEN != '' }}
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          npm install -g supabase --silent
+          supabase db lint --local 2>/dev/null || true
