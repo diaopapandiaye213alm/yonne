@@ -21,13 +21,14 @@ create table if not exists zones (
 
 alter table zones enable row level security;
 
-create policy if not exists "public read zones"
-  on zones for select using (true);
+do $$ begin
+  create policy "public read zones" on zones for select using (true);
+exception when duplicate_object then null; end $$;
 
-create policy if not exists "admin write zones"
-  on zones for all
-  using      (yonne_role() = 'admin')
-  with check (yonne_role() = 'admin');
+do $$ begin
+  create policy "admin write zones" on zones for all
+    using (yonne_role() = 'admin') with check (yonne_role() = 'admin');
+exception when duplicate_object then null; end $$;
 
 -- Zones Dakar initiales — couvrent les quartiers à forte densité de livraison
 insert into zones (id, name, center_lat, center_lng, radius_km) values

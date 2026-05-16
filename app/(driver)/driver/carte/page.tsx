@@ -12,9 +12,10 @@ import { Switch } from "@/components/ui/switch";
 import type { Pin } from "@/components/map/DakarMap";
 import { triggerOrderNotification } from "@/components/driver/PushNotifBanner";
 import { simulationEngine } from "@/lib/simulation/engine";
-import { Navigation } from "lucide-react";
+import { Navigation, Bell } from "lucide-react";
 import { useSupabaseAuthed } from "@/components/providers/SupabaseProvider";
 import { toast } from "sonner";
+import { usePushNotification } from "@/lib/hooks/usePushNotification";
 
 const DakarMap = dynamic(() => import("@/components/map/DakarMap"), {
   ssr: false,
@@ -48,6 +49,7 @@ export default function CartePage() {
   const [gpsActive, setGpsActive]     = useState(false);
   // BatchInfo indexé par orderId — peuplé par checkBatch() dès qu'un batch est trouvé
   const [batchInfoMap, setBatchInfoMap] = useState<Map<string, BatchInfo>>(new Map());
+  const { pushState, subscribe: subscribePush } = usePushNotification(demo?.id ?? null);
   const watchIdRef    = useRef<number | null>(null);
   const lastGpsSend   = useRef<number>(0);
 
@@ -286,6 +288,24 @@ export default function CartePage() {
           </span>
         )}
       </div>
+
+      {/* Push notification opt-in — shown once when not yet subscribed */}
+      {pushState === "idle" && online && (
+        <div className="absolute top-16 left-4 z-[1001]">
+          <button
+            onClick={() => {
+              subscribePush().then((ok) => {
+                if (ok) toast.success("Notifications activées");
+                else toast.error("Notifications non autorisées");
+              });
+            }}
+            className="flex items-center gap-1.5 bg-white rounded-full shadow-card px-3 py-2 text-xs font-medium text-ink-700 hover:bg-cream-50 transition-colors"
+          >
+            <Bell className="w-3.5 h-3.5 text-emerald-500" />
+            Activer les notifications
+          </button>
+        </div>
+      )}
 
       {/* Waiting state overlay — shown when online but no real orders */}
       {online && allOrders.length === 0 && (

@@ -50,6 +50,9 @@ jobs:
           AT_USERNAME: sandbox
           PAYMENT_WEBHOOK_SECRET: ci_placeholder_webhook_secret_32_bytes_ok
           NEXT_PUBLIC_APP_ENV: ci
+          NEXT_PUBLIC_VAPID_PUBLIC_KEY: BEl62iUYgUivxIkv69yViEuiBIa40cRi7v1-_PqPAlSm8eDHITmLPECBsQxJlHlpXsXGBVDJiEaV_BEdXmEfPg
+          VAPID_PUBLIC_KEY: BEl62iUYgUivxIkv69yViEuiBIa40cRi7v1-_PqPAlSm8eDHITmLPECBsQxJlHlpXsXGBVDJiEaV_BEdXmEfPg
+          VAPID_PRIVATE_KEY: u4dkFut5NJi7qnSFCMIMT5kQFHbsSSMCOBFCRiIe9sI
 
   # ── 2. DB schema validation : PostgreSQL 16 + auth stubs ───────────────────
   db-validate:
@@ -120,6 +123,9 @@ jobs:
       - name: Apply surge_pricing.sql
         run: psql -f supabase/surge_pricing.sql
 
+      - name: Apply web_push.sql
+        run: psql -f supabase/web_push.sql
+
       - name: Smoke-test function signatures
         run: |
           psql <<'SQL'
@@ -143,6 +149,9 @@ jobs:
           -- Verify batching RPC and surge RPC
           SELECT yonne_find_eligible_batch('nonexistent-order') IS NOT NULL AS batch_rpc_ok;
           SELECT yonne_calculate_surge_multiplier('zone-plateau') = 1.0 AS surge_rpc_ok;
+
+          -- Verify web push subscriptions table exists
+          SELECT count(*) = 0 AS push_subs_empty FROM driver_push_subscriptions;
           SQL
 
       - name: Supabase CLI lint (optional — skipped if token absent)
