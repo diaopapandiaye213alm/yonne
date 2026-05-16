@@ -44,7 +44,7 @@ truncate table api_rate_limits     restart identity cascade;
 -- ────────────────────────────────────────────────────────────────────────────
 insert into users (email, password_hash, role, display_name, redirect_url)
 values (
-  'diaoadmin@yonne.sn',
+  'admin@yonne.sn',
   '<HASH_BCRYPT_DU_MOT_DE_PASSE>',
   'admin',
   'Admin YONNE',

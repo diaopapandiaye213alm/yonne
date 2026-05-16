@@ -8,7 +8,7 @@ const ROLE_HOME: Record<string, string> = {
 };
 
 // Seul cet email peut accéder à /admin — doit correspondre à ADMIN_EMAIL dans les env vars
-const ADMIN_EMAIL = (process.env.ADMIN_EMAIL ?? "diaoadmin@yonne.sn").toLowerCase();
+const ADMIN_EMAIL = (process.env.ADMIN_EMAIL ?? "admin@yonne.sn").toLowerCase();
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
