@@ -11,7 +11,16 @@ import { toast } from "sonner";
 
 type Role = "merchant" | "driver";
 
-const CITIES    = ["Dakar", "Thiès", "Saint-Louis", "Touba"] as const;
+const CITIES = [
+  "Dakar", "Rufisque", "Bargny", "Diamniadio",
+  "Thiès", "Mbour", "Saly", "Tivaouane",
+  "Saint-Louis", "Richard Toll",
+  "Touba", "Mbacké", "Diourbel",
+  "Kaolack", "Fatick", "Kaffrine",
+  "Louga", "Matam", "Podor",
+  "Tambacounda", "Kédougou",
+  "Ziguinchor", "Kolda", "Sédhiou",
+] as const;
 const VEHICLES  = ["Moto Yamaha", "Moto TVS", "Vélo électrique", "Tricycle"] as const;
 
 export default function RegisterPage() {
