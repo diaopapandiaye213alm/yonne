@@ -68,9 +68,8 @@ export default function NotFound() {
 
         <div className="mt-10 flex flex-wrap justify-center gap-3">
           {[
-            { href: "/admin",    label: "Admin" },
-            { href: "/merchant", label: "Marchand" },
-            { href: "/driver/carte", label: "Livreur" },
+            { href: "/merchant", label: "Espace marchand" },
+            { href: "/driver/carte", label: "Espace livreur" },
           ].map(l => (
             <Link key={l.href} href={l.href}
               className="text-xs text-emerald-400/60 hover:text-emerald-300 transition-colors px-3 py-1.5 rounded-full border border-emerald-800 hover:border-emerald-600">

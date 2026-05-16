@@ -6,7 +6,7 @@ import { Wordmark } from "@/components/brand/Wordmark";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ShieldCheck, CheckCircle2, Loader2, Store, Bike, Mail, Lock } from "lucide-react";
+import { ShieldCheck, CheckCircle2, Loader2, Store, Bike, Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { useT } from "@/lib/i18n";
 
 const features = [
@@ -45,6 +45,7 @@ export default function LoginPage() {
   const t = useT();
   const [email,    setEmail]    = useState("");
   const [password, setPassword] = useState("");
+  const [showPwd,  setShowPwd]  = useState(false);
   const [error,    setError]    = useState<string | null>(null);
   const [loading,  setLoading]  = useState(false);
 
@@ -162,10 +163,18 @@ export default function LoginPage() {
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-400 pointer-events-none" />
                 <Input
-                  id="password" type="password" value={password}
+                  id="password" type={showPwd ? "text" : "password"} value={password}
                   onChange={e => setPassword(e.target.value)} required
-                  className="h-12 pl-9"
+                  className="h-12 pl-9 pr-10"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPwd(v => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-400 hover:text-ink-600 transition-colors"
+                  aria-label={showPwd ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+                >
+                  {showPwd ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
               </div>
             </div>
 
@@ -187,14 +196,19 @@ export default function LoginPage() {
               ) : t("loginCta")}
             </Button>
 
-            <button type="button" className="block w-full text-center text-xs text-ink-500 hover:text-ink-700 transition-colors">
+            <a
+              href="https://wa.me/221781234567?text=Bonjour%2C%20j%27ai%20oublié%20mon%20mot%20de%20passe%20YONNE."
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block w-full text-center text-xs text-ink-500 hover:text-emerald-600 transition-colors"
+            >
               {t("loginForgot")}
-            </button>
+            </a>
           </form>
 
           <div className="mt-5 flex items-center justify-center gap-2 text-xs text-ink-500 animate-fade-in-up" style={{ animationDelay: "120ms" }}>
             <ShieldCheck className="w-4 h-4 text-emerald-500" />
-            Authentification 2FA SMS activée
+            Connexion sécurisée · données chiffrées
           </div>
 
           <p className="text-center text-sm text-ink-500 mt-4 animate-fade-in-up" style={{ animationDelay: "140ms" }}>

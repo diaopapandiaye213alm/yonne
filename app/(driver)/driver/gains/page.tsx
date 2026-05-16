@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useDriversStore } from "@/lib/store/drivers";
 import { useOrdersStore } from "@/lib/store/orders";
+import { useDriverStore } from "@/lib/store/driver";
 import { useSession } from "@/lib/hooks/useSession";
 import { useSupabaseAuthed } from "@/components/providers/SupabaseProvider";
 import { landmarks } from "@/lib/mock-data/landmarks";
@@ -29,6 +30,7 @@ export default function GainsPage() {
   const session = useSession();
   const { drivers } = useDriversStore();
   const { orders } = useOrdersStore();
+  const { online } = useDriverStore();
 
   const demo = useMemo(() => {
     const byName = session?.displayName ? drivers.find(d => d.name === session.displayName) : null;
@@ -182,10 +184,17 @@ export default function GainsPage() {
             <h1 className="font-display font-bold text-xl text-white">{t("myEarnings")}</h1>
             <p className="text-emerald-200/60 text-sm mt-0.5">{session?.displayName ?? demo.id}</p>
           </div>
-          <div className="shrink-0 flex items-center gap-1.5 bg-emerald-500/30 border border-emerald-400/40 rounded-full px-3 py-1.5">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-live-pulse" />
-            <span className="text-white text-xs font-semibold">En ligne</span>
-          </div>
+          {online ? (
+            <div className="shrink-0 flex items-center gap-1.5 bg-emerald-500/30 border border-emerald-400/40 rounded-full px-3 py-1.5">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-live-pulse" />
+              <span className="text-white text-xs font-semibold">En ligne</span>
+            </div>
+          ) : (
+            <div className="shrink-0 flex items-center gap-1.5 bg-white/10 border border-white/20 rounded-full px-3 py-1.5">
+              <span className="w-2 h-2 rounded-full bg-white/30" />
+              <span className="text-white/60 text-xs font-semibold">Hors ligne</span>
+            </div>
+          )}
         </div>
       </div>
 

@@ -37,7 +37,7 @@ export function IncomingOrderCard({ order, secondsLeft, onAccept, onRefuse, batc
   const displayAmount = batchInfo ? batchInfo.totalAmount : order.amount;
 
   return (
-    <div className="bg-white rounded-t-2xl shadow-card-lg animate-in fade-in duration-200 overflow-hidden">
+    <div data-testid="order-card" className="bg-white rounded-t-2xl shadow-card-lg animate-in fade-in duration-200 overflow-hidden">
       {/* ── Enamel batch badge — full width premium strip ─────────────────── */}
       {batchInfo && (
         <div className="relative flex items-center gap-3 bg-gradient-to-r from-emerald-600 to-emerald-500 px-4 py-2.5 overflow-hidden">

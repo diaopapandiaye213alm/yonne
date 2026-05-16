@@ -102,8 +102,18 @@ const REVIEWS = [
   { name: "Ibrahima Seck", role: "Admin · Dakar", text: "Le dashboard me donne une visibilité complète sur toute la flotte. Le surge Tabaski a doublé nos revenus.", rating: 5 },
 ] as const;
 
+function getTabaskiBadge(): string | null {
+  const TABASKI_2026 = new Date("2026-06-04T00:00:00");
+  const now = new Date();
+  const diff = Math.ceil((TABASKI_2026.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+  if (diff < 0 || diff > 60) return null;
+  if (diff === 0) return "Tabaski aujourd'hui — surge IA × 1.4 actif";
+  return `Tabaski dans ${diff} jour${diff > 1 ? "s" : ""} — surge IA × 1.4 prêt`;
+}
+
 export default async function LandingPage() {
   const live = await getLiveStats();
+  const tabaskiBadge = getTabaskiBadge();
 
   const animatedStats = [
     { value: live.orders,  label: "commandes enregistrées",  suffix: "" },
@@ -154,10 +164,12 @@ export default async function LandingPage() {
         <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-96 h-32 bg-emerald-600/30 rounded-full blur-3xl pointer-events-none" />
 
         <div className="relative max-w-4xl mx-auto">
-          <div className="inline-flex items-center gap-2 bg-gold-500/20 border border-gold-500/30 text-gold-300 rounded-full px-4 py-1.5 text-xs font-medium mb-6 animate-fade-in-up">
-            <Zap className="w-3.5 h-3.5" />
-            Tabaski dans 7 jours — surge IA × 1.4 prêt
-          </div>
+          {tabaskiBadge && (
+            <div className="inline-flex items-center gap-2 bg-gold-500/20 border border-gold-500/30 text-gold-300 rounded-full px-4 py-1.5 text-xs font-medium mb-6 animate-fade-in-up">
+              <Zap className="w-3.5 h-3.5" />
+              {tabaskiBadge}
+            </div>
+          )}
 
           <h1 className="text-5xl md:text-7xl font-display font-bold text-white leading-[1.05] tracking-tight animate-fade-in-up" style={{ animationDelay: "80ms" }}>
             Livraison intelligente<br />
@@ -324,14 +336,14 @@ export default async function LandingPage() {
           <h2 className="text-4xl font-display font-bold text-white mb-4 leading-tight">
             Prêt à transformer<br />vos livraisons ?
           </h2>
-          <p className="text-ink-500 text-base mb-10 max-w-sm mx-auto">Rejoignez les commerçants et livreurs qui font confiance à YONNE partout à Dakar.</p>
+          <p className="text-ink-500 text-base mb-10 max-w-sm mx-auto">Rejoignez les commerçants et livreurs qui font confiance à YONNE partout au Sénégal.</p>
           <Link
             href="/login"
             className="inline-flex items-center gap-3 bg-gold-500 hover:bg-gold-600 text-ink-900 rounded-xl px-10 py-4 font-display font-bold text-lg transition-all hover:scale-105 shadow-glow"
           >
             Commencer maintenant <ChevronRight className="w-5 h-5" />
           </Link>
-          <p className="mt-5 text-xs text-ink-500/50">Aucun abonnement requis · Accès démo immédiat</p>
+          <p className="mt-5 text-xs text-ink-500/50">Aucun abonnement requis · Accès démo immédiat · Partout au Sénégal</p>
         </div>
       </section>
 

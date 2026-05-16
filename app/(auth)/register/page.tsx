@@ -82,10 +82,10 @@ export default function RegisterPage() {
             Rejoignez YONNE,<br />la livraison<br />intelligente 🇸🇳
           </h1>
           <p className="text-emerald-200 text-lg">
-            Commerçants et livreurs de Dakar, rejoignez la plateforme qui comprend votre marché.
+            Commerçants et livreurs du Sénégal, rejoignez la plateforme qui comprend votre marché.
           </p>
         </div>
-        <p className="text-emerald-400 text-sm">© 2026 YONNE · Dakar, Sénégal</p>
+        <p className="text-emerald-400 text-sm">© 2026 YONNE · Sénégal</p>
       </div>
 
       <div className="flex items-center justify-center p-8 bg-cream-50">

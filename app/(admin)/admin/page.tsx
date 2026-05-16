@@ -36,8 +36,13 @@ export default function AdminHomePage() {
   const { drivers } = useDriversStore();
   const { orders }  = useOrdersStore();
 
-  const onlineDrivers = drivers.filter(d => d.online);
-  const activeOrders  = orders.filter(o => o.active);
+  const onlineDrivers  = drivers.filter(d => d.online);
+  const inPrayerCount  = drivers.filter(d => d.inPrayer).length;
+  const activeOrders   = orders.filter(o => o.active);
+  const deliveredToday = orders.filter(o => {
+    if (o.status !== "livrée") return false;
+    return new Date(o.createdAt).toDateString() === new Date().toDateString();
+  }).length;
   const driverPins = onlineDrivers.slice(0, 15).map(d => ({ id: d.id, lat: d.lat, lng: d.lng, kind: "driver" as const }));
   const orderPins = activeOrders.map(o => {
     const lm = landmarks.find(l => l.id === o.landmarkId)!;
@@ -113,8 +118,8 @@ export default function AdminHomePage() {
         <div className="stagger-3 animate-fade-in-up">
           <KpiCard
             label={t("driversOnline")}
-            value={`${kpis.onlineDrivers} / 41`}
-            hint="3 en pause prière"
+            value={`${kpis.onlineDrivers} / ${drivers.length}`}
+            hint={inPrayerCount > 0 ? `${inPrayerCount} en pause prière` : "Tous disponibles"}
             accent="ink"
           />
         </div>
@@ -122,7 +127,7 @@ export default function AdminHomePage() {
           <KpiCard
             label={t("avgRating")}
             value={`${kpis.rating.toFixed(1)} ★`}
-            hint="89 avis aujourd'hui"
+            hint={deliveredToday > 0 ? `${deliveredToday} livraisons aujourd'hui` : "Aucune livraison encore"}
             accent="gold"
             highlight
           />
