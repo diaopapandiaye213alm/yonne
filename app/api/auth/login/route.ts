@@ -9,7 +9,11 @@ const ROLE_REDIRECTS: Record<string, string> = {
   driver:   "/driver/carte",
 };
 
+const MIN_RESPONSE_MS = 800;
+
 export async function POST(req: NextRequest) {
+  const start = Date.now();
+
   let email = "", password = "";
   try {
     const body = await req.json();
@@ -34,6 +38,11 @@ export async function POST(req: NextRequest) {
 
   const hashToCompare = (data?.password_hash as string | undefined) ?? DUMMY_HASH;
   const valid = await bcrypt.compare(password, hashToCompare);
+
+  const elapsed = Date.now() - start;
+  if (elapsed < MIN_RESPONSE_MS) {
+    await new Promise((r) => setTimeout(r, MIN_RESPONSE_MS - elapsed));
+  }
 
   if (error || !data || !valid)
     return NextResponse.json({ error: "Identifiants invalides" }, { status: 401 });

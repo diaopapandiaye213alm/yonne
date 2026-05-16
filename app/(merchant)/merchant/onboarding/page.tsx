@@ -195,10 +195,12 @@ export default function OnboardingPage() {
                 {/* QR code visuel SVG inline */}
                 <div className="w-48 h-48 bg-white border-2 border-emerald-500 rounded-xl p-3 flex items-center justify-center relative">
                   <div className="absolute inset-3 grid grid-cols-7 grid-rows-7 gap-0.5">
-                    {/* Simulation QR simplifié */}
                     {Array.from({ length: 49 }).map((_, i) => {
                       const corners = [0,1,2,3,4,5,6,7,13,14,20,21,27,28,34,35,41,42,43,44,45,46,47,48];
-                      const fill = corners.includes(i) || Math.random() > 0.5;
+                      const seedStr = (merchant?.id ?? "demo") + i;
+                      let h = 0;
+                      for (let c = 0; c < seedStr.length; c++) h = (h * 31 + seedStr.charCodeAt(c)) >>> 0;
+                      const fill = corners.includes(i) || (h % 2 === 0);
                       return (
                         <div
                           key={i}

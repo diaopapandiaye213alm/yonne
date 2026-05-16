@@ -20,8 +20,8 @@ async function isRateLimited(ip: string): Promise<boolean> {
     .single();
 
   if (error || !data) {
-    // On DB error, fail open to avoid blocking legitimate requests.
-    return false;
+    // On DB error, fail closed to prevent unbounded requests.
+    return true;
   }
 
   const resetAtDate = new Date(data.reset_at as string);

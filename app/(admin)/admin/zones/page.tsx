@@ -31,10 +31,28 @@ const INITIAL_ZONES: Zone[] = zoneActivity.map((z, i) => ({
 }));
 
 const ZONES_KEY = "yonne_delivery_zones";
+function isZoneArray(v: unknown): v is Zone[] {
+  return (
+    Array.isArray(v) &&
+    v.every(
+      (z) =>
+        z !== null &&
+        typeof z === "object" &&
+        typeof (z as Zone).id === "string" &&
+        typeof (z as Zone).name === "string" &&
+        typeof (z as Zone).lat === "number" &&
+        typeof (z as Zone).lng === "number" &&
+        typeof (z as Zone).active === "boolean"
+    )
+  );
+}
 function loadZones(): Zone[] {
   try {
     const raw = localStorage.getItem(ZONES_KEY);
-    if (raw) return JSON.parse(raw);
+    if (raw) {
+      const parsed: unknown = JSON.parse(raw);
+      if (isZoneArray(parsed)) return parsed;
+    }
   } catch { /* ignore */ }
   return INITIAL_ZONES;
 }
@@ -98,9 +116,9 @@ export default function ZonesPage() {
     const zone: Zone = {
       id:              `zone-${Date.now()}`,
       name:            newName.trim(),
-      lat:             14.67 + Math.random() * 0.1,
-      lng:             -17.49 + Math.random() * 0.1,
-      orders:          Math.floor(Math.random() * 20) + 5,
+      lat:             14.693,
+      lng:             -17.447,
+      orders:          0,
       radius:          400,
       active:          true,
       surgeMultiplier: 1.0,

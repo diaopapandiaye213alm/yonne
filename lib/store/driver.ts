@@ -28,7 +28,7 @@ export const useDriverStore = create<DriverState>()(
       activeOrderId: null,
       deliveryStep: 0 as DeliveryStep,
       hasHydrated: false,
-      setOnline: (v) => set((s) => s.inPrayer ? {} : { online: v }),
+      setOnline: (v) => set({ online: v, inPrayer: false }),
       setInPrayer: (v) => set(v ? { inPrayer: true, online: false } : { inPrayer: false }),
       acceptOrder: (orderId) => set({ activeOrderId: orderId, deliveryStep: 0 }),
       advanceStep: () => set((s) => ({ deliveryStep: Math.min(3, s.deliveryStep + 1) as DeliveryStep })),
@@ -37,7 +37,7 @@ export const useDriverStore = create<DriverState>()(
     }),
     {
       name: "yonne_driver_state",
-      storage: createJSONStorage(() => sessionStorage),
+      storage: createJSONStorage(() => localStorage),
       partialize: (s) => ({ activeOrderId: s.activeOrderId, deliveryStep: s.deliveryStep }),
       onRehydrateStorage: () => (state) => {
         state?.setHasHydrated(true);

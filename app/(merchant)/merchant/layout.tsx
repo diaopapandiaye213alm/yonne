@@ -6,6 +6,7 @@ import { getSession } from "@/lib/session";
 import { MerchantNotifier } from "@/components/providers/MerchantNotifier";
 import { OnboardingGuard } from "@/components/providers/OnboardingGuard";
 import { SupabaseProvider } from "@/components/providers/SupabaseProvider";
+import { StoreCleanup } from "@/components/providers/StoreCleanup";
 
 export default async function MerchantLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession();
@@ -14,6 +15,7 @@ export default async function MerchantLayout({ children }: { children: React.Rea
     <div className="flex h-screen bg-cream-50">
       <MerchantSidebar />
       <SupabaseProvider token={token}>
+        <StoreCleanup />
         <div className="flex-1 flex flex-col overflow-hidden">
           <Topbar breadcrumb="Marchand" userName={session?.displayName ?? "Marchand"} role="merchant" />
           <MerchantNotifier />

@@ -40,7 +40,7 @@ as $$
         'permissive', permissive
       ) order by tablename, policyname)
       from pg_policies
-      where tablename in ('orders', 'drivers', 'merchants', 'sav_tickets', 'users')
+      where tablename in ('orders', 'drivers', 'merchants', 'sav_tickets', 'sav_messages', 'users', 'catalogue_items', 'order_messages')
     )
   );
 $$;

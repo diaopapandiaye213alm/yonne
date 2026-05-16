@@ -41,11 +41,16 @@ export function QrScannerModal({ orderId, onConfirm, onClose }: Props) {
               {/* Scan line */}
               <div className="absolute inset-x-4 h-0.5 bg-emerald-400/70 top-1/2 animate-[scanline_1.5s_ease-in-out_infinite]"
                 style={{ animation: "scanline 1.5s ease-in-out infinite" }} />
-              {/* Noise squares for fake camera */}
+              {/* Noise squares for fake camera — deterministic per orderId */}
               <div className="w-full h-full grid grid-cols-8 gap-px opacity-10">
-                {Array.from({ length: 64 }, (_, i) => (
-                  <div key={i} className={`${Math.random() > 0.5 ? "bg-white" : "bg-ink-700"} rounded-[1px]`} />
-                ))}
+                {Array.from({ length: 64 }, (_, i) => {
+                  const seed = orderId + i;
+                  let h = 0;
+                  for (let c = 0; c < seed.length; c++) h = (h * 31 + seed.charCodeAt(c)) >>> 0;
+                  return (
+                    <div key={i} className={`${h % 2 === 0 ? "bg-white" : "bg-ink-700"} rounded-[1px]`} />
+                  );
+                })}
               </div>
               <p className="absolute bottom-3 left-0 right-0 text-center text-xs text-emerald-300">
                 Pointez vers le QR du colis…

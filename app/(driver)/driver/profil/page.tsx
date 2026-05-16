@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import Image from "next/image";
 import { useDriversStore, avatarUrl } from "@/lib/store/drivers";
 import { useOrdersStore } from "@/lib/store/orders";
@@ -49,6 +49,9 @@ export default function ProfilPage() {
     const byName = session?.displayName ? drivers.find(d => d.name === session.displayName) : null;
     return byName ?? drivers[0] ?? DRIVER_FALLBACK;
   }, [drivers, session?.displayName]);
+
+  const [avatarError, setAvatarError] = useState(false);
+  const handleAvatarError = useCallback(() => setAvatarError(true), []);
 
   const [editing,     setEditing]     = useState(false);
   const [editPhone,   setEditPhone]   = useState(demo.phone);
@@ -114,8 +117,14 @@ export default function ProfilPage() {
       {/* Avatar + identity */}
       <div className="bg-white rounded-lg border border-cream-200 shadow-card p-4">
         <div className="flex items-center gap-4">
-          <Image src={avatarUrl(demo)} alt={demo.name} width={72} height={72} unoptimized
-            className="rounded-full bg-cream-100 shrink-0" />
+          {avatarError ? (
+            <div className="w-[72px] h-[72px] rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-700 font-bold text-2xl shrink-0">
+              {demo.name.split(" ").filter(Boolean).map(n => n[0]).join("").slice(0, 2)}
+            </div>
+          ) : (
+            <Image src={avatarUrl(demo)} alt={demo.name} width={72} height={72} unoptimized
+              className="rounded-full bg-cream-100 shrink-0" onError={handleAvatarError} />
+          )}
           <div className="flex-1 min-w-0">
             <div className="font-display font-bold text-xl text-ink-900 truncate">{demo.name}</div>
             <span className={cn("inline-block mt-1 text-xs px-2 py-0.5 rounded-full border font-medium", tierStyle[demo.tier] ?? tierStyle.Bronze)}>
