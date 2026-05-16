@@ -114,6 +114,12 @@ jobs:
       - name: Apply payments.sql
         run: psql -f supabase/payments.sql
 
+      - name: Apply batching.sql
+        run: psql -f supabase/batching.sql
+
+      - name: Apply surge_pricing.sql
+        run: psql -f supabase/surge_pricing.sql
+
       - name: Smoke-test function signatures
         run: |
           psql <<'SQL'
@@ -133,6 +139,10 @@ jobs:
             'completed',
             '{"test": true}'::jsonb
           ) IS NOT NULL AS payment_rpc_ok;
+
+          -- Verify batching RPC and surge RPC
+          SELECT yonne_find_eligible_batch('nonexistent-order') IS NOT NULL AS batch_rpc_ok;
+          SELECT yonne_calculate_surge_multiplier('zone-plateau') = 1.0 AS surge_rpc_ok;
           SQL
 
       - name: Supabase CLI lint (optional — skipped if token absent)

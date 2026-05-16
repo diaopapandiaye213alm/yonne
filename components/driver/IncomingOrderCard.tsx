@@ -3,33 +3,54 @@ import type { IncomingOrder } from "@/lib/mock-data/incoming-orders";
 import { landmarks } from "@/lib/mock-data/landmarks";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
-import { MapPin } from "lucide-react";
+import { MapPin, Package } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const paymentLabel: Record<IncomingOrder["paymentMethod"], string> = {
-  wave: "Wave",
+  wave:   "Wave",
   orange: "Orange",
-  cash: "Cash",
+  cash:   "Cash",
 };
 const paymentColor: Record<IncomingOrder["paymentMethod"], string> = {
-  wave: "bg-blue-100 text-blue-700",
+  wave:   "bg-blue-100 text-blue-700",
   orange: "bg-orange-100 text-orange-700",
-  cash: "bg-cream-200 text-ink-700",
+  cash:   "bg-cream-200 text-ink-700",
 };
+
+export interface BatchInfo {
+  batchOrderId: string;
+  distanceKm: number;
+  totalAmount: number;
+  secondaryClient: string;
+}
 
 interface Props {
   order: IncomingOrder;
   secondsLeft: number;
   onAccept: () => void;
   onRefuse: () => void;
+  batchInfo?: BatchInfo;
 }
 
-export function IncomingOrderCard({ order, secondsLeft, onAccept, onRefuse }: Props) {
-  const dest = landmarks.find((l) => l.id === order.destLandmarkId);
+export function IncomingOrderCard({ order, secondsLeft, onAccept, onRefuse, batchInfo }: Props) {
+  const dest   = landmarks.find((l) => l.id === order.destLandmarkId);
   const urgent = secondsLeft <= 10;
 
   return (
     <div className="bg-white rounded-t-xl p-4 space-y-3 animate-in fade-in duration-200">
+      {/* Badge groupage — affiché uniquement si un batch est disponible */}
+      {batchInfo && (
+        <div className="flex items-center gap-2 rounded-md bg-emerald-50 border border-emerald-200 px-3 py-1.5">
+          <Package className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+          <span className="text-xs font-semibold text-emerald-700">
+            Commande Groupée ×2
+          </span>
+          <span className="text-xs text-emerald-600 ml-auto">
+            +{batchInfo.distanceKm.toFixed(1)} km · {batchInfo.totalAmount.toLocaleString("fr-FR")} F total
+          </span>
+        </div>
+      )}
+
       <div className="flex items-center justify-between">
         <span className="font-display font-bold text-ink-900">{order.clientName}</span>
         <span className={cn("text-xs px-2 py-0.5 rounded-full font-medium", paymentColor[order.paymentMethod])}>
@@ -40,7 +61,19 @@ export function IncomingOrderCard({ order, secondsLeft, onAccept, onRefuse }: Pr
       {dest && (
         <div className="flex items-center gap-2 text-sm text-ink-700">
           <MapPin className="w-4 h-4 text-emerald-500 shrink-0" />
-          <span className="truncate">{dest.name} · <span className="text-ink-500">{dest.quartier}</span></span>
+          <span className="truncate">
+            {dest.name} · <span className="text-ink-500">{dest.quartier}</span>
+          </span>
+        </div>
+      )}
+
+      {/* Deuxième destination si batch */}
+      {batchInfo && (
+        <div className="flex items-center gap-2 text-sm text-ink-500 pl-6">
+          <MapPin className="w-3.5 h-3.5 text-emerald-300 shrink-0" />
+          <span className="truncate">
+            {batchInfo.secondaryClient} · <span className="text-ink-400">{batchInfo.distanceKm.toFixed(1)} km</span>
+          </span>
         </div>
       )}
 
@@ -73,7 +106,7 @@ export function IncomingOrderCard({ order, secondsLeft, onAccept, onRefuse }: Pr
           className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white font-display font-bold"
           onClick={onAccept}
         >
-          Accepter
+          {batchInfo ? "Accepter ×2" : "Accepter"}
         </Button>
       </div>
     </div>

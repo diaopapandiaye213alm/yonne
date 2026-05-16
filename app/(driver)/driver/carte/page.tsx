@@ -7,7 +7,7 @@ import { useSession } from "@/lib/hooks/useSession";
 import { landmarks } from "@/lib/mock-data/landmarks";
 import type { IncomingOrder } from "@/lib/mock-data/incoming-orders";
 import { useDriverStore } from "@/lib/store/driver";
-import { IncomingOrderCard } from "@/components/driver/IncomingOrderCard";
+import { IncomingOrderCard, type BatchInfo } from "@/components/driver/IncomingOrderCard";
 import { Switch } from "@/components/ui/switch";
 import type { Pin } from "@/components/map/DakarMap";
 import { triggerOrderNotification } from "@/components/driver/PushNotifBanner";
@@ -46,6 +46,8 @@ export default function CartePage() {
   const [secondsLeft, setSecondsLeft] = useState(30);
   const [gpsPos, setGpsPos]           = useState<[number, number]>(defaultPos);
   const [gpsActive, setGpsActive]     = useState(false);
+  // BatchInfo indexé par orderId — peuplé par checkBatch() dès qu'un batch est trouvé
+  const [batchInfoMap, setBatchInfoMap] = useState<Map<string, BatchInfo>>(new Map());
   const watchIdRef    = useRef<number | null>(null);
   const lastGpsSend   = useRef<number>(0);
 
@@ -57,6 +59,32 @@ export default function CartePage() {
     }
     return hash % max;
   }
+
+  // ── Batch check ─────────────────────────────────────────────────────────────
+  // Appel RPC asynchrone : si un groupage est possible, stocke le BatchInfo.
+  const checkBatch = useCallback(async (orderId: string) => {
+    interface BatchRpcResult {
+      eligible: boolean;
+      batch_order_id?: string;
+      distance_km?: number;
+      total_amount?: number;
+      secondary_order?: { client: string; amount: number };
+    }
+    const { data } = await supabase
+      .rpc("yonne_find_eligible_batch", { p_order_id: orderId })
+      .then((r) => r, () => ({ data: null, error: null }));
+
+    const result = data as BatchRpcResult | null;
+    if (!result?.eligible) return;
+
+    const info: BatchInfo = {
+      batchOrderId:    result.batch_order_id ?? "",
+      distanceKm:      result.distance_km    ?? 0,
+      totalAmount:     result.total_amount   ?? 0,
+      secondaryClient: result.secondary_order?.client ?? "Client",
+    };
+    setBatchInfoMap((prev) => new Map(prev).set(orderId, info));
+  }, [supabase]);
 
   // Convert a Supabase order row to IncomingOrder format
   const rowToIncoming = useCallback((row: Record<string, unknown>): IncomingOrder => {
@@ -92,8 +120,11 @@ export default function CartePage() {
       .order("created_at", { ascending: false })
       .then(({ data }) => {
         if (data && data.length > 0) {
-          setRealOrders(data.map(r => rowToIncoming(r as Record<string, unknown>)));
+          const incoming = data.map(r => rowToIncoming(r as Record<string, unknown>));
+          setRealOrders(incoming);
           setOrderIndex(0);
+          // Vérifier le groupage pour chaque commande assignée existante
+          incoming.forEach((o) => { void checkBatch(o.id); });
         }
       });
 
@@ -109,6 +140,8 @@ export default function CartePage() {
           setOrderIndex(0);
           setSecondsLeft(30);
           triggerOrderNotification(incoming.id, incoming.clientName, incoming.amount);
+          // Vérifier le groupage en arrière-plan dès réception de la commande
+          void checkBatch(incoming.id);
         }
       )
       .on(
@@ -124,7 +157,7 @@ export default function CartePage() {
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [demo?.id, rowToIncoming, supabase]);
+  }, [demo?.id, rowToIncoming, supabase, checkBatch]);
 
   // Enregistrer ce livreur dans le moteur de simulation
   useEffect(() => {
@@ -276,6 +309,7 @@ export default function CartePage() {
               secondsLeft={secondsLeft}
               onAccept={handleAccept}
               onRefuse={handleRefuse}
+              batchInfo={batchInfoMap.get(currentOrder.id)}
             />
           ) : null
         ) : (
