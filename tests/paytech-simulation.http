@@ -1,0 +1,112 @@
+# ══════════════════════════════════════════════════════════════════
+#  YONNE — PayTech IPN Simulation (VS Code REST Client)
+#  Extension requise : humao.rest-client
+#
+#  IMPORTANT — Génération des empreintes SHA-256 :
+#  Avant d'exécuter, lancez le script helper pour obtenir les valeurs :
+#    node tests/paytech-e2e.js
+#  Les valeurs api_key_sha256 et api_secret_sha256 s'affichent dans
+#  les logs. Remplacez les variables ci-dessous.
+#
+#  Variables remplaçables :
+#    @api_key_sha256    → sha256(PAYTECH_API_KEY) en hex
+#    @api_secret_sha256 → sha256(PAYTECH_API_SECRET) en hex
+# ══════════════════════════════════════════════════════════════════
+
+# ── Cible (changer pour prod) ─────────────────────────────────────
+@base_url           = http://localhost:3000
+# @base_url         = https://yonne-sigma.vercel.app
+
+# ── Données de test ───────────────────────────────────────────────
+@order_id           = YN-2026-SMOKETEST01
+@token              = pt_smoke_test_token_001
+@amount             = 15000
+@client_phone       = %2B221771234567
+
+# ── Empreintes SHA-256 des clés PayTech (non secrètes — hash uniquement) ─────
+# Générer avec : node -e "const c=require('crypto'); console.log(c.createHash('sha256').update(process.env.PAYTECH_API_KEY??'').digest('hex'))"
+@api_key_sha256     = REMPLACER_PAR_SHA256_DE_VOTRE_API_KEY
+@api_secret_sha256  = REMPLACER_PAR_SHA256_DE_VOTRE_API_SECRET
+
+
+### ── TEST 1 : IPN Wave — Paiement réussi ────────────────────────
+# Simule un paiement Wave confirmé par PayTech.
+# Attendu : HTTP 200 {"received":true}
+# Effet DB : INSERT payment_events + UPDATE orders.status + UPDATE merchants.revenue
+
+POST {{base_url}}/api/webhooks/paytech
+Content-Type: application/x-www-form-urlencoded
+
+type_event=sale_complete&ref_command={{order_id}}&item_name=Livraison+YONNE+%E2%80%94+{{order_id}}&item_price={{amount}}&devise=XOF&command_name=Livraison+YONNE&payment_method=wave&client_phone={{client_phone}}&token={{token}}&env=prod&api_key_sha256={{api_key_sha256}}&api_secret_sha256={{api_secret_sha256}}
+
+
+### ── TEST 2 : IPN Orange Money — Paiement réussi ────────────────
+# Même flux mais via Orange Money.
+# Attendu : HTTP 200 {"received":true}
+
+POST {{base_url}}/api/webhooks/paytech
+Content-Type: application/x-www-form-urlencoded
+
+type_event=sale_complete&ref_command={{order_id}}&item_name=Livraison+YONNE+%E2%80%94+{{order_id}}&item_price={{amount}}&devise=XOF&command_name=Livraison+YONNE&payment_method=orange-money&client_phone={{client_phone}}&token=pt_smoke_om_001&env=prod&api_key_sha256={{api_key_sha256}}&api_secret_sha256={{api_secret_sha256}}
+
+
+### ── TEST 3 : IPN annulé — sale_canceled ────────────────────────
+# Simule un paiement annulé (client ferme la page PayTech).
+# Attendu : HTTP 200 {"received":true}
+# Effet DB : UPDATE paytech_sessions.status = 'canceled' — PAS d'insertion payment_events
+
+POST {{base_url}}/api/webhooks/paytech
+Content-Type: application/x-www-form-urlencoded
+
+type_event=sale_canceled&ref_command={{order_id}}&item_price={{amount}}&token=pt_smoke_cancel_001&env=prod&api_key_sha256={{api_key_sha256}}&api_secret_sha256={{api_secret_sha256}}
+
+
+### ── TEST 4 : Signature invalide — doit être rejeté ─────────────
+# Simule une requête frauduleuse avec de fausses empreintes SHA-256.
+# Attendu : HTTP 401 {"error":"unauthorized"}
+# SÉCURITÉ : le handler doit toujours fail-closed sur toute signature invalide
+
+POST {{base_url}}/api/webhooks/paytech
+Content-Type: application/x-www-form-urlencoded
+
+type_event=sale_complete&ref_command={{order_id}}&item_price={{amount}}&token=pt_fake_001&api_key_sha256=0000000000000000000000000000000000000000000000000000000000000000&api_secret_sha256=0000000000000000000000000000000000000000000000000000000000000000
+
+
+### ── TEST 5 : Création session PayTech (UI → API) ───────────────
+# Simule le clic "Générer le lien de paiement" depuis la page marchand.
+# Attendu : HTTP 200 {"redirect_url":"https://paytech.sn/payment/checkout/...","token":"..."}
+# ATTENTION : Ce test appelle réellement l'API PayTech — utiliser avec parcimonie.
+
+POST {{base_url}}/api/payments/paytech/request
+Content-Type: application/json
+
+{
+  "order_id": "{{order_id}}",
+  "amount": {{amount}},
+  "client_name": "Mamadou Diallo"
+}
+
+
+### ── TEST 6 : Production Guard ──────────────────────────────────
+# Vérifie que le check-production-ready.js est opérationnel.
+# Exécuter en terminal : node scripts/check-production-ready.js
+
+# ── Requêtes SQL de validation post-test ─────────────────────────
+# À coller dans Supabase SQL Editor après les tests :
+#
+# -- Vérifie l'enregistrement du paiement
+# SELECT event_id, order_id, provider, amount, status, processed_at
+# FROM payment_events
+# WHERE event_id LIKE 'pt_smoke_%'
+# ORDER BY processed_at DESC
+# LIMIT 10;
+#
+# -- Vérifie la session PayTech
+# SELECT token, order_id, status, created_at, completed_at
+# FROM paytech_sessions
+# WHERE token LIKE 'pt_smoke_%'
+# ORDER BY created_at DESC
+# LIMIT 10;
+#
+# -- Idempotence : le même event_id ne doit pas créer deux lignes
+# SELECT event_id, count(*) FROM payment_events GROUP BY event_id HAVING count(*) > 1;

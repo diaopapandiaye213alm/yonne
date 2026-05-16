@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "check:prod": "node scripts/check-production-ready.js",
+    "test:paytech": "node tests/paytech-e2e.js",
+    "test:paytech:prod": "node tests/paytech-e2e.js --prod"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.15",
