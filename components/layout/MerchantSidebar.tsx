@@ -24,8 +24,8 @@ export function MerchantSidebar() {
   const pathname = usePathname();
   const t = useT();
   return (
-    <aside className="hidden md:flex w-60 shrink-0 bg-emerald-900 flex-col">
-      <div className="h-16 px-5 flex items-center border-b border-emerald-800">
+    <aside className="hidden md:flex w-60 shrink-0 bg-navy-900 flex-col">
+      <div className="h-16 px-5 flex items-center border-b border-navy-800">
         <Link href="/merchant"><Wordmark size="md" variant="dark" /></Link>
       </div>
       <nav className="flex-1 p-3 space-y-1">
@@ -38,22 +38,22 @@ export function MerchantSidebar() {
               className={cn(
                 "flex items-center gap-3 py-2 rounded-md text-sm transition-colors",
                 active
-                  ? "border-l-2 border-gold-500 bg-gold-500/10 text-gold-400 pl-[calc(0.75rem-2px)] pr-3"
-                  : "text-emerald-100/60 hover:text-cream-50 hover:bg-emerald-800/60 px-3"
+                  ? "border-l-2 border-gold-400 bg-gold-500/10 text-gold-400 pl-[calc(0.75rem-2px)] pr-3"
+                  : "text-navy-400 hover:text-cream-50 hover:bg-navy-800 px-3"
               )}
             >
-              <Icon className={cn("w-4 h-4 shrink-0", active ? "text-gold-400" : "text-emerald-300/70")} />
+              <Icon className={cn("w-4 h-4 shrink-0", active ? "text-gold-400" : "text-navy-500")} />
               <span>{t(key)}</span>
             </Link>
           );
         })}
       </nav>
-      <div className="p-3 border-t border-emerald-800 space-y-3">
+      <div className="p-3 border-t border-navy-800 space-y-3">
         <LangSwitcher variant="dark" />
         <form action="/api/auth/logout" method="POST">
           <button
             type="submit"
-            className="flex items-center gap-3 px-3 py-2 rounded-md text-sm text-emerald-300/70 hover:text-cream-50 hover:bg-emerald-800/60 w-full text-left cursor-pointer transition-colors"
+            className="flex items-center gap-3 px-3 py-2 rounded-md text-sm text-navy-400 hover:text-cream-50 hover:bg-navy-800 w-full text-left cursor-pointer transition-colors"
           >
             <LogOut className="w-4 h-4" /> {t("navLogout")}
           </button>

@@ -4,11 +4,11 @@
 
 @layer base {
   :root {
-    --background: 36 56% 96%;
-    --foreground: 22 35% 19%;
+    --background: 210 40% 98%;   /* F8FAFC slate-50 */
+    --foreground: 222 47% 11%;   /* 0F172A navy-900 */
   }
   body {
-    @apply bg-cream-50 text-ink-900 font-body;
+    @apply bg-cream-50 text-ink-900 font-body antialiased;
     font-feature-settings: "cv11", "ss01";
   }
   h1, h2, h3, h4 {
@@ -21,57 +21,97 @@
 
 @import "leaflet/dist/leaflet.css";
 
+/* ── Map Pins — high contrast for outdoor readability ─────────────────── */
 .driver-pin {
-  background: #D4A574;
-  width: 14px; height: 14px; border-radius: 50%;
-  border: 2px solid white;
-  box-shadow: 0 0 0 0 rgba(212,165,116,0.6);
+  background: #f59e0b;        /* amber-500 — visible sous le soleil */
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  border: 2.5px solid white;
+  box-shadow: 0 0 0 0 rgba(245,158,11,0.5);
   animation: pulseGold 2s ease-in-out infinite;
 }
 .order-pin {
-  background: #15803D;
-  width: 12px; height: 12px; border-radius: 50%;
-  border: 2px solid white;
+  background: #10b981;        /* emerald-500 — action verte */
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  border: 2.5px solid white;
+  box-shadow: 0 2px 4px rgba(16,185,129,0.35);
 }
 .dest-pin {
-  background: #15803D;
-  width: 18px; height: 18px; border-radius: 50% 50% 50% 0;
+  background: #0F172A;        /* navy-900 — destination claire */
+  width: 18px; height: 18px;
+  border-radius: 50% 50% 50% 0;
   transform: rotate(-45deg);
-  border: 2px solid white;
+  border: 2.5px solid white;
+  box-shadow: 0 2px 6px rgba(15,23,42,0.35);
 }
-
 .incoming-pin {
-  background: #15803D;
-  width: 16px; height: 16px; border-radius: 50%;
-  border: 2px solid white;
-  box-shadow: 0 0 0 0 rgba(21,128,61,0.5);
+  background: #10b981;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  border: 2.5px solid white;
+  box-shadow: 0 0 0 0 rgba(16,185,129,0.5);
   animation: pulseEmerald 2s ease-in-out infinite;
 }
+
 @keyframes pulseEmerald {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(21,128,61,0.5); }
-  50% { box-shadow: 0 0 0 8px rgba(21,128,61,0); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0.5); }
+  50%       { box-shadow: 0 0 0 8px rgba(16,185,129,0); }
 }
 
+/* ── Mobile panel entrance ─────────────────────────────────────────────── */
 .sheet-enter  { transform: translateY(100%); }
-.sheet-active { transform: translateY(0); transition: transform 300ms cubic-bezier(0.4,0,0.2,1); }
+.sheet-active {
+  transform: translateY(0);
+  transition: transform 300ms cubic-bezier(0.4,0,0.2,1);
+}
 
-::selection { background: #D4A574; color: #3F2A1F; }
-::-webkit-scrollbar { width: 10px; height: 10px; }
-::-webkit-scrollbar-thumb { background: #E8DFD0; border-radius: 5px; }
-::-webkit-scrollbar-thumb:hover { background: #D4A574; }
+/* ── Text selection ────────────────────────────────────────────────────── */
+::selection { background: #d1fae5; color: #064e3b; }
 
-/* Skeleton shimmer */
+/* ── Scrollbar ─────────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
+::-webkit-scrollbar-track { background: transparent; }
+
+/* ── Skeleton shimmer ──────────────────────────────────────────────────── */
 .skeleton {
-  background: linear-gradient(90deg, #E8DFD0 25%, #F5EFE0 50%, #E8DFD0 75%);
+  background: linear-gradient(
+    90deg,
+    #E2E8F0 25%,
+    #F1F5F9 50%,
+    #E2E8F0 75%
+  );
   background-size: 200% 100%;
   animation: shimmer 1.8s linear infinite;
-  border-radius: 6px;
+  border-radius: 8px;
 }
 
-/* Staggered card entrance */
+/* ── Staggered card entrance ───────────────────────────────────────────── */
 .stagger-1 { animation-delay: 0ms; }
-.stagger-2 { animation-delay: 60ms; }
-.stagger-3 { animation-delay: 120ms; }
-.stagger-4 { animation-delay: 180ms; }
-.stagger-5 { animation-delay: 240ms; }
-.stagger-6 { animation-delay: 300ms; }
+.stagger-2 { animation-delay: 55ms; }
+.stagger-3 { animation-delay: 110ms; }
+.stagger-4 { animation-delay: 165ms; }
+.stagger-5 { animation-delay: 220ms; }
+.stagger-6 { animation-delay: 275ms; }
+
+/* ── Tactile button press ──────────────────────────────────────────────── */
+.btn-tactile {
+  transition: transform 120ms ease, box-shadow 120ms ease;
+}
+.btn-tactile:active {
+  transform: scale(0.97);
+}
+
+/* ── KPI card gradient top strip ───────────────────────────────────────── */
+.kpi-strip::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  border-radius: 24px 24px 0 0;
+}

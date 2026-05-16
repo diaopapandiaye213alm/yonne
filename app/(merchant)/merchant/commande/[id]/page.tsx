@@ -45,8 +45,9 @@ export default function TrackingPage({ params }: { params: { id: string } }) {
   const isCancelled = order?.status === "annulée";
   const canCancel   = order ? order.status !== "livrée" && order.status !== "annulée" : false;
 
-  const [showConfirm, setShowConfirm] = useState(false);
-  const [cancelling, setCancelling]   = useState(false);
+  const [showConfirm, setShowConfirm]     = useState(false);
+  const [cancelling, setCancelling]       = useState(false);
+  const [justConfirmed, setJustConfirmed] = useState(false);
 
   // ── Merchant phone — fetched once for payment confirmation display ────────
   const [merchantPhone, setMerchantPhone] = useState<string | null>(null);
@@ -74,6 +75,8 @@ export default function TrackingPage({ params }: { params: { id: string } }) {
       try {
         const result = await confirmPayment(params.id, method);
         if (result.ok) {
+          setJustConfirmed(true);
+          setTimeout(() => setJustConfirmed(false), 2000);
           toast.success("Paiement confirmé — commande débloquée pour dispatch");
         } else {
           toast.error(result.error ?? "Erreur de confirmation");
@@ -244,43 +247,42 @@ export default function TrackingPage({ params }: { params: { id: string } }) {
             </p>
 
             <div className="grid grid-cols-1 gap-2">
-              <Button
-                className="w-full bg-blue-500 hover:bg-blue-600 text-white font-display font-semibold gap-2 h-11 text-sm"
-                disabled={confirming}
-                onClick={() => handleConfirmPayment("wave_personal")}
-              >
-                {confirming ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <CheckCircle2 className="w-4 h-4" />
-                )}
-                Transfert Wave reçu ✓
-              </Button>
-              <Button
-                className="w-full bg-orange-500 hover:bg-orange-600 text-white font-display font-semibold gap-2 h-11 text-sm"
-                disabled={confirming}
-                onClick={() => handleConfirmPayment("om_personal")}
-              >
-                {confirming ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <CheckCircle2 className="w-4 h-4" />
-                )}
-                Transfert Orange Money reçu ✓
-              </Button>
-              <Button
-                variant="outline"
-                className="w-full border-amber-300 text-amber-800 hover:bg-amber-100 font-display font-semibold gap-2 h-11 text-sm"
-                disabled={confirming}
-                onClick={() => handleConfirmPayment("cash")}
-              >
-                {confirming ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <CheckCircle2 className="w-4 h-4" />
-                )}
-                Paiement cash reçu ✓
-              </Button>
+              {justConfirmed ? (
+                <div className="flex items-center justify-center gap-2 h-14 rounded-xl bg-emerald-500 text-white font-display font-bold animate-scale-in">
+                  <CheckCircle2 className="w-5 h-5" />
+                  Paiement confirmé !
+                </div>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    className="w-full h-14 rounded-xl bg-blue-500 hover:bg-blue-600 disabled:opacity-50 text-white font-display font-semibold text-sm flex items-center justify-center gap-2 active:scale-[0.98] transition-transform duration-100"
+                    disabled={confirming}
+                    onClick={() => handleConfirmPayment("wave_personal")}
+                  >
+                    {confirming ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                    Transfert Wave reçu ✓
+                  </button>
+                  <button
+                    type="button"
+                    className="w-full h-14 rounded-xl bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white font-display font-semibold text-sm flex items-center justify-center gap-2 active:scale-[0.98] transition-transform duration-100"
+                    disabled={confirming}
+                    onClick={() => handleConfirmPayment("om_personal")}
+                  >
+                    {confirming ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                    Transfert Orange Money reçu ✓
+                  </button>
+                  <button
+                    type="button"
+                    className="w-full h-14 rounded-xl border border-amber-300 bg-transparent hover:bg-amber-50 disabled:opacity-50 text-amber-800 font-display font-semibold text-sm flex items-center justify-center gap-2 active:scale-[0.98] transition-transform duration-100"
+                    disabled={confirming}
+                    onClick={() => handleConfirmPayment("cash")}
+                  >
+                    {confirming ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                    Paiement cash reçu ✓
+                  </button>
+                </>
+              )}
             </div>
           </div>
         )}

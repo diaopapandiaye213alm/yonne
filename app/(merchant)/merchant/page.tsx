@@ -8,6 +8,17 @@ import { Package, TrendingUp, CheckCircle2, PlusSquare, Clock } from "lucide-rea
 import { useT, useLang } from "@/lib/i18n";
 import { toast } from "sonner";
 
+function KpiSkeleton() {
+  return (
+    <div className="bg-white rounded-xl border border-cream-200 shadow-card p-5 space-y-3">
+      <div className="skeleton w-10 h-10 rounded-xl" />
+      <div className="skeleton w-24 h-8 rounded-md" />
+      <div className="skeleton w-32 h-3 rounded" />
+      <div className="skeleton w-20 h-3 rounded" />
+    </div>
+  );
+}
+
 const STATUS_COLORS: Record<string, string> = {
   "créée":    "bg-gray-100 text-gray-700",
   "assignée": "bg-blue-100 text-blue-700",
@@ -23,6 +34,8 @@ export default function MerchantAccueilPage() {
   const session       = useSession();
   const { merchants } = useMerchantsStore();
   const { orders }    = useOrdersStore();
+
+  const { loading } = useOrdersStore();
 
   const merchant = useMemo(() => {
     const byEmail = session?.email ? merchants.find(m => m.email === session.email) : null;
@@ -99,20 +112,29 @@ export default function MerchantAccueilPage() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {[
-          { label: t("ordersThisMonth"),  value: String(merchant.ordersThisMonth),                         icon: Package,      delta: deltaOrders,  chip: "bg-emerald-100 text-emerald-600", border: "border-emerald-100" },
-          { label: t("revenueThisMonth"), value: `${merchant.revenueThisMonth.toLocaleString("fr-FR")} F`, icon: TrendingUp,   delta: deltaRevenue, chip: "bg-gold-500/15 text-gold-600",     border: "border-gold-300/40" },
-          { label: t("deliveryRate"),     value: `${tauxLivre}%`,                                          icon: CheckCircle2, delta: deltaTaux,    chip: "bg-blue-100 text-blue-600",        border: "border-blue-100" },
-        ].map(({ label, value, icon: Icon, delta, chip, border }) => (
-          <div key={label} className={`bg-white rounded-xl border ${border} shadow-card p-5 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200`}>
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-4 ${chip}`}>
-              <Icon className="w-5 h-5" />
+        {loading ? (
+          <>
+            <KpiSkeleton />
+            <KpiSkeleton />
+            <KpiSkeleton />
+          </>
+        ) : (
+          [
+            { label: t("ordersThisMonth"),  value: String(merchant.ordersThisMonth),                         icon: Package,      delta: deltaOrders,  chip: "bg-emerald-100 text-emerald-600", border: "border-emerald-100", strip: "bg-gradient-to-r from-emerald-500 to-emerald-400" },
+            { label: t("revenueThisMonth"), value: `${merchant.revenueThisMonth.toLocaleString("fr-FR")} F`, icon: TrendingUp,   delta: deltaRevenue, chip: "bg-gold-500/15 text-gold-600",     border: "border-gold-300/40", strip: "bg-gradient-to-r from-gold-500 to-gold-400" },
+            { label: t("deliveryRate"),     value: `${tauxLivre}%`,                                          icon: CheckCircle2, delta: deltaTaux,    chip: "bg-blue-100 text-blue-600",        border: "border-blue-100",    strip: "bg-gradient-to-r from-blue-500 to-blue-400" },
+          ].map(({ label, value, icon: Icon, delta, chip, border, strip }, idx) => (
+            <div key={label} className={`relative bg-white rounded-xl border ${border} shadow-card p-5 hover:shadow-card-md hover:-translate-y-0.5 transition-all duration-200 overflow-hidden stagger-${idx + 1} animate-fade-in-up`}>
+              <div className={`absolute top-0 left-0 right-0 h-[3px] rounded-t-xl ${strip}`} />
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-4 ${chip}`}>
+                <Icon className="w-5 h-5" />
+              </div>
+              <div className="text-3xl font-display font-bold text-ink-900 tabular-nums">{value}</div>
+              <div className="text-xs text-ink-500 mt-1">{label}</div>
+              <div className="mt-2.5"><Delta pct={delta} /></div>
             </div>
-            <div className="text-3xl font-display font-bold text-ink-900 tabular-nums">{value}</div>
-            <div className="text-xs text-ink-500 mt-1">{label}</div>
-            <div className="mt-2.5"><Delta pct={delta} /></div>
-          </div>
-        ))}
+          ))
+        )}
       </div>
 
       <Link

@@ -24,7 +24,7 @@ export function GlovoTimeline({ activeStage }: Props) {
               <div className={cn(
                 "w-6 h-6 rounded-full flex items-center justify-center transition-colors",
                 done && "bg-emerald-500 text-white",
-                active && "bg-gold-500 text-ink-900 ring-4 ring-gold-500/20 animate-pulse-gold",
+                active && "bg-emerald-500 text-white ring-4 ring-emerald-500/25 animate-step-pulse",
                 !done && !active && "bg-cream-200"
               )}>
                 {done && <Check className="w-3 h-3" />}
