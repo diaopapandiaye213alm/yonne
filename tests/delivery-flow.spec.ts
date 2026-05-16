@@ -7,15 +7,8 @@
  */
 
 import { test, expect } from "@playwright/test";
-import { createHmac } from "crypto";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-
-const WEBHOOK_SECRET = "playwright_webhook_secret_32_bytes_ok";
-
-function makeHmacSignature(body: string): string {
-  return createHmac("sha256", WEBHOOK_SECRET).update(body, "utf8").digest("hex");
-}
 
 /** Intercepte tous les appels REST Supabase avec une réponse vide. */
 async function stubSupabase(page: Parameters<typeof test>[1] extends (args: infer A) => unknown ? A extends { page: infer P } ? P : never : never) {
@@ -173,62 +166,33 @@ test.describe("Réception commande temps réel", () => {
   });
 });
 
-// ── 5. Sécurité webhook — vérification HMAC ──────────────────────────────────
-test.describe("Webhook paiement — sécurité HMAC", () => {
-  test("signature invalide retourne 401", async ({ request }) => {
-    const body = JSON.stringify({
-      event: "payment.success",
-      transaction_id: "wave_e2e_test_001",
-      amount: 5_000,
-      currency: "XOF",
-      status: "completed",
-      metadata: { order_id: "ORD-E2E-001" },
-    });
+// ── 5. Sécurité webhook PayTech — vérification SHA-256 ──────────────────────
+test.describe("Webhook PayTech — fail-closed sur signature invalide", () => {
+  test("signature SHA-256 invalide retourne 401", async ({ request }) => {
+    const body = new URLSearchParams({
+      type_event: "sale_complete",
+      ref_command: "ORD-E2E-001",
+      item_price: "5000",
+      token: "pt_fake_001",
+      api_key_sha256:
+        "0000000000000000000000000000000000000000000000000000000000000000",
+      api_secret_sha256:
+        "0000000000000000000000000000000000000000000000000000000000000000",
+    }).toString();
 
-    const response = await request.post("/api/webhooks/payments", {
+    const response = await request.post("/api/webhooks/paytech", {
       data: body,
-      headers: {
-        "content-type": "application/json",
-        "x-webhook-signature":
-          "0000000000000000000000000000000000000000000000000000000000000000",
-      },
+      headers: { "content-type": "application/x-www-form-urlencoded" },
     });
 
     expect(response.status()).toBe(401);
   });
 
-  test("signature absente retourne 401", async ({ request }) => {
-    const response = await request.post("/api/webhooks/payments", {
-      data: { event: "payment.success" },
-      headers: { "content-type": "application/json" },
+  test("signatures absentes retournent 401", async ({ request }) => {
+    const response = await request.post("/api/webhooks/paytech", {
+      data: "type_event=sale_complete",
+      headers: { "content-type": "application/x-www-form-urlencoded" },
     });
     expect(response.status()).toBe(401);
-  });
-
-  test("signature HMAC correcte retourne 200 ou 500 (jamais 401)", async ({
-    request,
-  }) => {
-    const body = JSON.stringify({
-      event: "payment.success",
-      transaction_id: `wave_e2e_${Date.now()}`,
-      amount: 5_000,
-      currency: "XOF",
-      status: "completed",
-      metadata: { order_id: "ORD-E2E-VALID" },
-    });
-
-    const signature = makeHmacSignature(body);
-
-    const response = await request.post("/api/webhooks/payments", {
-      data: body,
-      headers: {
-        "content-type": "application/json",
-        "x-webhook-signature": signature,
-      },
-    });
-
-    // Avec un DB placeholder, la RPC échouera (500) ou réussira (200).
-    // Ce qui compte : la vérification de signature n'a PAS rejeté la requête (pas 401).
-    expect(response.status()).not.toBe(401);
   });
 });

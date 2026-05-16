@@ -104,9 +104,10 @@ export async function POST(req: NextRequest) {
 
   // SMS de bienvenue (non-bloquant)
   if (phone) {
+    const appUrl = (process.env.APP_URL ?? new URL(req.url).origin).replace(/^https?:\/\//, "");
     const welcomeMsg = role === "driver"
-      ? `Bienvenue sur YONNE ${name} ! Votre compte livreur est actif. Connectez-vous sur yonne-sigma.vercel.app 🛵`
-      : `Bienvenue sur YONNE ${name} ! Votre boutique est créée. Commencez à livrer sur yonne-sigma.vercel.app 🏪`;
+      ? `Bienvenue sur YONNE ${name} ! Votre compte livreur est actif. Connectez-vous sur ${appUrl} 🛵`
+      : `Bienvenue sur YONNE ${name} ! Votre boutique est créée. Commencez à livrer sur ${appUrl} 🏪`;
     void sendSms(phone, welcomeMsg);
   }
 

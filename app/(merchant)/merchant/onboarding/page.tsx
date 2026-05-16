@@ -67,7 +67,8 @@ export default function OnboardingPage() {
     router.push("/merchant");
   }
 
-  const qrData = `https://yonne-sigma.vercel.app/merchant/nouvelle-commande?ref=${merchant?.id ?? "demo"}`;
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const qrData = `${origin}/merchant/nouvelle-commande?ref=${merchant?.id ?? "demo"}`;
 
   return (
     <div className="min-h-screen bg-cream-50 flex flex-col">
