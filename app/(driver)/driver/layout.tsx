@@ -5,6 +5,7 @@ import { OfflineBanner } from "@/components/driver/OfflineBanner";
 import { getSession } from "@/lib/session";
 import { SupabaseProvider } from "@/components/providers/SupabaseProvider";
 import { StoreCleanup } from "@/components/providers/StoreCleanup";
+import { ErrorBoundary } from "@/components/providers/ErrorBoundary";
 
 export default async function DriverLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession();
@@ -21,7 +22,7 @@ export default async function DriverLayout({ children }: { children: React.React
       <SupabaseProvider token={token}>
         <StoreCleanup />
         <div className="max-w-sm mx-auto relative">
-          {children}
+          <ErrorBoundary>{children}</ErrorBoundary>
         </div>
       </SupabaseProvider>
       <DriverBottomNav />

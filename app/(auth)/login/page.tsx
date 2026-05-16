@@ -10,8 +10,8 @@ import { ShieldCheck, CheckCircle2, Loader2, Store, Bike, Mail, Lock, Eye, EyeOf
 import { useT } from "@/lib/i18n";
 
 const features = [
-  "147 commandes traitées aujourd'hui",
-  "28 livreurs actifs en temps réel",
+  "Livraisons créées en 30 secondes",
+  "Livreurs actifs en temps réel",
   "Suivi GPS partagé via WhatsApp",
 ];
 
@@ -59,6 +59,10 @@ export default function LoginPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: email.trim(), password }),
       });
+      if (res.status === 429) {
+        setError("Trop de tentatives — réessayez dans 15 minutes.");
+        return;
+      }
       if (!res.ok) { setError("Email ou mot de passe invalide."); return; }
       const { redirect } = await res.json();
       router.push(redirect ?? "/");
@@ -239,6 +243,7 @@ export default function LoginPage() {
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({ email: demoEmail, password: demoPassword }),
                       });
+                      if (res.status === 429) { setError("Trop de tentatives — réessayez dans 15 minutes."); return; }
                       if (!res.ok) { setError("Erreur de connexion demo."); return; }
                       const { redirect } = await res.json();
                       router.push(redirect ?? "/");

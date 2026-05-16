@@ -9,6 +9,7 @@ import { MerchantNotifier } from "@/components/providers/MerchantNotifier";
 import { OnboardingGuard } from "@/components/providers/OnboardingGuard";
 import { SupabaseProvider } from "@/components/providers/SupabaseProvider";
 import { StoreCleanup } from "@/components/providers/StoreCleanup";
+import { ErrorBoundary } from "@/components/providers/ErrorBoundary";
 
 export default async function MerchantLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession();
@@ -35,7 +36,9 @@ export default async function MerchantLayout({ children }: { children: React.Rea
           <Topbar breadcrumb="Marchand" userName={session.displayName} role="merchant" />
           <MerchantNotifier merchantId={merchant?.id} />
           <OnboardingGuard />
-          <main className="flex-1 overflow-y-auto pb-16 md:pb-0">{children}</main>
+          <main className="flex-1 overflow-y-auto pb-16 md:pb-0">
+            <ErrorBoundary>{children}</ErrorBoundary>
+          </main>
         </div>
       </SupabaseProvider>
       <MerchantBottomNav />

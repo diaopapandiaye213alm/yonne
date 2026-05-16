@@ -11,8 +11,50 @@ const ROLE_REDIRECTS: Record<string, string> = {
 
 const MIN_RESPONSE_MS = 800;
 
+// Brute-force protection: max 10 login attempts per IP per 15 minutes.
+// Uses the api_rate_limits table (same infrastructure as SMS circuit breaker).
+// Fail-open if the DB is unavailable — don't block legitimate users on DB outage.
+async function checkLoginRateLimit(ip: string): Promise<boolean> {
+  try {
+    const window = 15 * 60 * 1000; // 15 min
+    const limit  = 10;
+    const key    = `login:ip:${ip}:${new Date().toISOString().slice(0, 15)}`; // 15-min bucket
+
+    const { data } = await supabaseAdmin
+      .from("api_rate_limits")
+      .select("count, reset_at")
+      .eq("key", key)
+      .maybeSingle();
+
+    const now = new Date();
+    if (!data || new Date(data.reset_at as string) <= now) {
+      await supabaseAdmin.from("api_rate_limits").upsert({
+        key, count: 1, reset_at: new Date(now.getTime() + window).toISOString(),
+      });
+      return true;
+    }
+    const count = data.count as number;
+    if (count >= limit) return false;
+    await supabaseAdmin.from("api_rate_limits").update({ count: count + 1 }).eq("key", key);
+    return true;
+  } catch {
+    return true; // fail-open on DB error
+  }
+}
+
 export async function POST(req: NextRequest) {
   const start = Date.now();
+
+  // Rate limit by IP before any other work
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
+    ?? req.headers.get("x-real-ip")
+    ?? "unknown";
+  const allowed = await checkLoginRateLimit(ip);
+  if (!allowed) {
+    const elapsed = Date.now() - start;
+    if (elapsed < MIN_RESPONSE_MS) await new Promise(r => setTimeout(r, MIN_RESPONSE_MS - elapsed));
+    return NextResponse.json({ error: "Trop de tentatives — réessayez dans 15 minutes" }, { status: 429 });
+  }
 
   let email = "", password = "";
   try {

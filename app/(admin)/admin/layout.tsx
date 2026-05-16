@@ -5,6 +5,7 @@ import { Topbar } from "@/components/layout/Topbar";
 import { getSession } from "@/lib/session";
 import { SupabaseProvider } from "@/components/providers/SupabaseProvider";
 import { StoreCleanup } from "@/components/providers/StoreCleanup";
+import { ErrorBoundary } from "@/components/providers/ErrorBoundary";
 
 const ADMIN_EMAIL = (process.env.ADMIN_EMAIL ?? "admin@yonne.sn").toLowerCase();
 
@@ -24,7 +25,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         <StoreCleanup />
         <div className="flex-1 flex flex-col overflow-hidden">
           <Topbar breadcrumb="Admin" userName={session.displayName} role="admin" />
-          <main className="flex-1 overflow-y-auto p-6">{children}</main>
+          <main className="flex-1 overflow-y-auto p-6">
+            <ErrorBoundary>{children}</ErrorBoundary>
+          </main>
         </div>
       </SupabaseProvider>
     </div>
