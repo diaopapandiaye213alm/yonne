@@ -4,6 +4,10 @@ import { useState, useEffect, useRef } from "react";
 import { Radio } from "lucide-react";
 import { useOrdersStore } from "@/lib/store/orders";
 
+// In production the feed shows only real Supabase order events.
+// Synthetic events are disabled to avoid polluting the live dashboard.
+const IS_PROD = process.env.NEXT_PUBLIC_APP_ENV === "production";
+
 type EventKind = "assigned" | "picked_up" | "en_route" | "delivered" | "new_order";
 
 const KIND_CONFIG: Record<EventKind, { label: string; color: string; dot: string }> = {
@@ -85,7 +89,8 @@ const PAY_MAP: Record<string, "Wave" | "Orange" | "Cash"> = {
 
 export function LiveFeed() {
   const { orders } = useOrdersStore();
-  const [events, setEvents] = useState<FeedEvent[]>(makeSeedEvents);
+  // Production: start with an empty feed — no synthetic seed events.
+  const [events, setEvents] = useState<FeedEvent[]>(IS_PROD ? [] : makeSeedEvents);
   const [flash,  setFlash]  = useState<string | null>(null);
   const prevOrdersRef = useRef<typeof orders>([]);
 
@@ -119,6 +124,9 @@ export function LiveFeed() {
   }, [orders]);
 
   useEffect(() => {
+    // Production: synthetic events disabled — real Supabase events only (see orders effect above).
+    if (IS_PROD) return;
+
     let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
     function addEvent() {

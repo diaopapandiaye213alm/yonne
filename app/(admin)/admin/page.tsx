@@ -14,14 +14,17 @@ import { SimulationControls } from "@/components/admin/SimulationControls";
 import { useSimulationStore } from "@/lib/store/simulation";
 import { Sparkles, ChevronRight } from "lucide-react";
 
+const IS_PROD = process.env.NEXT_PUBLIC_APP_ENV === "production";
+
 export default function AdminHomePage() {
   const kpis = useLiveKpis(10000);
   const { running, start } = useSimulationStore();
   const autoStarted = useRef(false);
 
-  // Auto-start simulation 3s after admin dashboard loads (demo mode)
+  // Auto-start simulation 3s after admin dashboard loads — demo mode only.
+  // Disabled in production to prevent synthetic orders from hitting the real DB.
   useEffect(() => {
-    if (running || autoStarted.current) return;
+    if (IS_PROD || running || autoStarted.current) return;
     autoStarted.current = true;
     const t = setTimeout(() => {
       if (!useSimulationStore.getState().running) start(1);
@@ -73,7 +76,7 @@ export default function AdminHomePage() {
           </div>
 
           <div className="flex items-center gap-2 shrink-0 flex-wrap">
-            <SimulationControls />
+            {!IS_PROD && <SimulationControls />}
             <Link
               href="/admin/tabaski"
               className="flex items-center gap-2 bg-gold-500/20 hover:bg-gold-500/30 border border-gold-500/40 text-gold-300 hover:text-gold-200 rounded-lg px-4 py-2.5 text-sm font-medium transition-all w-fit"

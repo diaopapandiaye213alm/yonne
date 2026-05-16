@@ -3,6 +3,10 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { simulationEngine } from "@/lib/simulation/engine";
 
+// Simulation is strictly forbidden in production to prevent fake orders from
+// polluting the real Supabase database and triggering real SMS notifications.
+const IS_PROD = process.env.NEXT_PUBLIC_APP_ENV === "production";
+
 interface SimulationState {
   running: boolean;
   speed: 1 | 2 | 5;
@@ -25,6 +29,7 @@ export const useSimulationStore = create<SimulationState>()(
         ordersCreated: 0,
 
         start: (speed = 1) => {
+          if (IS_PROD) return; // hard block — never run simulation on production DB
           simulationEngine.start(speed);
         },
 
@@ -34,7 +39,7 @@ export const useSimulationStore = create<SimulationState>()(
 
         setSpeed: (speed) => {
           set({ speed });
-          simulationEngine.setSpeed(speed);
+          if (!IS_PROD) simulationEngine.setSpeed(speed);
         },
       };
     },
@@ -43,8 +48,8 @@ export const useSimulationStore = create<SimulationState>()(
       // Only persist running + speed (not ordersCreated which resets each session)
       partialize: (s) => ({ running: s.running, speed: s.speed }),
       onRehydrateStorage: () => (state) => {
-        // Auto-restart engine if it was running before page refresh
-        if (state?.running) {
+        // Auto-restart only in non-production environments
+        if (!IS_PROD && state?.running) {
           setTimeout(() => simulationEngine.start(state.speed), 800);
         }
       },
