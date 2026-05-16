@@ -10,7 +10,7 @@ import { ChatBubble } from "@/components/tracking/ChatBubble";
 import { EtaBadge } from "@/components/tracking/EtaBadge";
 import { DriverCard } from "@/components/tracking/DriverCard";
 import { Button } from "@/components/ui/button";
-import { Share2, XCircle, AlertTriangle, FileText, Send, Loader2, CheckCircle2, Smartphone } from "lucide-react";
+import { Share2, XCircle, AlertTriangle, FileText, Send, Loader2, CheckCircle2, Smartphone, ExternalLink, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { useSupabaseAuthed } from "@/components/providers/SupabaseProvider";
 
@@ -48,6 +48,35 @@ export default function TrackingPage({ params }: { params: { id: string } }) {
   const [showConfirm, setShowConfirm]     = useState(false);
   const [cancelling, setCancelling]       = useState(false);
   const [justConfirmed, setJustConfirmed] = useState(false);
+
+  // ── PayTech — génération du lien de paiement en ligne ─────────────────────
+  const [paytechUrl, setPaytechUrl]         = useState<string | null>(null);
+  const [generatingLink, setGeneratingLink] = useState(false);
+
+  const isOnlinePayment = order?.paymentMethod === "wave" || order?.paymentMethod === "orange";
+  const isManualPayment = !isOnlinePayment;
+
+  const handleGeneratePayTechLink = useCallback(async () => {
+    if (generatingLink || !order) return;
+    setGeneratingLink(true);
+    try {
+      const res  = await fetch("/api/payments/paytech/request", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ order_id: order.id, amount: order.amount, client_name: order.clientName }),
+      });
+      const data = await res.json() as { redirect_url?: string; error?: string };
+      if (data.redirect_url) {
+        setPaytechUrl(data.redirect_url);
+      } else {
+        toast.error(data.error ?? "Impossible de générer le lien PayTech");
+      }
+    } catch {
+      toast.error("Erreur réseau — réessayez");
+    } finally {
+      setGeneratingLink(false);
+    }
+  }, [generatingLink, order]);
 
   // ── Merchant phone — fetched once for payment confirmation display ────────
   const [merchantPhone, setMerchantPhone] = useState<string | null>(null);
@@ -218,8 +247,72 @@ export default function TrackingPage({ params }: { params: { id: string } }) {
         {driver && <DriverCard driver={driver} />}
         {distanceKm !== null && <EtaBadge distanceKm={distanceKm} />}
 
-        {/* ── Panneau de confirmation de paiement (mobile-first) ────────── */}
-        {order?.paymentStatus === "pending" &&
+        {/* ── Panneau PayTech — Wave / Orange en ligne ─────────────────── */}
+        {isOnlinePayment &&
+          order?.paymentStatus === "pending" &&
+          status !== "annulée" &&
+          status !== "livrée" && (
+          <div className="rounded-xl border border-navy-200 bg-navy-50 p-4 space-y-3">
+            <div className="flex items-center gap-2">
+              <Smartphone className="w-4 h-4 text-navy-700 shrink-0" />
+              <h3 className="font-display font-semibold text-navy-900 text-sm">
+                Paiement en ligne via PayTech
+              </h3>
+            </div>
+            <p className="text-xs text-navy-600">
+              Génère un lien de paiement sécurisé à envoyer au client. Il paie directement
+              depuis son téléphone via {order?.paymentMethod === "wave" ? "Wave" : "Orange Money"}.
+            </p>
+
+            {!paytechUrl ? (
+              <button
+                type="button"
+                onClick={handleGeneratePayTechLink}
+                disabled={generatingLink}
+                className="w-full h-14 rounded-xl bg-gradient-to-b from-navy-800 to-navy-900 text-white font-display font-semibold text-sm flex items-center justify-center gap-2 active:scale-[0.98] transition-transform duration-100 disabled:opacity-60"
+              >
+                {generatingLink
+                  ? <><Loader2 className="w-4 h-4 animate-spin" /> Génération…</>
+                  : <><ExternalLink className="w-4 h-4" /> Générer le lien de paiement</>
+                }
+              </button>
+            ) : (
+              <div className="space-y-2">
+                <div className="rounded-lg bg-white border border-navy-200 px-3 py-2 font-mono text-xs text-navy-800 break-all select-all">
+                  {paytechUrl}
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => { navigator.clipboard.writeText(paytechUrl); toast.success("Lien copié !"); }}
+                    className="h-10 rounded-lg border border-navy-300 text-navy-700 text-xs font-semibold flex items-center justify-center gap-1.5 hover:bg-navy-100 active:scale-[0.98] transition-transform duration-100"
+                  >
+                    <Copy className="w-3.5 h-3.5" /> Copier
+                  </button>
+                  <a
+                    href={`https://wa.me/${order?.clientPhone?.replace(/\D/g, "")}?text=${encodeURIComponent(`Paiement YONNE — cliquez ici pour payer: ${paytechUrl}`)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="h-10 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-semibold flex items-center justify-center gap-1.5 active:scale-[0.98] transition-transform duration-100"
+                  >
+                    <Share2 className="w-3.5 h-3.5" /> WhatsApp
+                  </a>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setPaytechUrl(null)}
+                  className="w-full text-xs text-navy-500 hover:text-navy-700 py-1"
+                >
+                  Générer un nouveau lien
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── Panneau confirmation manuelle — cash / transfert personnel ─── */}
+        {isManualPayment &&
+          order?.paymentStatus === "pending" &&
           status !== "annulée" &&
           status !== "livrée" && (
           <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 space-y-3">
@@ -233,9 +326,7 @@ export default function TrackingPage({ params }: { params: { id: string } }) {
             {merchantPhone && (
               <div className="rounded-md bg-white border border-amber-200 px-3 py-2 text-xs text-amber-800">
                 Votre numéro Wave / OM :{" "}
-                <span className="font-mono font-bold text-amber-900 select-all">
-                  {merchantPhone}
-                </span>
+                <span className="font-mono font-bold text-amber-900 select-all">{merchantPhone}</span>
                 <span className="block text-amber-600 mt-0.5">
                   Communiquez ce numéro au client pour recevoir le transfert.
                 </span>

@@ -53,6 +53,9 @@ jobs:
           NEXT_PUBLIC_VAPID_PUBLIC_KEY: BEl62iUYgUivxIkv69yViEuiBIa40cRi7v1-_PqPAlSm8eDHITmLPECBsQxJlHlpXsXGBVDJiEaV_BEdXmEfPg
           VAPID_PUBLIC_KEY: BEl62iUYgUivxIkv69yViEuiBIa40cRi7v1-_PqPAlSm8eDHITmLPECBsQxJlHlpXsXGBVDJiEaV_BEdXmEfPg
           VAPID_PRIVATE_KEY: u4dkFut5NJi7qnSFCMIMT5kQFHbsSSMCOBFCRiIe9sI
+          PAYTECH_API_KEY: ci_placeholder_paytech_api_key
+          PAYTECH_API_SECRET: ci_placeholder_paytech_api_secret
+          APP_URL: https://ci-placeholder.vercel.app
 
   # ── 2. DB schema validation : PostgreSQL 16 + auth stubs ───────────────────
   db-validate:
@@ -129,6 +132,9 @@ jobs:
       - name: Apply payment_status.sql
         run: psql -f supabase/payment_status.sql
 
+      - name: Apply paytech.sql
+        run: psql -f supabase/paytech.sql
+
       - name: Smoke-test function signatures
         run: |
           psql <<'SQL'
@@ -162,6 +168,9 @@ jobs:
 
           -- Verify zones table seeded by surge_pricing.sql (5 Dakar zones)
           SELECT count(*) >= 5 AS zones_dakar_ok FROM zones WHERE active = true;
+
+          -- Verify PayTech sessions table
+          SELECT count(*) = 0 AS paytech_sessions_empty FROM paytech_sessions;
           SQL
 
       - name: Supabase CLI lint (optional — skipped if token absent)
