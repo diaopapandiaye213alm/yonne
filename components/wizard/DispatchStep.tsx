@@ -12,6 +12,18 @@ import { Button } from "@/components/ui/button";
 import { Loader2, Star } from "lucide-react";
 import { toast } from "sonner";
 
+type RecentClientEntry = { name: string; phone: string; landmarkId: string; landmarkName: string };
+function isRecentEntry(x: unknown): x is RecentClientEntry {
+  if (x === null || typeof x !== "object") return false;
+  const o = x as Record<string, unknown>;
+  return (
+    typeof o.name === "string" && (o.name as string).trim() !== "" &&
+    typeof o.phone === "string" && (o.phone as string).trim() !== "" &&
+    typeof o.landmarkId === "string" &&
+    typeof o.landmarkName === "string"
+  );
+}
+
 // Generates a collision-resistant YONNE order ID using crypto.randomUUID().
 // Format: YN-{YEAR}-{8 hex chars uppercase} — ~4 billion combinations per year.
 function generateOrderId(): string {
@@ -101,7 +113,8 @@ export function DispatchStep() {
           landmarkName: landmarkObj?.name ?? "",
         };
         const raw = localStorage.getItem("yonne_recent_clients");
-        const existing: typeof newEntry[] = raw ? JSON.parse(raw) : [];
+        const parsed: unknown = raw ? JSON.parse(raw) : [];
+        const existing = Array.isArray(parsed) ? parsed.filter(isRecentEntry) : [];
         const deduped = existing.filter(c => c.phone !== newEntry.phone);
         localStorage.setItem("yonne_recent_clients", JSON.stringify([newEntry, ...deduped].slice(0, 5)));
       } catch { /* ignore storage errors */ }

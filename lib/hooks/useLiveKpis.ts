@@ -12,8 +12,20 @@ interface LiveKpis {
   sparkOrders: number[];
 }
 
+class Prng {
+  private s: number;
+  constructor(seed: number) { this.s = seed >>> 0; }
+  next(): number {
+    this.s = (this.s + 0x6D2B79F5) >>> 0;
+    let t = Math.imul(this.s ^ (this.s >>> 15), 1 | this.s);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) >>> 0;
+    return ((t ^ (t >>> 14)) >>> 0) / 0x100000000;
+  }
+}
+const _kpisRng = new Prng(Date.now() & 0xffffffff);
+
 function randInt(min: number, max: number) {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
+  return Math.floor(_kpisRng.next() * (max - min + 1)) + min;
 }
 
 export function useLiveKpis(intervalMs = 10000): LiveKpis {

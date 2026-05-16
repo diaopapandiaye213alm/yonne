@@ -62,6 +62,7 @@ export default function CommandeDetailPage({ params }: { params: { id: string } 
   );
 
   async function confirmDispatch() {
+    if (dispatchSubmitting) return;
     if (!selectedDriver || !order) return;
     const d = drivers.find(dr => dr.id === selectedDriver);
     setDispatchSubmitting(true);

@@ -20,9 +20,13 @@ export function OnboardingGuard() {
     if (pathname === "/merchant/onboarding") return;
     if (checked.current) return;
 
-    // Fast path: localStorage already set
+    // Fast path: localStorage already set — accept "1", "true", or any truthy JSON value
     try {
-      if (localStorage.getItem("yonne_merchant_onboarding_done") === "1") return;
+      const raw = localStorage.getItem("yonne_merchant_onboarding_done");
+      if (raw !== null) {
+        if (raw === "1" || raw === "true") return;
+        try { if (JSON.parse(raw)) return; } catch { /* non-JSON string, fall through */ }
+      }
     } catch { /* ignore */ }
 
     // Server path: wait for session + merchants to load, then check DB flag

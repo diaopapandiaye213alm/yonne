@@ -28,8 +28,19 @@ export function ClientStep() {
     try {
       const raw = localStorage.getItem("yonne_recent_clients");
       if (raw) {
-        const parsed: RecentClient[] = JSON.parse(raw);
-        setRecentClients(parsed.slice(0, 5));
+        const parsed: unknown = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          const valid = parsed.filter(
+            (c): c is RecentClient =>
+              c !== null &&
+              typeof c === "object" &&
+              typeof (c as RecentClient).name === "string" && (c as RecentClient).name.trim() !== "" &&
+              typeof (c as RecentClient).phone === "string" && (c as RecentClient).phone.trim() !== "" &&
+              typeof (c as RecentClient).landmarkId === "string" && (c as RecentClient).landmarkId.trim() !== "" &&
+              typeof (c as RecentClient).landmarkName === "string"
+          );
+          setRecentClients(valid.slice(0, 5));
+        }
       }
     } catch {
       // ignore parse errors
@@ -45,11 +56,19 @@ export function ClientStep() {
     try {
       const raw = localStorage.getItem("yonne_prefill_order");
       if (raw) {
-        const prefill = JSON.parse(raw);
-        if (prefill.clientName) w.set("clientName", prefill.clientName);
-        if (prefill.clientPhone) w.set("clientPhone", prefill.clientPhone);
-        if (prefill.landmarkId) w.set("landmarkId", prefill.landmarkId);
-        if (prefill.amount) w.set("amount", prefill.amount);
+        const prefill: unknown = JSON.parse(raw);
+        if (prefill !== null && typeof prefill === "object") {
+          const p = prefill as Record<string, unknown>;
+          const hasName     = typeof p.clientName  === "string" && !!(p.clientName  as string).trim();
+          const hasPhone    = typeof p.clientPhone === "string" && !!(p.clientPhone as string).trim();
+          const hasLandmark = typeof p.landmarkId  === "string" && !!(p.landmarkId  as string).trim();
+          if (hasName && hasPhone && hasLandmark) {
+            w.set("clientName",  p.clientName  as string);
+            w.set("clientPhone", p.clientPhone as string);
+            w.set("landmarkId",  p.landmarkId  as string);
+            if (typeof p.amount === "number" && p.amount > 0) w.set("amount", p.amount);
+          }
+        }
       }
     } catch {
       // ignore parse errors

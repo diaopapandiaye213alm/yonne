@@ -12,6 +12,20 @@ import { useMerchantsStore } from "@/lib/store/merchants";
 import { landmarks } from "@/lib/mock-data/landmarks";
 import type { Order, OrderStatus } from "@/lib/mock-data/orders";
 
+// ── Seeded PRNG (Mulberry32) — deterministic within a session ─────────────
+class Prng {
+  private s: number;
+  constructor(seed: number) { this.s = seed >>> 0; }
+  next(): number {
+    this.s = (this.s + 0x6D2B79F5) >>> 0;
+    let t = Math.imul(this.s ^ (this.s >>> 15), 1 | this.s);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) >>> 0;
+    return ((t ^ (t >>> 14)) >>> 0) / 0x100000000;
+  }
+}
+// Seed from module load timestamp — varies per session, deterministic within it.
+const rng = new Prng(Date.now() & 0xffffffff);
+
 // ── Noms sénégalais réalistes ──────────────────────────────────────────────
 const FIRST = ["Moussa", "Ibrahima", "Fatou", "Aminata", "Ousmane", "Cheikh",
                "Awa", "Mariama", "Lamine", "Assane", "Aissatou", "Khadija",
@@ -20,9 +34,9 @@ const LAST  = ["Diallo", "Fall", "Sow", "Ndiaye", "Ba", "Mbaye",
                "Diop", "Sarr", "Sy", "Gueye", "Kane", "Thiam", "Faye", "Dème"];
 const METHODS: Order["paymentMethod"][] = ["wave", "orange", "cash", "cash", "wave"];
 
-function pick<T>(arr: T[]): T { return arr[Math.floor(Math.random() * arr.length)]; }
-function randPhone() { return `+22177${Math.floor(1000000 + Math.random() * 8999999)}`; }
-function randAmount() { return (Math.floor(Math.random() * 22) + 3) * 500; } // 1500–12500 F
+function pick<T>(arr: T[]): T { return arr[Math.floor(rng.next() * arr.length)]; }
+function randPhone() { return `+22177${Math.floor(1000000 + rng.next() * 8999999)}`; }
+function randAmount() { return (Math.floor(rng.next() * 22) + 3) * 500; } // 1500–12500 F
 
 // ── Types internes ──────────────────────────────────────────────────────────
 interface PendingAdvance {
@@ -41,6 +55,7 @@ interface DriverMovement {
 
 // ── Engine (singleton) ─────────────────────────────────────────────────────
 class SimulationEngine {
+  private startTimer:  ReturnType<typeof setTimeout>  | null = null;
   private orderTimer:  ReturnType<typeof setInterval> | null = null;
   private advTimer:    ReturnType<typeof setInterval> | null = null;
   private moveTimer:   ReturnType<typeof setInterval> | null = null;
@@ -69,7 +84,7 @@ class SimulationEngine {
     const advanceCheck  = Math.max(1000, Math.floor(3000 / speed));
 
     // Créer une commande immédiatement puis à intervalle
-    setTimeout(() => this.createOrder(), 1500);
+    this.startTimer = setTimeout(() => { this.startTimer = null; this.createOrder(); }, 1500);
     this.orderTimer = setInterval(() => this.createOrder(), orderInterval);
 
     // Vérifier les statuts à avancer
@@ -82,6 +97,7 @@ class SimulationEngine {
   }
 
   stop() {
+    if (this.startTimer) { clearTimeout(this.startTimer); this.startTimer = null; }
     if (this.orderTimer) clearInterval(this.orderTimer);
     if (this.advTimer)   clearInterval(this.advTimer);
     if (this.moveTimer)  clearInterval(this.moveTimer);
@@ -111,7 +127,7 @@ class SimulationEngine {
 
     // 40% de chance de cibler le livreur actuellement connecté
     let driver = pick(online);
-    if (this.activeDriverId && Math.random() < 0.4) {
+    if (this.activeDriverId && rng.next() < 0.4) {
       const target = online.find(d => d.id === this.activeDriverId);
       if (target) driver = target;
     }
@@ -130,7 +146,7 @@ class SimulationEngine {
       clientPhone:   randPhone(),
       amount,
       paymentMethod: pick(METHODS),
-      insurance:     Math.random() > 0.65,
+      insurance:     rng.next() > 0.65,
       status:        "créée",
       active:        true,
       createdAt:     new Date().toISOString(),
@@ -205,7 +221,7 @@ class SimulationEngine {
     if (!driver || !lm) return;
 
     // Destination : landmark ± petit décalage réaliste
-    const jitter = () => (Math.random() - 0.5) * 0.008;
+    const jitter = () => (rng.next() - 0.5) * 0.008;
     this.movements.set(driverId, {
       driverId,
       fromLat: driver.lat, fromLng: driver.lng,

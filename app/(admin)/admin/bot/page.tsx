@@ -17,10 +17,29 @@ const INIT_SCENARIOS: Scenario[] = [
 ];
 
 const SCENARIOS_KEY = "yonne_bot_scenarios";
+
+function isScenario(x: unknown): x is Scenario {
+  if (x === null || typeof x !== "object") return false;
+  const o = x as Record<string, unknown>;
+  return (
+    typeof o.id === "string" && (o.id as string).trim() !== "" &&
+    typeof o.keyword === "string" && (o.keyword as string).trim() !== "" &&
+    typeof o.response === "string" &&
+    typeof o.active === "boolean" &&
+    typeof o.hits === "number"
+  );
+}
+
 function loadScenarios(): Scenario[] {
   try {
     const raw = localStorage.getItem(SCENARIOS_KEY);
-    if (raw) return JSON.parse(raw);
+    if (raw) {
+      const parsed: unknown = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        const valid = parsed.filter(isScenario);
+        if (valid.length > 0) return valid;
+      }
+    }
   } catch { /* ignore */ }
   return INIT_SCENARIOS;
 }

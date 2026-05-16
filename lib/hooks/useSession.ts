@@ -30,7 +30,13 @@ function scheduleRetry(delayMs: number) {
 function ensureFetched() {
   if (_resolved || _fetchPromise) return;
   _fetchPromise = fetch("/api/auth/me")
-    .then(r => (r.ok ? r.json() : null))
+    .then(r => {
+      if (!r.ok) return null;
+      // Guard against proxies (Nginx 502/504) returning HTML error pages
+      const ct = r.headers.get("content-type") ?? "";
+      if (!ct.includes("application/json")) return null;
+      return r.json() as Promise<SessionState>;
+    })
     .then(data => {
       _resolved = true;
       _retryCount = 0;

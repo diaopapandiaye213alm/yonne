@@ -12,7 +12,7 @@ import { useSupabaseAuthed } from "@/components/providers/SupabaseProvider";
 import { REALTIME_SUBSCRIBE_STATES } from "@supabase/supabase-js";
 import {
   ArrowLeft, Star, Bike, Package,
-  Edit2, Check, X, MessageSquare, Send, Phone,
+  Edit2, Check, X, MessageSquare, Send, Phone, WifiOff,
 } from "lucide-react";
 
 const TIER_COLORS: Record<Tier, string> = {
@@ -69,8 +69,9 @@ export default function LivreurDetailPage({ params }: { params: { id: string } }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [driver?.id]); // intentionally keyed on id to avoid re-running on unrelated re-renders
 
-  const [chatMsg, setChatMsg] = useState("");
-  const [chat,    setChat]    = useState<ChatMessage[]>([]);
+  const [chatMsg,    setChatMsg]    = useState("");
+  const [chat,       setChat]       = useState<ChatMessage[]>([]);
+  const [chatOnline, setChatOnline] = useState(true);
 
   useEffect(() => {
     if (!params.id) return;
@@ -89,7 +90,7 @@ export default function LivreurDetailPage({ params }: { params: { id: string } }
       );
 
     const channel = supabase
-      .channel(`admin_messages_driver_${params.id}`)
+      .channel(`admin_messages_driver_${params.id}_${Date.now()}`)
       .on("postgres_changes", {
         event: "INSERT", schema: "public", table: "admin_messages",
         filter: `subject_id=eq.${params.id}`,
@@ -97,7 +98,11 @@ export default function LivreurDetailPage({ params }: { params: { id: string } }
         setChat(prev => [...prev, payload.new as ChatMessage]);
       })
       .subscribe((status) => {
-        if (status === REALTIME_SUBSCRIBE_STATES.CHANNEL_ERROR) {
+        if (
+          status === REALTIME_SUBSCRIBE_STATES.CHANNEL_ERROR ||
+          status === REALTIME_SUBSCRIBE_STATES.TIMED_OUT
+        ) {
+          setChatOnline(false);
           console.error("[Realtime] admin_messages subscription failed — driver:", params.id);
         }
       });
@@ -343,6 +348,11 @@ export default function LivreurDetailPage({ params }: { params: { id: string } }
       <div className="bg-white rounded-lg border border-cream-200 shadow-card p-5">
         <h2 className="font-semibold text-ink-900 mb-4 flex items-center gap-2">
           <MessageSquare className="w-4 h-4 text-emerald-500" /> Chat SAV
+          {!chatOnline && (
+            <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-600 font-medium">
+              <WifiOff className="w-3 h-3" /> Déconnecté
+            </span>
+          )}
         </h2>
         <div className="space-y-3 max-h-56 overflow-y-auto pr-1 mb-4">
           {chat.length === 0 && (

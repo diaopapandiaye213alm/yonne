@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef } from "react";
 import { toast } from "sonner";
+import { REALTIME_SUBSCRIBE_STATES } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 
 const STATUS_LABELS: Record<string, string> = {
@@ -23,6 +24,7 @@ export function MerchantNotifier({ merchantId }: { merchantId?: string }) {
   const prevStatuses = useRef<Record<string, string>>({});
 
   useEffect(() => {
+    let errorToastShown = false;
     const channel = supabase
       .channel("merchant-order-updates")
       .on(
@@ -51,7 +53,16 @@ export function MerchantNotifier({ merchantId }: { merchantId?: string }) {
           }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        if (
+          (status === REALTIME_SUBSCRIBE_STATES.CHANNEL_ERROR ||
+           status === REALTIME_SUBSCRIBE_STATES.TIMED_OUT) &&
+          !errorToastShown
+        ) {
+          errorToastShown = true;
+          toast.error("Notifications en arrière-plan hors-ligne");
+        }
+      });
 
     return () => { supabase.removeChannel(channel); };
   }, [merchantId]);

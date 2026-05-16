@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { useMerchantsStore } from "@/lib/store/merchants";
 import { useOrdersStore } from "@/lib/store/orders";
-import { ArrowLeft, FileText, TrendingUp, TrendingDown, MessageSquare, Send, Download, RefreshCw } from "lucide-react";
+import { ArrowLeft, FileText, TrendingUp, TrendingDown, MessageSquare, Send, Download, RefreshCw, WifiOff } from "lucide-react";
 import { toast } from "sonner";
 import { useSupabaseAuthed } from "@/components/providers/SupabaseProvider";
 import { REALTIME_SUBSCRIBE_STATES } from "@supabase/supabase-js";
@@ -30,6 +30,7 @@ export default function MarchandDetailPage({ params }: { params: { id: string } 
   const [chatMsg,    setChatMsg]    = useState("");
   const [chat,       setChat]       = useState<ChatMessage[]>([]);
   const [upgrading,  setUpgrading]  = useState(false);
+  const [chatOnline, setChatOnline] = useState(true);
 
   useEffect(() => {
     supabase
@@ -47,7 +48,7 @@ export default function MarchandDetailPage({ params }: { params: { id: string } 
       );
 
     const channel = supabase
-      .channel(`admin_messages_merchant_${params.id}`)
+      .channel(`admin_messages_merchant_${params.id}_${Date.now()}`)
       .on("postgres_changes", {
         event: "INSERT", schema: "public", table: "admin_messages",
         filter: `subject_id=eq.${params.id}`,
@@ -55,7 +56,11 @@ export default function MarchandDetailPage({ params }: { params: { id: string } 
         setChat(prev => [...prev, payload.new as ChatMessage]);
       })
       .subscribe((status) => {
-        if (status === REALTIME_SUBSCRIBE_STATES.CHANNEL_ERROR) {
+        if (
+          status === REALTIME_SUBSCRIBE_STATES.CHANNEL_ERROR ||
+          status === REALTIME_SUBSCRIBE_STATES.TIMED_OUT
+        ) {
+          setChatOnline(false);
           console.error("[Realtime] admin_messages subscription failed — merchant:", params.id);
         }
       });
@@ -269,6 +274,11 @@ export default function MarchandDetailPage({ params }: { params: { id: string } 
       <div className="bg-white rounded-lg border border-cream-200 shadow-card p-5">
         <h2 className="font-semibold text-ink-900 mb-4 flex items-center gap-2">
           <MessageSquare className="w-4 h-4 text-emerald-500" /> Chat SAV
+          {!chatOnline && (
+            <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-600 font-medium">
+              <WifiOff className="w-3 h-3" /> Déconnecté
+            </span>
+          )}
         </h2>
         <div className="space-y-3 max-h-56 overflow-y-auto pr-1 mb-4">
           {chat.length === 0 && (
