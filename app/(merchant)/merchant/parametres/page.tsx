@@ -15,14 +15,22 @@ export default function ParametresPage() {
   const { merchants, updateMerchant } = useMerchantsStore();
   const merchant = useMemo(() => {
     const byEmail = session?.email ? merchants.find(m => m.email === session.email) : null;
-    return byEmail ?? merchants[0] ?? { id: "", name: "—", email: "", phone: "", city: "", plan: "Standard" as const };
+    return byEmail ?? merchants[0] ?? {
+      id: "", name: "—", email: "", phone: "", city: "",
+      plan: "Standard" as const,
+      notifWhatsapp: true, notifSms: true, notifEmail: false,
+    };
   }, [merchants, session?.email]);
+
   const qrRef = useRef<SVGSVGElement>(null);
-  const qrValue = `https://yonne.sn/m/${merchant.id}`;
+  const [origin, setOrigin] = useState("https://yonne.sn");
+  useEffect(() => { setOrigin(window.location.origin); }, []);
+  const qrValue = merchant.id ? `${origin}/m/${merchant.id}` : "";
 
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [city,  setCity]  = useState("");
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     setEmail(merchant.email);
@@ -33,6 +41,13 @@ export default function ParametresPage() {
   const [whatsapp,   setWhatsapp]   = useState(true);
   const [sms,        setSms]        = useState(true);
   const [emailNotif, setEmailNotif] = useState(false);
+  const [savingNotif, setSavingNotif] = useState(false);
+
+  useEffect(() => {
+    setWhatsapp(merchant.notifWhatsapp ?? true);
+    setSms(merchant.notifSms ?? true);
+    setEmailNotif(merchant.notifEmail ?? false);
+  }, [merchant.notifWhatsapp, merchant.notifSms, merchant.notifEmail]);
 
   return (
     <div className="p-6 max-w-2xl mx-auto space-y-6">
@@ -64,14 +79,22 @@ export default function ParametresPage() {
         </div>
         <Button
           type="button"
+          disabled={saving || !merchant.id}
           onClick={async () => {
             if (!merchant.id) return;
-            await updateMerchant(merchant.id, { email, phone, city });
-            toast.success("Profil enregistré");
+            setSaving(true);
+            try {
+              await updateMerchant(merchant.id, { email, phone, city });
+              toast.success("Profil enregistré");
+            } catch {
+              toast.error("Erreur lors de la sauvegarde");
+            } finally {
+              setSaving(false);
+            }
           }}
-          className="bg-emerald-500 hover:bg-emerald-600 text-white"
+          className="bg-emerald-500 hover:bg-emerald-600 text-white disabled:opacity-60"
         >
-          Enregistrer
+          {saving ? "Enregistrement…" : "Enregistrer"}
         </Button>
       </div>
 
@@ -106,74 +129,95 @@ export default function ParametresPage() {
       </div>
 
       {/* QR Code boutique */}
-      <div className="bg-white rounded-lg border border-cream-200 shadow-card p-5">
-        <div className="flex items-center gap-2 mb-4">
-          <QrCode className="w-4 h-4 text-ink-700" />
-          <h2 className="font-semibold text-ink-900">QR Code boutique</h2>
-        </div>
-        <p className="text-sm text-ink-500 mb-4">Partagez ce code avec vos clients pour qu&apos;ils puissent passer commande directement.</p>
-        <div className="flex items-center gap-6">
-          <div className="shrink-0 p-2 border border-cream-200 rounded-lg bg-white">
-            <QRCodeSVG
-              ref={qrRef}
-              value={qrValue}
-              size={96}
-              bgColor="#ffffff"
-              fgColor="#1a1a2e"
-              level="M"
-            />
+      {qrValue && (
+        <div className="bg-white rounded-lg border border-cream-200 shadow-card p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <QrCode className="w-4 h-4 text-ink-700" />
+            <h2 className="font-semibold text-ink-900">QR Code boutique</h2>
           </div>
-          <div className="flex-1 space-y-3">
-            <div className="font-mono text-xs text-ink-600 bg-cream-50 rounded px-3 py-2 break-all">
-              {qrValue}
+          <p className="text-sm text-ink-500 mb-4">Partagez ce code avec vos clients pour qu&apos;ils puissent passer commande directement.</p>
+          <div className="flex items-center gap-6">
+            <div className="shrink-0 p-2 border border-cream-200 rounded-lg bg-white">
+              <QRCodeSVG
+                ref={qrRef}
+                value={qrValue}
+                size={96}
+                bgColor="#ffffff"
+                fgColor="#1a1a2e"
+                level="M"
+              />
             </div>
-            <div className="flex gap-2">
-              <button type="button"
-                onClick={() => { navigator.clipboard.writeText(qrValue).catch(() => {}); toast.success("Lien copié"); }}
-                className="flex items-center gap-1.5 text-xs border border-cream-200 text-ink-600 hover:bg-cream-50 px-3 py-1.5 rounded-lg transition-colors">
-                <Copy className="w-3.5 h-3.5" /> Copier le lien
-              </button>
-              <button type="button"
-                onClick={() => {
-                  const svg = qrRef.current;
-                  if (!svg) return;
-                  const data = new XMLSerializer().serializeToString(svg);
-                  const blob = new Blob([data], { type: "image/svg+xml" });
-                  const url = URL.createObjectURL(blob);
-                  const a = document.createElement("a");
-                  a.href = url; a.download = `qr-yonne-${merchant.id}.svg`; a.click();
-                  URL.revokeObjectURL(url);
-                  toast.success("QR Code téléchargé (SVG)");
-                }}
-                className="flex items-center gap-1.5 text-xs bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-1.5 rounded-lg transition-colors font-medium">
-                <Download className="w-3.5 h-3.5" /> Télécharger
-              </button>
+            <div className="flex-1 space-y-3">
+              <div className="font-mono text-xs text-ink-600 bg-cream-50 rounded px-3 py-2 break-all">
+                {qrValue}
+              </div>
+              <div className="flex gap-2">
+                <button type="button"
+                  onClick={() => { navigator.clipboard.writeText(qrValue).catch(() => {}); toast.success("Lien copié"); }}
+                  className="flex items-center gap-1.5 text-xs border border-cream-200 text-ink-600 hover:bg-cream-50 px-3 py-1.5 rounded-lg transition-colors">
+                  <Copy className="w-3.5 h-3.5" /> Copier le lien
+                </button>
+                <button type="button"
+                  onClick={() => {
+                    const svg = qrRef.current;
+                    if (!svg) return;
+                    const data = new XMLSerializer().serializeToString(svg);
+                    const blob = new Blob([data], { type: "image/svg+xml" });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url; a.download = `qr-yonne-${merchant.id}.svg`; a.click();
+                    URL.revokeObjectURL(url);
+                    toast.success("QR Code téléchargé (SVG)");
+                  }}
+                  className="flex items-center gap-1.5 text-xs bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-1.5 rounded-lg transition-colors font-medium">
+                  <Download className="w-3.5 h-3.5" /> Télécharger
+                </button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Notifications */}
       <div className="bg-white rounded-lg border border-cream-200 shadow-card p-5 space-y-4">
         <h2 className="font-semibold text-ink-900">Notifications</h2>
         <div className="space-y-4">
           {[
-            { id: "wa",    label: "WhatsApp", checked: whatsapp,   onCheckedChange: setWhatsapp },
-            { id: "sms",   label: "SMS",       checked: sms,        onCheckedChange: setSms },
-            { id: "email", label: "Email",     checked: emailNotif, onCheckedChange: setEmailNotif },
-          ].map(({ id, label, checked, onCheckedChange }) => (
-            <div key={id} className="flex items-center justify-between">
-              <Label htmlFor={id} className="text-sm text-ink-700 cursor-pointer">{label}</Label>
+            { id: "wa",    label: "WhatsApp", desc: "Alertes commandes via WhatsApp", checked: whatsapp,   onCheckedChange: setWhatsapp },
+            { id: "sms",   label: "SMS",      desc: "Alertes commandes par SMS",      checked: sms,        onCheckedChange: setSms },
+            { id: "email", label: "Email",    desc: "Résumé quotidien par email",     checked: emailNotif, onCheckedChange: setEmailNotif },
+          ].map(({ id, label, desc, checked, onCheckedChange }) => (
+            <div key={id} className="flex items-center justify-between gap-4">
+              <div>
+                <Label htmlFor={id} className="text-sm font-medium text-ink-700 cursor-pointer">{label}</Label>
+                <p className="text-xs text-ink-400 mt-0.5">{desc}</p>
+              </div>
               <Switch id={id} checked={checked} onCheckedChange={onCheckedChange} />
             </div>
           ))}
         </div>
         <Button
           type="button"
-          onClick={() => toast.success("Notifications enregistrées")}
-          className="bg-emerald-500 hover:bg-emerald-600 text-white"
+          disabled={savingNotif || !merchant.id}
+          onClick={async () => {
+            if (!merchant.id) return;
+            setSavingNotif(true);
+            try {
+              await updateMerchant(merchant.id, {
+                notifWhatsapp: whatsapp,
+                notifSms: sms,
+                notifEmail: emailNotif,
+              });
+              toast.success("Préférences de notifications enregistrées");
+            } catch {
+              toast.error("Erreur lors de la sauvegarde");
+            } finally {
+              setSavingNotif(false);
+            }
+          }}
+          className="bg-emerald-500 hover:bg-emerald-600 text-white disabled:opacity-60"
         >
-          Enregistrer
+          {savingNotif ? "Enregistrement…" : "Enregistrer"}
         </Button>
       </div>
     </div>

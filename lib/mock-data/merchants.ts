@@ -15,6 +15,9 @@ export interface Merchant {
   revenueLastMonth: number;
   joinedAt: string;
   onboardingDone: boolean;
+  notifWhatsapp: boolean;
+  notifSms: boolean;
+  notifEmail: boolean;
 }
 
 function r(seed: number, min: number, max: number) {
@@ -45,4 +48,7 @@ export const merchants: Merchant[] = shopNames.map((name, i) => ({
   joinedAt: new Date(2025, Math.floor(r(i + 11, 0, 12)), Math.floor(r(i + 13, 1, 28)) + 1)
     .toISOString().split("T")[0],
   onboardingDone: false,
+  notifWhatsapp: true,
+  notifSms: true,
+  notifEmail: false,
 }));

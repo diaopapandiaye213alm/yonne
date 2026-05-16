@@ -1,7 +1,6 @@
 import { create } from "zustand";
 import { getSupabase } from "@/lib/supabase";
 import type { Order, OrderStatus, PaymentStatus } from "@/lib/mock-data/orders";
-import { sendSms } from "@/lib/sms";
 
 type ConfirmationMethod = "wave_personal" | "om_personal" | "cash";
 
@@ -103,7 +102,7 @@ export const useOrdersStore = create<OrdersState>((set, get) => ({
 
       set((s) => ({ orders: [order, ...s.orders] }));
 
-      // Non-blocking SMS to driver (fire-and-forget — non-critical)
+      // Non-blocking push/SMS notification to driver via server-side route (fire-and-forget)
       if (order.driverId) {
         void (async () => {
           try {
@@ -112,12 +111,17 @@ export const useOrdersStore = create<OrdersState>((set, get) => ({
               .select("phone,name")
               .eq("id", order.driverId)
               .single();
-            if (d?.phone) {
-              await sendSms(
-                d.phone,
-                `Nouvelle commande YONNE 📦 ${order.id} — ${order.clientName} — ${order.amount.toLocaleString("fr-FR")} F. Connectez-vous pour accepter.`
-              );
-            }
+            await fetch("/api/notifications/send", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                driver_id:   order.driverId,
+                title:       "Nouvelle commande YONNE 📦",
+                body:        `${order.clientName} — ${order.amount.toLocaleString("fr-FR")} F`,
+                phone:       d?.phone ?? undefined,
+                merchant_id: order.merchantId ?? undefined,
+              }),
+            });
           } catch {/* non-critical */}
         })();
       }

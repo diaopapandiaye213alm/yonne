@@ -118,8 +118,8 @@ export default async function LandingPage() {
   const animatedStats = [
     { value: live.orders,  label: "commandes enregistrées",  suffix: "" },
     { value: live.drivers, label: "livreurs actifs en ce moment", suffix: "" },
-    { value: Math.round(live.rating * 10), label: "note moyenne sur 50", prefix: "", suffix: "/50" },
-    { value: 140, label: "surge Tabaski activé", prefix: "× ", suffix: "%" },
+    { value: Math.round(live.rating * 10), label: "note moyenne sur 50", suffix: "/50" },
+    { value: 40, label: "hausse prix Tabaski", prefix: "+", suffix: "%" },
   ];
 
   return (

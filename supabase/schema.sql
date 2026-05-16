@@ -216,3 +216,10 @@ create index if not exists idx_sav_messages_tick      on sav_messages(ticket_id)
 create index if not exists idx_order_messages_order   on order_messages(order_id);
 create index if not exists idx_admin_messages_subject on admin_messages(subject_type, subject_id);
 create index if not exists idx_driver_withdrawals_drv on driver_withdrawals(driver_id);
+
+-- ────────────────────────────────────────────────────────────
+-- MERCHANT NOTIFICATION PREFERENCES (migration)
+-- ────────────────────────────────────────────────────────────
+alter table merchants add column if not exists notif_whatsapp boolean default true;
+alter table merchants add column if not exists notif_sms      boolean default true;
+alter table merchants add column if not exists notif_email    boolean default false;
