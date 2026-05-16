@@ -183,7 +183,38 @@ insert into zones (id, name, center_lat, center_lng, radius_km) values
   ('zone-stlouis-sud',  'Saint-Louis Faubourg Sud',     15.9950, -16.5050, 3.0),
   -- ── Touba / Mbacké ────────────────────────────────────────────────────
   ('zone-touba',        'Touba Centre',                 14.8504, -15.8878, 6.0),
-  ('zone-mbacke',       'Mbacké',                       14.8009, -15.9104, 3.0)
+  ('zone-mbacke',       'Mbacké',                       14.8009, -15.9104, 3.0),
+  -- ── Grand Dakar — est ────────────────────────────────────────────────────
+  ('zone-rufisque',     'Rufisque',                     14.7155, -17.2728, 4.0),
+  ('zone-bargny',       'Bargny',                       14.6964, -17.2286, 2.5),
+  ('zone-diamniadio',   'Diamniadio',                   14.7140, -17.1820, 5.0),
+  -- ── Thiès région (hors Thiès-ville) ─────────────────────────────────────
+  ('zone-tivaouane',    'Tivaouane',                    14.9518, -16.8208, 3.0),
+  -- ── Diourbel région ──────────────────────────────────────────────────────
+  ('zone-diourbel',     'Diourbel Centre',              14.6540, -16.2310, 3.0),
+  -- ── Kaolack région ───────────────────────────────────────────────────────
+  ('zone-kaolack',      'Kaolack Centre',               14.1652, -16.0726, 4.5),
+  -- ── Fatick région ────────────────────────────────────────────────────────
+  ('zone-fatick',       'Fatick Centre',                14.3345, -16.4083, 3.0),
+  -- ── Kaffrine région ──────────────────────────────────────────────────────
+  ('zone-kaffrine',     'Kaffrine Centre',              14.1055, -15.5508, 3.0),
+  -- ── Louga région ─────────────────────────────────────────────────────────
+  ('zone-louga',        'Louga Centre',                 15.6172, -16.2241, 3.5),
+  -- ── Matam région ─────────────────────────────────────────────────────────
+  ('zone-matam',        'Matam Centre',                 15.6558, -13.2553, 3.0),
+  ('zone-podor',        'Podor',                        16.6499, -14.9584, 2.5),
+  -- ── Saint-Louis région (hors ville) ─────────────────────────────────────
+  ('zone-richard-toll', 'Richard Toll',                 16.4607, -15.6973, 3.5),
+  -- ── Tambacounda région ───────────────────────────────────────────────────
+  ('zone-tambacounda',  'Tambacounda Centre',           13.7708, -13.6669, 4.0),
+  -- ── Kédougou région ──────────────────────────────────────────────────────
+  ('zone-kedougou',     'Kédougou Centre',              12.5597, -12.1772, 3.5),
+  -- ── Ziguinchor région ────────────────────────────────────────────────────
+  ('zone-ziguinchor',   'Ziguinchor Centre',            12.5636, -16.2728, 4.5),
+  -- ── Kolda région ─────────────────────────────────────────────────────────
+  ('zone-kolda',        'Kolda Centre',                 12.8978, -14.9408, 3.5),
+  -- ── Sédhiou région ───────────────────────────────────────────────────────
+  ('zone-sedhiou',      'Sédhiou Centre',               12.7082, -15.5574, 3.0)
 on conflict (id) do nothing;
 
 
@@ -253,6 +284,6 @@ delete from payment_audit_log where confirmed_at < now() - interval '1 second'; 
 --   select count(*) from drivers;            -- doit retourner 0
 --   select count(*) from merchants;          -- doit retourner 0
 --   select count(*) from orders;             -- doit retourner 0
---   select count(*) from zones where active; -- doit retourner >= 13 (5 Dakar + 8 nationales)
+--   select count(*) from zones where active; -- doit retourner >= 30 (5 Dakar + 8 premières nationales + 17 expansion)
 --   select id, name from zones order by id;  -- vérification visuelle des zones
 -- ────────────────────────────────────────────────────────────────────────────
