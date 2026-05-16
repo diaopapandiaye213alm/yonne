@@ -6,7 +6,7 @@ import { getSession } from "@/lib/session";
 import { SupabaseProvider } from "@/components/providers/SupabaseProvider";
 import { StoreCleanup } from "@/components/providers/StoreCleanup";
 
-const ADMIN_EMAIL = (process.env.ADMIN_EMAIL ?? "admin@yonne.sn").toLowerCase();
+const ADMIN_EMAIL = (process.env.ADMIN_EMAIL ?? "diaoadmin@yonne.sn").toLowerCase();
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession();
