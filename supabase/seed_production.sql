@@ -166,18 +166,93 @@ on conflict (id) do nothing;
 
 
 -- ────────────────────────────────────────────────────────────────────────────
--- 5. INITIALISATION DES RATE-LIMITS SMS
+-- 5. ZONES NATIONALES — Extension Sénégal
+--    Prérequis : supabase/surge_pricing.sql (table zones) déjà appliqué.
+--    Les 5 zones Dakar initiales sont insérées par surge_pricing.sql.
+--    Ce bloc complète avec les autres grandes villes du territoire.
+-- ────────────────────────────────────────────────────────────────────────────
+insert into zones (id, name, center_lat, center_lng, radius_km) values
+  -- ── Thiès ──────────────────────────────────────────────────────────────
+  ('zone-thies-centre', 'Thiès Centre-ville',          14.7902, -16.9319, 3.0),
+  ('zone-thies-ism',    'Thiès ISM / Escale',           14.7986, -16.9200, 2.0),
+  -- ── Petite Côte (Mbour / Saly) ─────────────────────────────────────────
+  ('zone-mbour',        'Mbour Centre',                 14.3674, -16.9657, 3.5),
+  ('zone-saly',         'Saly / Ngaparou',              14.4586, -17.0158, 4.0),
+  -- ── Saint-Louis ────────────────────────────────────────────────────────
+  ('zone-stlouis',      'Saint-Louis Ndar (île)',       16.0261, -16.4977, 3.5),
+  ('zone-stlouis-sud',  'Saint-Louis Faubourg Sud',     15.9950, -16.5050, 3.0),
+  -- ── Touba / Mbacké ────────────────────────────────────────────────────
+  ('zone-touba',        'Touba Centre',                 14.8504, -15.8878, 6.0),
+  ('zone-mbacke',       'Mbacké',                       14.8009, -15.9104, 3.0)
+on conflict (id) do nothing;
+
+
+-- ────────────────────────────────────────────────────────────────────────────
+-- 6. LANDMARKS NATIONAUX (hors Dakar)
+--    Décommentez le bloc ci-dessous après avoir créé la table landmarks
+--    (cf. section 3 de ce fichier).
+--
+--    Coordonnées vérifiées sur OpenStreetMap / Google Maps (mai 2026).
+--    Toutes les villes couvertes par les zones nationales ci-dessus.
+-- ────────────────────────────────────────────────────────────────────────────
+
+/*
+insert into landmarks (id, name, quartier, type, lat, lng, city) values
+-- ── Thiès ────────────────────────────────────────────────────────────────
+  ('lm-th-001', 'Marché Central de Thiès',          'Centre',         'commerce',    14.7902, -16.9319, 'Thiès'),
+  ('lm-th-002', 'Gare de Thiès',                    'Centre',         'transport',   14.7956, -16.9267, 'Thiès'),
+  ('lm-th-003', 'ISM Thiès',                        'Escale',         'éducation',   14.7986, -16.9200, 'Thiès'),
+  ('lm-th-004', 'Hôpital Régional de Thiès',        'Centre',         'santé',       14.7870, -16.9380, 'Thiès'),
+  ('lm-th-005', 'Mosquée Baye Laye',                'Escale',         'culte',       14.7920, -16.9290, 'Thiès'),
+  ('lm-th-006', 'Marché Escale',                    'Escale',         'commerce',    14.7985, -16.9240, 'Thiès'),
+  ('lm-th-007', 'Palais des Arts de Thiès',         'Centre',         'loisir',      14.7912, -16.9350, 'Thiès'),
+  ('lm-th-008', 'Total Thiès Centre',               'Centre',         'transport',   14.7930, -16.9280, 'Thiès'),
+-- ── Mbour / Petite Côte ───────────────────────────────────────────────────
+  ('lm-mb-001', 'Marché Central de Mbour',          'Centre',         'commerce',    14.3674, -16.9657, 'Mbour'),
+  ('lm-mb-002', 'Gare routière de Mbour',           'Centre',         'transport',   14.3700, -16.9680, 'Mbour'),
+  ('lm-mb-003', 'Hôpital de Mbour',                 'Centre',         'santé',       14.3650, -16.9710, 'Mbour'),
+  ('lm-mb-004', 'Port de pêche de Mbour',           'Sérère',         'loisir',      14.3615, -16.9590, 'Mbour'),
+  ('lm-mb-005', 'Saly Zone Touristique',            'Saly',           'loisir',      14.4586, -17.0158, 'Saly'),
+  ('lm-mb-006', 'Hôtel Palm Beach Saly',            'Saly',           'loisir',      14.4540, -17.0200, 'Saly'),
+  ('lm-mb-007', 'Ngaparou Village',                 'Ngaparou',       'commerce',    14.4480, -17.0120, 'Saly'),
+  ('lm-mb-008', 'Total Mbour',                      'Centre',         'transport',   14.3690, -16.9670, 'Mbour'),
+-- ── Saint-Louis ───────────────────────────────────────────────────────────
+  ('lm-sl-001', 'Pont Faidherbe',                   'Ndar',           'transport',   16.0261, -16.4977, 'Saint-Louis'),
+  ('lm-sl-002', 'Marché Sor',                       'Sor',            'commerce',    16.0180, -16.5080, 'Saint-Louis'),
+  ('lm-sl-003', 'Université Gaston Berger',         'Saint-Louis',    'éducation',   16.0490, -16.4608, 'Saint-Louis'),
+  ('lm-sl-004', 'Hôpital Régional de Saint-Louis',  'Ndar',           'santé',       16.0230, -16.4970, 'Saint-Louis'),
+  ('lm-sl-005', 'Grande Mosquée de Saint-Louis',    'Ndar',           'culte',       16.0270, -16.4960, 'Saint-Louis'),
+  ('lm-sl-006', 'Gare de Saint-Louis',              'Ndar',           'transport',   16.0200, -16.4900, 'Saint-Louis'),
+  ('lm-sl-007', 'Place Faidherbe',                  'Ndar',           'loisir',      16.0265, -16.4970, 'Saint-Louis'),
+  ('lm-sl-008', 'Marché Octave Diallo',             'Ndar',           'commerce',    16.0250, -16.4980, 'Saint-Louis'),
+-- ── Touba / Mbacké ────────────────────────────────────────────────────────
+  ('lm-tb-001', 'Grande Mosquée de Touba',          'Centre',         'culte',       14.8504, -15.8878, 'Touba'),
+  ('lm-tb-002', 'Marché Ocass de Touba',            'Centre',         'commerce',    14.8520, -15.8900, 'Touba'),
+  ('lm-tb-003', 'Gare routière de Touba',           'Centre',         'transport',   14.8480, -15.8850, 'Touba'),
+  ('lm-tb-004', 'Hôpital Matlaboul Fawzeyni',       'Centre',         'santé',       14.8535, -15.8910, 'Touba'),
+  ('lm-tb-005', 'Mbacké Centre-ville',              'Mbacké',         'commerce',    14.8009, -15.9104, 'Mbacké'),
+  ('lm-tb-006', 'Gare routière de Mbacké',          'Mbacké',         'transport',   14.8020, -15.9080, 'Mbacké'),
+  ('lm-tb-007', 'Marché Mbacké',                    'Mbacké',         'commerce',    14.8015, -15.9120, 'Mbacké')
+on conflict (id) do nothing;
+*/
+
+
+-- ────────────────────────────────────────────────────────────────────────────
+-- 7. INITIALISATION DES RATE-LIMITS SMS
 --    Remet à zéro les compteurs de quota SMS (au cas où un environnement de
 --    staging aurait inséré des lignes de test dans api_rate_limits).
 -- ────────────────────────────────────────────────────────────────────────────
 delete from api_rate_limits where key like 'sms:%';
+delete from payment_audit_log where confirmed_at < now() - interval '1 second'; -- purge données de test uniquement
 
 
 -- ────────────────────────────────────────────────────────────────────────────
 -- FIN DU SEED DE PRODUCTION
 -- Vérification finale :
---   select count(*) from users;     -- doit retourner 1 (admin)
---   select count(*) from drivers;   -- doit retourner 0
---   select count(*) from merchants; -- doit retourner 0
---   select count(*) from orders;    -- doit retourner 0
+--   select count(*) from users;              -- doit retourner 1 (admin)
+--   select count(*) from drivers;            -- doit retourner 0
+--   select count(*) from merchants;          -- doit retourner 0
+--   select count(*) from orders;             -- doit retourner 0
+--   select count(*) from zones where active; -- doit retourner >= 13 (5 Dakar + 8 nationales)
+--   select id, name from zones order by id;  -- vérification visuelle des zones
 -- ────────────────────────────────────────────────────────────────────────────

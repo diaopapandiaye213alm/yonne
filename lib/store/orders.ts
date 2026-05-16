@@ -1,7 +1,9 @@
 import { create } from "zustand";
 import { getSupabase } from "@/lib/supabase";
-import type { Order, OrderStatus } from "@/lib/mock-data/orders";
+import type { Order, OrderStatus, PaymentStatus } from "@/lib/mock-data/orders";
 import { sendSms } from "@/lib/sms";
+
+type ConfirmationMethod = "wave_personal" | "om_personal" | "cash";
 
 interface OrdersState {
   orders: Order[];
@@ -12,6 +14,7 @@ interface OrdersState {
   updateStatus: (id: string, status: OrderStatus) => Promise<void>;
   assignDriver: (id: string, driverId: string) => Promise<void>;
   cancelOrder: (id: string) => Promise<void>;
+  confirmPayment: (id: string, method: ConfirmationMethod) => Promise<{ ok: boolean; error?: string }>;
   cleanup: () => void;
 }
 
@@ -27,6 +30,7 @@ function rowToOrder(row: Record<string, unknown>): Order {
     paymentMethod: (row.payment_method as Order["paymentMethod"]) ?? "cash",
     insurance:     (row.insurance as boolean) ?? false,
     status:        (row.status as OrderStatus) ?? "créée",
+    paymentStatus: (row.payment_status as PaymentStatus | undefined) ?? undefined,
     active:        (row.active as boolean) ?? false,
     createdAt:     (row.created_at as string) ?? new Date().toISOString(),
   };
@@ -167,6 +171,25 @@ export const useOrdersStore = create<OrdersState>((set, get) => ({
       }
       throw err;
     }
+  },
+
+  confirmPayment: async (id, method) => {
+    interface RpcResult { ok: boolean; error?: string }
+    const { data, error } = await getSupabase()
+      .rpc("yonne_merchant_confirm_payment", { p_order_id: id, p_method: method })
+      .then((r) => r, () => ({ data: null, error: new Error("réseau") }));
+
+    if (error || !data) return { ok: false, error: "Erreur réseau" };
+    const result = data as RpcResult;
+    if (!result.ok) return { ok: false, error: result.error ?? "Erreur inconnue" };
+
+    // Optimistic update: reflect confirmed payment locally without a full refetch
+    set((s) => ({
+      orders: s.orders.map((o) =>
+        o.id === id ? { ...o, paymentStatus: "received_manually" as PaymentStatus } : o
+      ),
+    }));
+    return { ok: true };
   },
 
   cancelOrder: async (id) => {

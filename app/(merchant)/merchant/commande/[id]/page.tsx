@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { useDriversStore } from "@/lib/store/drivers";
 import { landmarks } from "@/lib/mock-data/landmarks";
@@ -10,7 +10,7 @@ import { ChatBubble } from "@/components/tracking/ChatBubble";
 import { EtaBadge } from "@/components/tracking/EtaBadge";
 import { DriverCard } from "@/components/tracking/DriverCard";
 import { Button } from "@/components/ui/button";
-import { Share2, XCircle, AlertTriangle, FileText, Send, Loader2 } from "lucide-react";
+import { Share2, XCircle, AlertTriangle, FileText, Send, Loader2, CheckCircle2, Smartphone } from "lucide-react";
 import { toast } from "sonner";
 import { useSupabaseAuthed } from "@/components/providers/SupabaseProvider";
 
@@ -36,7 +36,7 @@ const DakarMap = dynamic(() => import("@/components/map/DakarMap"), { ssr: false
 
 export default function TrackingPage({ params }: { params: { id: string } }) {
   const supabase = useSupabaseAuthed();
-  const { orders, cancelOrder, loading } = useOrdersStore();
+  const { orders, cancelOrder, confirmPayment, loading } = useOrdersStore();
   const order = orders.find(o => o.id === params.id);
   // RLS filters orders to only the current merchant's — if not found after load, it's not theirs
   const notFound = !loading && orders.length > 0 && !order;
@@ -47,6 +47,44 @@ export default function TrackingPage({ params }: { params: { id: string } }) {
 
   const [showConfirm, setShowConfirm] = useState(false);
   const [cancelling, setCancelling]   = useState(false);
+
+  // ── Merchant phone — fetched once for payment confirmation display ────────
+  const [merchantPhone, setMerchantPhone] = useState<string | null>(null);
+  useEffect(() => {
+    supabase
+      .from("merchants")
+      .select("phone")
+      .limit(1)
+      .maybeSingle()
+      .then(
+        ({ data }) => { if (data?.phone) setMerchantPhone(data.phone as string); },
+        () => {}
+      );
+  }, [supabase]);
+
+  // ── Payment confirmation — anti-double-submit ref guard ───────────────────
+  const confirmingRef = useRef(false);
+  const [confirming, setConfirming] = useState(false);
+
+  const handleConfirmPayment = useCallback(
+    async (method: "wave_personal" | "om_personal" | "cash") => {
+      if (confirmingRef.current) return;
+      confirmingRef.current = true;
+      setConfirming(true);
+      try {
+        const result = await confirmPayment(params.id, method);
+        if (result.ok) {
+          toast.success("Paiement confirmé — commande débloquée pour dispatch");
+        } else {
+          toast.error(result.error ?? "Erreur de confirmation");
+        }
+      } finally {
+        confirmingRef.current = false;
+        setConfirming(false);
+      }
+    },
+    [confirmPayment, params.id]
+  );
 
   async function handleCancel() {
     setCancelling(true);
@@ -176,6 +214,84 @@ export default function TrackingPage({ params }: { params: { id: string } }) {
         </div>
         {driver && <DriverCard driver={driver} />}
         {distanceKm !== null && <EtaBadge distanceKm={distanceKm} />}
+
+        {/* ── Panneau de confirmation de paiement (mobile-first) ────────── */}
+        {order?.paymentStatus === "pending" &&
+          status !== "annulée" &&
+          status !== "livrée" && (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 space-y-3">
+            <div className="flex items-center gap-2">
+              <Smartphone className="w-4 h-4 text-amber-600 shrink-0" />
+              <h3 className="font-display font-semibold text-amber-900 text-sm">
+                Confirmer la réception du paiement
+              </h3>
+            </div>
+
+            {merchantPhone && (
+              <div className="rounded-md bg-white border border-amber-200 px-3 py-2 text-xs text-amber-800">
+                Votre numéro Wave / OM :{" "}
+                <span className="font-mono font-bold text-amber-900 select-all">
+                  {merchantPhone}
+                </span>
+                <span className="block text-amber-600 mt-0.5">
+                  Communiquez ce numéro au client pour recevoir le transfert.
+                </span>
+              </div>
+            )}
+
+            <p className="text-xs text-amber-700">
+              Une fois le transfert reçu, sélectionnez la méthode pour débloquer la livraison.
+            </p>
+
+            <div className="grid grid-cols-1 gap-2">
+              <Button
+                className="w-full bg-blue-500 hover:bg-blue-600 text-white font-display font-semibold gap-2 h-11 text-sm"
+                disabled={confirming}
+                onClick={() => handleConfirmPayment("wave_personal")}
+              >
+                {confirming ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <CheckCircle2 className="w-4 h-4" />
+                )}
+                Transfert Wave reçu ✓
+              </Button>
+              <Button
+                className="w-full bg-orange-500 hover:bg-orange-600 text-white font-display font-semibold gap-2 h-11 text-sm"
+                disabled={confirming}
+                onClick={() => handleConfirmPayment("om_personal")}
+              >
+                {confirming ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <CheckCircle2 className="w-4 h-4" />
+                )}
+                Transfert Orange Money reçu ✓
+              </Button>
+              <Button
+                variant="outline"
+                className="w-full border-amber-300 text-amber-800 hover:bg-amber-100 font-display font-semibold gap-2 h-11 text-sm"
+                disabled={confirming}
+                onClick={() => handleConfirmPayment("cash")}
+              >
+                {confirming ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <CheckCircle2 className="w-4 h-4" />
+                )}
+                Paiement cash reçu ✓
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {order?.paymentStatus === "received_manually" && (
+          <div className="flex items-center gap-2 text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">
+            <CheckCircle2 className="w-4 h-4 shrink-0" />
+            <span>Paiement confirmé — livraison débloquée</span>
+          </div>
+        )}
+
         <div>
           <h3 className="font-display font-semibold text-ink-900 mb-3">Suivi</h3>
           <GlovoTimeline activeStage={STATUS_STAGE[status]} />

@@ -126,6 +126,9 @@ jobs:
       - name: Apply web_push.sql
         run: psql -f supabase/web_push.sql
 
+      - name: Apply payment_status.sql
+        run: psql -f supabase/payment_status.sql
+
       - name: Smoke-test function signatures
         run: |
           psql <<'SQL'
@@ -152,6 +155,13 @@ jobs:
 
           -- Verify web push subscriptions table exists
           SELECT count(*) = 0 AS push_subs_empty FROM driver_push_subscriptions;
+
+          -- Verify payment_status migration
+          SELECT count(*) = 0 AS audit_log_empty FROM payment_audit_log;
+          SELECT proname FROM pg_proc WHERE proname = 'yonne_merchant_confirm_payment';
+
+          -- Verify zones table seeded by surge_pricing.sql (5 Dakar zones)
+          SELECT count(*) >= 5 AS zones_dakar_ok FROM zones WHERE active = true;
           SQL
 
       - name: Supabase CLI lint (optional — skipped if token absent)

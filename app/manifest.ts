@@ -2,10 +2,10 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "YONNE Livreur",
+    name: "YONNE",
     short_name: "YONNE",
-    description: "Application livreur · livraison last-mile Sénégal",
-    start_url: "/driver/carte",
+    description: "Plateforme de livraison last-mile Sénégal — livreurs & marchands",
+    start_url: "/",
     scope: "/",
     display: "standalone",
     background_color: "#FAF7F0",
