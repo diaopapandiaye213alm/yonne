@@ -9,33 +9,53 @@ import {
   Zap, PackageCheck, Bot, MapPin, Star,
 } from "lucide-react";
 async function getLiveStats() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  // Debug — visible dans Vercel logs (Functions tab)
+  console.log("[getLiveStats] url defined:", !!url, "| url prefix:", url?.slice(0, 30));
+  console.log("[getLiveStats] key defined:", !!key, "| key length:", key?.length ?? 0);
+
+  if (!url || !key) {
+    console.error("[getLiveStats] MISSING env vars — url:", url, "| key:", !!key);
+    return { orders: 0, drivers: 0, rating: 0 };
+  }
+
   try {
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    // Service role pour bypasser RLS — safe car Server Component (jamais envoyé au browser).
-    const key = process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
     const headers: HeadersInit = {
       apikey:        key,
       Authorization: `Bearer ${key}`,
-      "Content-Type": "application/json",
     };
 
-    // fetch natif évite l'erreur WebSocket de createClient() en Node 18/20
     const [ordersRes, driversRes] = await Promise.all([
       fetch(`${url}/rest/v1/orders?select=count`, { headers, cache: "no-store" }),
       fetch(`${url}/rest/v1/drivers?select=online,rating`, { headers, cache: "no-store" }),
     ]);
 
-    const ordersJson  = await ordersRes.json()  as { count: number }[];
+    console.log("[getLiveStats] orders status:", ordersRes.status, "| drivers status:", driversRes.status);
+
+    if (!ordersRes.ok || !driversRes.ok) {
+      const errText = await ordersRes.text().catch(() => "?");
+      console.error("[getLiveStats] fetch error:", errText);
+      return { orders: 0, drivers: 0, rating: 0 };
+    }
+
+    const ordersJson  = await ordersRes.json()  as { count: number | string }[];
     const driversJson = await driversRes.json() as { online: boolean; rating: number }[];
 
-    const orderCount  = ordersJson[0]?.count ?? 0;
+    console.log("[getLiveStats] ordersJson:", JSON.stringify(ordersJson));
+    console.log("[getLiveStats] driversJson length:", driversJson.length);
+
+    const orderCount  = Number(ordersJson[0]?.count ?? 0);
     const onlineCount = driversJson.filter(d => d.online).length;
     const avgRating   = driversJson.length > 0
-      ? Math.round((driversJson.reduce((s, d) => s + (d.rating ?? 0), 0) / driversJson.length) * 10) / 10
+      ? Math.round((driversJson.reduce((s, d) => s + (Number(d.rating) || 0), 0) / driversJson.length) * 10) / 10
       : 4.7;
 
+    console.log("[getLiveStats] result:", { orderCount, onlineCount, avgRating });
     return { orders: orderCount, drivers: onlineCount, rating: avgRating };
-  } catch {
+  } catch (e) {
+    console.error("[getLiveStats] exception:", e);
     return { orders: 0, drivers: 0, rating: 0 };
   }
 }
