@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyToken, type SessionPayload } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { getSessionFromRequest } from "@/lib/session";
 import { haversineKm } from "@/lib/utils";
 
 // ── CORS ─────────────────────────────────────────────────────────────────────
@@ -12,13 +12,6 @@ const CORS = {
 
 export async function OPTIONS() {
   return new NextResponse(null, { status: 204, headers: CORS });
-}
-
-// ── Auth helper ───────────────────────────────────────────────────────────────
-export async function getSession(req: NextRequest): Promise<SessionPayload | null> {
-  const cookie = req.cookies.get("yonne_session")?.value ?? "";
-  const bearer = req.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ?? "";
-  return verifyToken(cookie || bearer);
 }
 
 // ── Rate limit (100 req / min / user) ────────────────────────────────────────
@@ -100,7 +93,7 @@ async function dispatchDriver(): Promise<{ id: string; name: string } | null> {
 
 // ── GET /api/orders ───────────────────────────────────────────────────────────
 export async function GET(req: NextRequest) {
-  const session = await getSession(req);
+  const session = await getSessionFromRequest(req);
   if (!session) {
     return NextResponse.json({ error: "Non authentifié" }, { status: 401, headers: CORS });
   }
@@ -143,7 +136,7 @@ export async function GET(req: NextRequest) {
 
 // ── POST /api/orders ──────────────────────────────────────────────────────────
 export async function POST(req: NextRequest) {
-  const session = await getSession(req);
+  const session = await getSessionFromRequest(req);
   if (!session) {
     return NextResponse.json({ error: "Non authentifié" }, { status: 401, headers: CORS });
   }

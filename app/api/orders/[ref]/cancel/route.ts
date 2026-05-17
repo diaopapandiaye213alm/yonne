@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
-import { getSession } from "@/app/api/orders/route";
+import { getSessionFromRequest } from "@/lib/session";
 
 const CORS = {
   "Access-Control-Allow-Origin":  "*",
@@ -19,7 +19,7 @@ export async function POST(
   req: NextRequest,
   { params }: { params: { ref: string } },
 ) {
-  const session = await getSession(req);
+  const session = await getSessionFromRequest(req);
   if (!session) {
     return NextResponse.json({ error: "Non authentifié" }, { status: 401, headers: CORS });
   }
