@@ -26,7 +26,14 @@ export async function POST(req: NextRequest) {
   const password = String(body?.password ?? "");
   const phone    = String(body?.phone    ?? "").trim();
   const city     = String(body?.city     ?? "").trim() || "Dakar";
-  const vehicle  = String(body?.vehicle  ?? "").trim() || "Moto Yamaha";
+  const VEHICLE_MAP: Record<string, string> = {
+    moto: "Moto Yamaha", yamaha: "Moto Yamaha", tvs: "Moto TVS",
+    velo: "Vélo électrique", vélo: "Vélo électrique", bike: "Vélo électrique",
+    tricycle: "Tricycle", trike: "Tricycle",
+  };
+  const vehicleRaw = String(body?.vehicle ?? "").trim().toLowerCase();
+  const vehicle = VEHICLE_MAP[vehicleRaw]
+    ?? (["Moto Yamaha","Moto TVS","Vélo électrique","Tricycle"].includes(String(body?.vehicle ?? "")) ? String(body?.vehicle) : "Moto Yamaha");
 
   if (!name)
     return NextResponse.json({ error: "Le nom est requis" }, { status: 400 });
