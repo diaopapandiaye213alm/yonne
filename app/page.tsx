@@ -12,9 +12,11 @@ import { createClient } from "@supabase/supabase-js";
 
 async function getLiveStats() {
   try {
+    // Server Component — on utilise la service role key pour bypasser RLS.
+    // Cette clé n'est JAMAIS exposée au navigateur car page.tsx est un Server Component.
     const sb = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     );
     const [{ count: orderCount }, { data: driverData }] = await Promise.all([
       sb.from("orders").select("*", { count: "exact", head: true }),
@@ -25,9 +27,9 @@ async function getLiveStats() {
     const avgRating = drivers.length > 0
       ? Math.round((drivers.reduce((s, d) => s + d.rating, 0) / drivers.length) * 10) / 10
       : 4.7;
-    return { orders: orderCount ?? 147, drivers: onlineCount || 28, rating: avgRating };
+    return { orders: orderCount ?? 0, drivers: onlineCount, rating: avgRating };
   } catch {
-    return { orders: 147, drivers: 28, rating: 4.7 };
+    return { orders: 0, drivers: 0, rating: 0 };
   }
 }
 

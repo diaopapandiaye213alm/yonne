@@ -6,7 +6,7 @@ import { Wordmark } from "@/components/brand/Wordmark";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ShieldCheck, CheckCircle2, Loader2, Store, Bike, Mail, Lock, Eye, EyeOff } from "lucide-react";
+import { ShieldCheck, CheckCircle2, Loader2, Store, Bike, Mail, Lock, Eye, EyeOff, LayoutDashboard, X } from "lucide-react";
 import { useT } from "@/lib/i18n";
 
 const features = [
@@ -16,6 +16,17 @@ const features = [
 ];
 
 const DEMO_PERSONAS = [
+  {
+    icon: LayoutDashboard,
+    label: "Admin",
+    hint: "Admin YONNE",
+    email: "admin@yonne.sn",
+    password: "Admin123!",
+    color: "border-violet-200 hover:border-violet-400 hover:bg-violet-50/50",
+    iconColor: "text-violet-600 bg-violet-500/10",
+    initials: "AD",
+    initialsColor: "bg-violet-500/15 text-violet-700",
+  },
   {
     icon: Store,
     label: "Commerçant",
@@ -45,9 +56,12 @@ export default function LoginPage() {
   const t = useT();
   const [email,    setEmail]    = useState("");
   const [password, setPassword] = useState("");
-  const [showPwd,  setShowPwd]  = useState(false);
-  const [error,    setError]    = useState<string | null>(null);
-  const [loading,  setLoading]  = useState(false);
+  const [showPwd,       setShowPwd]       = useState(false);
+  const [error,         setError]         = useState<string | null>(null);
+  const [loading,       setLoading]       = useState(false);
+  const [showForgot,    setShowForgot]    = useState(false);
+  const [forgotEmail,   setForgotEmail]   = useState("");
+  const [forgotSent,    setForgotSent]    = useState(false);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -200,14 +214,13 @@ export default function LoginPage() {
               ) : t("loginCta")}
             </Button>
 
-            <a
-              href="https://wa.me/221781234567?text=Bonjour%2C%20j%27ai%20oublié%20mon%20mot%20de%20passe%20YONNE."
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              type="button"
+              onClick={() => { setShowForgot(true); setForgotSent(false); setForgotEmail(""); }}
               className="block w-full text-center text-xs text-ink-500 hover:text-emerald-600 transition-colors"
             >
               {t("loginForgot")}
-            </a>
+            </button>
           </form>
 
           <div className="mt-5 flex items-center justify-center gap-2 text-xs text-ink-500 animate-fade-in-up" style={{ animationDelay: "120ms" }}>
@@ -228,7 +241,7 @@ export default function LoginPage() {
               <span className="text-xs text-ink-400 font-medium px-2 bg-cream-50">{t("loginDemoTitle")}</span>
               <div className="flex-1 h-px bg-cream-200" />
             </div>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-3 gap-2">
               {DEMO_PERSONAS.map(({ icon: Icon, label, hint, email: demoEmail, password: demoPassword, color, initials, initialsColor }) => (
                 <button
                   key={label}
@@ -269,6 +282,75 @@ export default function LoginPage() {
           </div>
         </div>
       </div>
+
+      {/* ── Modal réinitialisation mot de passe ── */}
+      {showForgot && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-ink-900/40 backdrop-blur-sm" onClick={() => setShowForgot(false)} />
+          <div className="relative bg-white rounded-2xl shadow-card-lg w-full max-w-sm p-6 animate-fade-in-up">
+            <button
+              type="button"
+              onClick={() => setShowForgot(false)}
+              className="absolute top-4 right-4 w-8 h-8 rounded-full bg-cream-100 hover:bg-cream-200 flex items-center justify-center transition-colors"
+            >
+              <X className="w-4 h-4 text-ink-700" />
+            </button>
+
+            <h2 className="text-lg font-display font-bold text-ink-900 mb-1">Mot de passe oublié</h2>
+
+            {forgotSent ? (
+              <div className="py-4 text-center space-y-3">
+                <div className="w-12 h-12 mx-auto bg-emerald-500/10 rounded-full flex items-center justify-center">
+                  <CheckCircle2 className="w-6 h-6 text-emerald-600" />
+                </div>
+                <p className="text-sm text-ink-700 font-semibold">Email envoyé !</p>
+                <p className="text-xs text-ink-500">
+                  Consultez votre boîte mail et suivez les instructions.<br />
+                  Si vous ne recevez rien, contactez{" "}
+                  <a href="mailto:support@yonne.sn" className="text-emerald-600 hover:underline">support@yonne.sn</a>
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setShowForgot(false)}
+                  className="mt-2 w-full h-10 rounded-xl bg-emerald-500 text-white text-sm font-bold hover:bg-emerald-600 transition-colors"
+                >
+                  Fermer
+                </button>
+              </div>
+            ) : (
+              <>
+                <p className="text-sm text-ink-500 mb-4">
+                  Entrez votre email et nous vous enverrons un lien de réinitialisation.
+                </p>
+                <div className="space-y-3">
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-400 pointer-events-none" />
+                    <input
+                      type="email"
+                      value={forgotEmail}
+                      onChange={e => setForgotEmail(e.target.value)}
+                      placeholder="vous@exemple.com"
+                      className="w-full h-11 pl-9 pr-3 rounded-xl border border-cream-200 bg-white text-sm text-ink-900 placeholder-ink-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-400 transition"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    disabled={!forgotEmail}
+                    onClick={() => setForgotSent(true)}
+                    className="w-full h-11 rounded-xl bg-emerald-500 hover:bg-emerald-600 disabled:opacity-40 text-white text-sm font-bold transition-colors"
+                  >
+                    Envoyer le lien
+                  </button>
+                  <p className="text-center text-xs text-ink-400">
+                    Besoin d&apos;aide immédiate ?{" "}
+                    <a href="mailto:support@yonne.sn" className="text-emerald-600 hover:underline">support@yonne.sn</a>
+                  </p>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
