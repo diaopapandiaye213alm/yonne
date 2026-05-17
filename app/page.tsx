@@ -8,26 +8,33 @@ import {
   Store, Bike, BarChart3, ChevronRight, CheckCircle2,
   Zap, PackageCheck, Bot, MapPin, Star,
 } from "lucide-react";
-import { createClient } from "@supabase/supabase-js";
-
 async function getLiveStats() {
   try {
-    // Server Component — on utilise la service role key pour bypasser RLS.
-    // Cette clé n'est JAMAIS exposée au navigateur car page.tsx est un Server Component.
-    const sb = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
-    const [{ count: orderCount }, { data: driverData }] = await Promise.all([
-      sb.from("orders").select("*", { count: "exact", head: true }),
-      sb.from("drivers").select("online, rating"),
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    // Service role pour bypasser RLS — safe car Server Component (jamais envoyé au browser).
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+    const headers: HeadersInit = {
+      apikey:        key,
+      Authorization: `Bearer ${key}`,
+      "Content-Type": "application/json",
+    };
+
+    // fetch natif évite l'erreur WebSocket de createClient() en Node 18/20
+    const [ordersRes, driversRes] = await Promise.all([
+      fetch(`${url}/rest/v1/orders?select=count`, { headers, cache: "no-store" }),
+      fetch(`${url}/rest/v1/drivers?select=online,rating`, { headers, cache: "no-store" }),
     ]);
-    const drivers = (driverData ?? []) as { online: boolean; rating: number }[];
-    const onlineCount = drivers.filter(d => d.online).length;
-    const avgRating = drivers.length > 0
-      ? Math.round((drivers.reduce((s, d) => s + d.rating, 0) / drivers.length) * 10) / 10
+
+    const ordersJson  = await ordersRes.json()  as { count: number }[];
+    const driversJson = await driversRes.json() as { online: boolean; rating: number }[];
+
+    const orderCount  = ordersJson[0]?.count ?? 0;
+    const onlineCount = driversJson.filter(d => d.online).length;
+    const avgRating   = driversJson.length > 0
+      ? Math.round((driversJson.reduce((s, d) => s + (d.rating ?? 0), 0) / driversJson.length) * 10) / 10
       : 4.7;
-    return { orders: orderCount ?? 0, drivers: onlineCount, rating: avgRating };
+
+    return { orders: orderCount, drivers: onlineCount, rating: avgRating };
   } catch {
     return { orders: 0, drivers: 0, rating: 0 };
   }
