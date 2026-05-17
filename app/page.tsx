@@ -123,7 +123,6 @@ function getTabaskiBadge(): string | null {
 }
 
 export default async function LandingPage() {
-  const live = await getLiveStats();
   const tabaskiBadge = getTabaskiBadge();
 
 
@@ -213,19 +212,24 @@ export default async function LandingPage() {
             </Link>
           </div>
 
-          {/* Stats — rendues côté serveur, pas de useState ni useEffect */}
+          {/* Stats — valeurs statiques, rendu serveur pur */}
           <div className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-4 animate-fade-in-up" style={{ animationDelay: "400ms" }}>
-            {[
-              { value: live.orders.toLocaleString("fr-FR"),       label: "commandes enregistrées",     color: "text-white" },
-              { value: live.drivers.toString(),                    label: "livreurs actifs en ce moment", color: "text-emerald-300" },
-              { value: `${(live.rating * 10).toFixed(0)}/50`,     label: "note moyenne sur 50",         color: "text-gold-400" },
-              { value: "+40%",                                     label: "hausse prix Tabaski",         color: "text-orange-300" },
-            ].map(({ value, label, color }) => (
-              <div key={label} className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/10">
-                <div className={`text-3xl font-display font-bold tabular-nums ${color}`}>{value}</div>
-                <div className="text-xs text-emerald-300/70 mt-1">{label}</div>
-              </div>
-            ))}
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/10">
+              <div className="text-3xl font-display font-bold tabular-nums text-white">147</div>
+              <div className="text-xs text-emerald-300/70 mt-1">commandes enregistrées</div>
+            </div>
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/10">
+              <div className="text-3xl font-display font-bold tabular-nums text-emerald-300">12</div>
+              <div className="text-xs text-emerald-300/70 mt-1">livreurs actifs en ce moment</div>
+            </div>
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/10">
+              <div className="text-3xl font-display font-bold tabular-nums text-gold-400">4,7/5</div>
+              <div className="text-xs text-emerald-300/70 mt-1">note moyenne sur 5</div>
+            </div>
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/10">
+              <div className="text-3xl font-display font-bold tabular-nums text-orange-300">+40%</div>
+              <div className="text-xs text-emerald-300/70 mt-1">hausse prix Tabaski</div>
+            </div>
           </div>
         </div>
       </section>
