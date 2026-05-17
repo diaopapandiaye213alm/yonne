@@ -26,7 +26,7 @@ export async function POST(
 
   const { data: order, error: fetchErr } = await supabaseAdmin
     .from("orders")
-    .select("id, status, merchant_id, driver_id, amount, payment_status")
+    .select("id, status, merchant_id, driver_id, amount, payment_method")
     .eq("id", params.ref)
     .maybeSingle();
 
@@ -76,7 +76,7 @@ export async function POST(
       ok: true,
       ref: params.ref,
       status: "annulée",
-      refund_required: order.payment_status === "completed",
+      refund_required: order.payment_method !== "cash",
     },
     { headers: CORS },
   );
