@@ -6,7 +6,7 @@ import { Wordmark } from "@/components/brand/Wordmark";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ShieldCheck, CheckCircle2, Loader2, Store, Bike, Mail, Lock, Eye, EyeOff, LayoutDashboard, X } from "lucide-react";
+import { ShieldCheck, CheckCircle2, Loader2, Mail, Lock, Eye, EyeOff, X } from "lucide-react";
 import { useT } from "@/lib/i18n";
 
 const features = [
@@ -15,41 +15,6 @@ const features = [
   "Suivi GPS partagé via WhatsApp",
 ];
 
-const DEMO_PERSONAS = [
-  {
-    icon: LayoutDashboard,
-    label: "Admin",
-    hint: "Admin YONNE",
-    email: "admin@yonne.sn",
-    password: "Admin123!",
-    color: "border-violet-200 hover:border-violet-400 hover:bg-violet-50/50",
-    iconColor: "text-violet-600 bg-violet-500/10",
-    initials: "AD",
-    initialsColor: "bg-violet-500/15 text-violet-700",
-  },
-  {
-    icon: Store,
-    label: "Commerçant",
-    hint: "Boutique Plateau",
-    email: "boutique.plateau@gmail.com",
-    password: "Demo123!",
-    color: "border-emerald-200 hover:border-emerald-400 hover:bg-emerald-50/50",
-    iconColor: "text-emerald-600 bg-emerald-500/10",
-    initials: "BP",
-    initialsColor: "bg-emerald-500/15 text-emerald-700",
-  },
-  {
-    icon: Bike,
-    label: "Livreur",
-    hint: "Ibrahima Sow",
-    email: "livreur.dakar@yonne.sn",
-    password: "Demo123!",
-    color: "border-gold-300 hover:border-gold-500 hover:bg-gold-50/50",
-    iconColor: "text-gold-600 bg-gold-500/10",
-    initials: "IS",
-    initialsColor: "bg-gold-500/15 text-gold-700",
-  },
-] as const;
 
 export default function LoginPage() {
   const router = useRouter();
@@ -235,51 +200,6 @@ export default function LoginPage() {
             </Link>
           </p>
 
-          <div className="mt-6 animate-fade-in-up" style={{ animationDelay: "180ms" }}>
-            <div className="relative flex items-center gap-3 mb-4">
-              <div className="flex-1 h-px bg-cream-200" />
-              <span className="text-xs text-ink-400 font-medium px-2 bg-cream-50">{t("loginDemoTitle")}</span>
-              <div className="flex-1 h-px bg-cream-200" />
-            </div>
-            <div className="grid grid-cols-3 gap-2">
-              {DEMO_PERSONAS.map(({ icon: Icon, label, hint, email: demoEmail, password: demoPassword, color, initials, initialsColor }) => (
-                <button
-                  key={label}
-                  type="button"
-                  disabled={loading}
-                  onClick={async () => {
-                    setError(null);
-                    setLoading(true);
-                    try {
-                      const res = await fetch("/api/auth/login", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ email: demoEmail, password: demoPassword }),
-                      });
-                      if (res.status === 429) { setError("Trop de tentatives — réessayez dans 15 minutes."); return; }
-                      if (!res.ok) { setError("Erreur de connexion demo."); return; }
-                      const { redirect } = await res.json();
-                      router.push(redirect ?? "/");
-                    } catch {
-                      setError("Erreur réseau.");
-                    } finally {
-                      setLoading(false);
-                    }
-                  }}
-                  className={`flex flex-col items-center gap-2 p-3.5 rounded-xl border-2 transition-all duration-200 disabled:opacity-50 ${color}`}
-                >
-                  <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold ${initialsColor}`}>
-                    {initials}
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Icon className="w-3 h-3 opacity-60" />
-                    <span className="text-xs font-bold text-ink-800">{label}</span>
-                  </div>
-                  <span className="text-[10px] text-ink-400 leading-tight text-center">{hint}</span>
-                </button>
-              ))}
-            </div>
-          </div>
         </div>
       </div>
 
