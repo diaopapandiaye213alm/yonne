@@ -3,7 +3,6 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { Wordmark } from "@/components/brand/Wordmark";
-import { AnimatedStats } from "@/components/landing/AnimatedStats";
 import { LiveTicker } from "@/components/landing/LiveTicker";
 import {
   Store, Bike, BarChart3, ChevronRight, CheckCircle2,
@@ -127,12 +126,6 @@ export default async function LandingPage() {
   const live = await getLiveStats();
   const tabaskiBadge = getTabaskiBadge();
 
-  const animatedStats = [
-    { value: live.orders,  label: "commandes enregistrées",  suffix: "" },
-    { value: live.drivers, label: "livreurs actifs en ce moment", suffix: "" },
-    { value: Math.round(live.rating * 10), label: "note moyenne sur 50", suffix: "/50" },
-    { value: 40, label: "hausse prix Tabaski", prefix: "+", suffix: "%" },
-  ];
 
   return (
     <div className="min-h-screen bg-cream-50 flex flex-col">
@@ -220,8 +213,20 @@ export default async function LandingPage() {
             </Link>
           </div>
 
-          {/* Animated stats */}
-          <AnimatedStats stats={animatedStats} />
+          {/* Stats — rendues côté serveur, pas de useState ni useEffect */}
+          <div className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-4 animate-fade-in-up" style={{ animationDelay: "400ms" }}>
+            {[
+              { value: live.orders.toLocaleString("fr-FR"),       label: "commandes enregistrées",     color: "text-white" },
+              { value: live.drivers.toString(),                    label: "livreurs actifs en ce moment", color: "text-emerald-300" },
+              { value: `${(live.rating * 10).toFixed(0)}/50`,     label: "note moyenne sur 50",         color: "text-gold-400" },
+              { value: "+40%",                                     label: "hausse prix Tabaski",         color: "text-orange-300" },
+            ].map(({ value, label, color }) => (
+              <div key={label} className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/10">
+                <div className={`text-3xl font-display font-bold tabular-nums ${color}`}>{value}</div>
+                <div className="text-xs text-emerald-300/70 mt-1">{label}</div>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
