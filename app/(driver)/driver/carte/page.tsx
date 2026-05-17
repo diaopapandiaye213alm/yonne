@@ -37,6 +37,19 @@ export default function CartePage() {
     const byName = session?.displayName ? drivers.find(d => d.name === session.displayName) : null;
     return byName ?? drivers[0];
   }, [drivers, session?.displayName]);
+
+  // Real driver profile resolved server-side by userId — overrides displayName matching
+  const [myDriverId, setMyDriverId] = useState<string | null>(null);
+  useEffect(() => {
+    fetch("/api/driver/me")
+      .then(r => r.ok ? r.json() : null)
+      .then((d: { driver?: { id: string; lat: number; lng: number } } | null) => {
+        if (d?.driver) setMyDriverId(d.driver.id);
+      })
+      .catch(() => null);
+  }, []);
+  const effectiveDriverId = myDriverId ?? demo?.id ?? null;
+
   const defaultPos: [number, number] = [demo?.lat ?? 14.6928, demo?.lng ?? -17.4467];
 
   // Supabase real orders assigned to this driver
@@ -113,14 +126,14 @@ export default function CartePage() {
 
   // Subscribe to real Supabase orders for this driver
   useEffect(() => {
-    if (!demo?.id) return;
+    if (!effectiveDriverId) return;
 
     // Fetch existing assigned or paid orders visible par ce livreur
     supabase
       .from("orders")
       .select("*")
-      .eq("driver_id", demo.id)
-      .in("status", ["assignée", "payée_a_collecter"])
+      .eq("driver_id", effectiveDriverId)
+      .in("status", ["assignée", "payée_a_collecter", "collecte"])
       .order("created_at", { ascending: false })
       .then(({ data, error }) => {
         if (error) {
@@ -138,23 +151,22 @@ export default function CartePage() {
 
     // Subscribe to new orders assigned to this driver
     const channel = supabase
-      .channel(`driver-orders-${demo.id}`)
+      .channel(`driver-orders-${effectiveDriverId}`)
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "orders", filter: `driver_id=eq.${demo.id}` },
+        { event: "INSERT", schema: "public", table: "orders", filter: `driver_id=eq.${effectiveDriverId}` },
         (payload) => {
           const incoming = rowToIncoming(payload.new as Record<string, unknown>);
           setRealOrders(prev => [incoming, ...prev]);
           setOrderIndex(0);
           setSecondsLeft(30);
           triggerOrderNotification(incoming.id, incoming.clientName, incoming.amount);
-          // Vérifier le groupage en arrière-plan dès réception de la commande
           void checkBatch(incoming.id);
         }
       )
       .on(
         "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "orders", filter: `driver_id=eq.${demo.id}` },
+        { event: "UPDATE", schema: "public", table: "orders", filter: `driver_id=eq.${effectiveDriverId}` },
         (payload) => {
           const row = payload.new as Record<string, unknown>;
           const visibleStatuses = ["assignée", "payée_a_collecter"];
@@ -166,9 +178,8 @@ export default function CartePage() {
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  // retryKey triggers refetch without duplicating the channel subscription logic
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [demo?.id, rowToIncoming, supabase, checkBatch, retryKey]);
+  }, [effectiveDriverId, rowToIncoming, supabase, checkBatch, retryKey]);
 
   // Enregistrer ce livreur dans le moteur de simulation
   useEffect(() => {
@@ -186,15 +197,15 @@ export default function CartePage() {
         setGpsPos([lat, lng]);
         setGpsActive(true);
 
-        // Send to Supabase at most every 10s
+        // Send position via REST API at most every 10s (avoids Supabase anon auth issues)
         const now = Date.now();
-        if (now - lastGpsSend.current > 10000 && demo?.id) {
+        if (now - lastGpsSend.current > 10000) {
           lastGpsSend.current = now;
-          void supabase.from("drivers").update({ lat, lng }).eq("id", demo.id)
-            .then(
-              ({ error }) => { if (error) console.error("[GPS] update failed:", error.message); },
-              (err: unknown) => console.error("[GPS] network error:", err)
-            );
+          fetch("/api/driver/position", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ lat, lng }),
+          }).catch((err: unknown) => console.error("[GPS] position sync failed:", err));
         }
       },
       (err) => {
@@ -238,48 +249,26 @@ export default function CartePage() {
   async function handleAccept() {
     if (!currentOrder) return;
 
-    if (realOrders.some(o => o.id === currentOrder.id)) {
-      // RPC accept_order_safely : SELECT FOR UPDATE NOWAIT + vérification statut
-      // atomique côté PostgreSQL. Aucune race condition possible.
-      interface AcceptRpcResult {
-        success:      boolean;
-        reason?:      string;
-        order_id?:    string;
-        status?:      string;
-        idempotent?:  boolean;
-      }
-      const { data, error } = await supabase
-        .rpc("accept_order_safely", {
-          p_order_id:  currentOrder.id,
-          p_driver_id: demo?.id ?? "",
-        })
-        .then((r) => r, (err: unknown) => ({ data: null, error: err }));
+    try {
+      const res = await fetch(`/api/orders/${currentOrder.id}/accept`, { method: "POST" });
+      const body = await res.json() as { ok?: boolean; error?: string; idempotent?: boolean };
 
-      if (error) {
-        toast.error("Erreur réseau — réessayez dans un instant");
-        return;
-      }
-
-      const result = data as AcceptRpcResult | null;
-      if (!result?.success) {
-        const reason = result?.reason ?? "unknown";
-        if (reason === "concurrent_lock") {
-          toast.error("Commande en cours d'attribution — patientez");
-        } else if (reason === "order_unavailable") {
-          toast.error("Commande déjà prise en charge par un autre livreur");
-          setRealOrders(prev => prev.filter(o => o.id !== currentOrder.id));
-        } else if (reason === "order_not_found") {
-          toast.error("Commande introuvable — rechargez la page");
+      if (!res.ok) {
+        const msg = body?.error ?? "Erreur inconnue";
+        if (res.status === 409) {
+          toast.error("Commande déjà prise par un autre livreur");
           setRealOrders(prev => prev.filter(o => o.id !== currentOrder.id));
         } else {
-          toast.error("Impossible d'accepter la commande — réessayez");
+          toast.error(`Impossible d'accepter — ${msg}`);
         }
         return;
       }
-
-      setRealOrders(prev => prev.filter(o => o.id !== currentOrder.id));
+    } catch {
+      toast.error("Erreur réseau — vérifiez votre connexion");
+      return;
     }
 
+    setRealOrders(prev => prev.filter(o => o.id !== currentOrder.id));
     acceptOrder(currentOrder.id);
     router.push(`/driver/livraison/${currentOrder.id}`);
   }

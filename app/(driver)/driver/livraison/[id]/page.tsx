@@ -28,7 +28,7 @@ export default function LivraisonPage({ params }: { params: { id: string } }) {
   const router  = useRouter();
   const session = useSession();
   const { drivers } = useDriversStore();
-  const { activeOrderId, deliveryStep, hasHydrated, advanceStep, completeDelivery } = useDriverStore();
+  const { activeOrderId, deliveryStep, hasHydrated } = useDriverStore();
   const { orders } = useOrdersStore();
   const demo = useMemo(() => {
     const byName = session?.displayName ? drivers.find(d => d.name === session.displayName) : null;
@@ -72,6 +72,7 @@ export default function LivraisonPage({ params }: { params: { id: string } }) {
   const target = (deliveryStep <= 1 ? pickup : dest) ?? { lat: 14.6928, lng: -17.4467 };
 
   const [pos, setPos]           = useState<[number, number]>([demo.lat, demo.lng]);
+  const [routeCoords, setRouteCoords] = useState<[number, number][]>([]);
   const [showQr, setShowQr]     = useState(false);
   const [showNavChoice, setShowNavChoice] = useState(false);
   const [showIncident, setShowIncident] = useState(false);
@@ -126,16 +127,35 @@ export default function LivraisonPage({ params }: { params: { id: string } }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [target.lat, target.lng, demo.lat, demo.lng]);
 
+  // Fetch OSRM route when driver position or target changes
+  useEffect(() => {
+    const from = pos;
+    const to: [number, number] = [target.lat, target.lng];
+    const url =
+      `https://router.project-osrm.org/route/v1/driving/` +
+      `${from[1]},${from[0]};${to[1]},${to[0]}?overview=full&geometries=geojson`;
+    fetch(url)
+      .then(r => r.json())
+      .then((data: { routes?: { geometry: { coordinates: [number, number][] } }[] }) => {
+        const coords = data.routes?.[0]?.geometry?.coordinates;
+        if (coords) setRouteCoords(coords.map(c => [c[1], c[0]]));
+      })
+      .catch(() => null);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [target.lat, target.lng]);
+
   const pins: Pin[] = [
     { id: "driver", lat: pos[0], lng: pos[1], kind: "driver" },
     { id: "dest",   lat: target.lat, lng: target.lng, kind: "dest" },
   ];
 
-  function handleAdvance() {
+  const { syncAdvanceStep, syncCompleteDelivery } = useDriverStore();
+
+  async function handleAdvance() {
     if (deliveryStep < 3) {
-      advanceStep();
+      await syncAdvanceStep(params.id);
     } else {
-      completeDelivery();
+      await syncCompleteDelivery(params.id);
       router.push("/driver/gains");
     }
   }
@@ -168,7 +188,8 @@ export default function LivraisonPage({ params }: { params: { id: string } }) {
     <div className="relative" style={{ height: "calc(100dvh - 56px)" }}>
       <DakarMap
         pins={pins}
-        trail={{ from: pos, to: [target.lat, target.lng] }}
+        routeCoords={routeCoords.length > 1 ? routeCoords : undefined}
+        trail={routeCoords.length <= 1 ? { from: pos, to: [target.lat, target.lng] } : undefined}
         center={pos}
         zoom={14}
         height="calc(100dvh - 56px)"
