@@ -2,6 +2,17 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Quand l'OS demande "réduire les animations", annule fill-mode:both
+   sinon les éléments restent bloqués à opacity:0 indéfiniment */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
 @layer base {
   :root {
     --background: 210 40% 98%;   /* F8FAFC slate-50 */
