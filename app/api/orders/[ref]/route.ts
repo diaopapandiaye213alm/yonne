@@ -50,7 +50,7 @@ export async function GET(
     : { data: null };
   const { data: driver } = session.role === "driver"
     ? await supabaseAdmin.from("drivers").select("id")
-        .or(`user_id.eq.${session.userId},email.eq.${session.email}`).maybeSingle()
+        .eq("user_id", session.userId).maybeSingle()
     : { data: null };
 
   if (!canAccess(session, order as Record<string, unknown>, (merchant as { id: string } | null)?.id ?? null, (driver as { id: string } | null)?.id ?? null)) {
@@ -129,7 +129,7 @@ export async function PATCH(
     : { data: null };
   const { data: driver } = session.role === "driver"
     ? await supabaseAdmin.from("drivers").select("id")
-        .or(`user_id.eq.${session.userId},email.eq.${session.email}`).maybeSingle()
+        .eq("user_id", session.userId).maybeSingle()
     : { data: null };
 
   if (!canAccess(session, order as Record<string, unknown>, (merchant as { id: string } | null)?.id ?? null, (driver as { id: string } | null)?.id ?? null)) {

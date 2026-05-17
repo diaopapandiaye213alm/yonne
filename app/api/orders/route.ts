@@ -117,7 +117,7 @@ export async function GET(req: NextRequest) {
   } else if (session.role === "driver") {
     const { data: driver } = await supabaseAdmin
       .from("drivers").select("id")
-      .or(`user_id.eq.${session.userId},email.eq.${session.email}`)
+      .eq("user_id", session.userId)
       .maybeSingle();
     if (!driver) return NextResponse.json({ orders: [], count: 0 }, { headers: CORS });
     query = query.eq("driver_id", driver.id as string);
