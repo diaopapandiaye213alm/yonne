@@ -18,30 +18,36 @@ const DakarMap = dynamic(() => import("@/components/map/DakarMap"), {
 });
 
 const STATUS_STAGE: Record<OrderStatus, "created" | "assigned" | "enroute" | "delivered"> = {
-  "créée":    "created",
-  "assignée": "assigned",
-  "collecte": "assigned",
-  "en route": "enroute",
-  "livrée":   "delivered",
-  "annulée":  "created",
+  "créée":                  "created",
+  "en_attente_de_paiement": "created",
+  "payée_a_collecter":      "assigned",
+  "assignée":               "assigned",
+  "collecte":               "assigned",
+  "en route":               "enroute",
+  "livrée":                 "delivered",
+  "annulée":                "created",
 };
 
 const STATUS_COLORS: Record<OrderStatus, string> = {
-  "créée":    "bg-gray-100 text-gray-700",
-  "assignée": "bg-blue-100 text-blue-700",
-  "collecte": "bg-amber-100 text-amber-700",
-  "en route": "bg-gold-500/20 text-ink-900",
-  "livrée":   "bg-emerald-500/20 text-emerald-700",
-  "annulée":  "bg-red-100 text-red-600",
+  "créée":                  "bg-gray-100 text-gray-700",
+  "en_attente_de_paiement": "bg-amber-100 text-amber-700",
+  "payée_a_collecter":      "bg-emerald-100 text-emerald-700",
+  "assignée":               "bg-blue-100 text-blue-700",
+  "collecte":               "bg-amber-100 text-amber-700",
+  "en route":               "bg-gold-500/20 text-ink-900",
+  "livrée":                 "bg-emerald-500/20 text-emerald-700",
+  "annulée":                "bg-red-100 text-red-600",
 };
 
 const NEXT_STATUS: Record<OrderStatus, OrderStatus | null> = {
-  "créée":    "assignée",
-  "assignée": "collecte",
-  "collecte": "en route",
-  "en route": "livrée",
-  "livrée":   null,
-  "annulée":  null,
+  "créée":                  "assignée",
+  "en_attente_de_paiement": null,
+  "payée_a_collecter":      "collecte",
+  "assignée":               "collecte",
+  "collecte":               "en route",
+  "en route":               "livrée",
+  "livrée":                 null,
+  "annulée":                null,
 };
 
 export default function CommandeDetailPage({ params }: { params: { id: string } }) {

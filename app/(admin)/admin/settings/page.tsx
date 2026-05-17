@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,35 +7,87 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useT } from "@/lib/i18n";
+import { Loader2 } from "lucide-react";
 
 const PRAYERS = ["Fajr", "Dhuhr", "Asr", "Maghrib", "Isha"] as const;
 type Prayer = typeof PRAYERS[number];
 
 const FLOOD_ZONES = ["Parcelles Assainies", "Pikine", "Guédiawaye", "Thiaroye", "Yeumbeul"] as const;
 
-const IA_WEIGHTS_DEFAULT = { distance: 40, charge: 30, fiabilite: 30 };
-
-const WA_TEMPLATES_DEFAULT = {
-  assigned: "Bonjour {client_name}, votre livreur {driver_name} est en route. Commande {order_id}.",
-  pickup:   "Votre livreur {driver_name} arrive au point de collecte. ETA : {eta} min.",
-  enroute:  "{driver_name} est en route vers vous. Arrivée estimée : {eta} min.",
-  delivered:"Livraison confirmée ! Merci d'avoir utilisé YONNE. Commande {order_id} livrée ✓",
+const DEFAULTS = {
+  platform: { name: "YONNE", city: "Dakar", email: "contact@yonne.sn", phone: "+221 78 000 00 00" },
+  ia:       { distance: 40, charge: 30, fiabilite: 30 },
+  templates: {
+    assigned: "Bonjour {client_name}, votre livreur {driver_name} est en route. Commande {order_id}.",
+    pickup:   "Votre livreur {driver_name} arrive au point de collecte. ETA : {eta} min.",
+    enroute:  "{driver_name} est en route vers vous. Arrivée estimée : {eta} min.",
+    delivered:"Livraison confirmée ! Merci d'avoir utilisé YONNE. Commande {order_id} livrée ✓",
+  },
+  hivernage:   false,
+  floodZones:  [] as string[],
+  prayers:     { Fajr: true, Dhuhr: true, Asr: true, Maghrib: true, Isha: true } as Record<Prayer, boolean>,
 };
 
 export default function SettingsPage() {
   const t = useT();
-  const [iaWeights,   setIaWeights]   = useState(IA_WEIGHTS_DEFAULT);
-  const [templates,   setTemplates]   = useState(WA_TEMPLATES_DEFAULT);
-  const [hivernage,   setHivernage]   = useState(false);
-  const [floodZones,  setFloodZones]  = useState<string[]>([]);
-  const [prayers,     setPrayers]     = useState<Record<Prayer, boolean>>({ Fajr: true, Dhuhr: true, Asr: true, Maghrib: true, Isha: true });
+
+  const [loadingInit, setLoadingInit] = useState(true);
+
+  const [platform,   setPlatform]   = useState(DEFAULTS.platform);
+  const [iaWeights,  setIaWeights]  = useState(DEFAULTS.ia);
+  const [templates,  setTemplates]  = useState(DEFAULTS.templates);
+  const [hivernage,  setHivernage]  = useState(DEFAULTS.hivernage);
+  const [floodZones, setFloodZones] = useState<string[]>(DEFAULTS.floodZones);
+  const [prayers,    setPrayers]    = useState<Record<Prayer, boolean>>(DEFAULTS.prayers);
+
+  const [saving, setSaving] = useState<string | null>(null);
 
   const weightsSum = iaWeights.distance + iaWeights.charge + iaWeights.fiabilite;
 
-  function save(section: string) { toast.success(`${section} enregistré`); }
+  // Load persisted settings on mount
+  useEffect(() => {
+    fetch("/api/settings")
+      .then(r => (r.ok ? r.json() : null))
+      .then((data: Record<string, unknown> | null) => {
+        if (!data) return;
+        if (data.platform)   setPlatform(prev => ({ ...prev, ...(data.platform as typeof DEFAULTS.platform) }));
+        if (data.ia)         setIaWeights(prev => ({ ...prev, ...(data.ia as typeof DEFAULTS.ia) }));
+        if (data.templates)  setTemplates(prev => ({ ...prev, ...(data.templates as typeof DEFAULTS.templates) }));
+        if (typeof data.hivernage === "boolean") setHivernage(data.hivernage);
+        if (Array.isArray(data.floodZones)) setFloodZones(data.floodZones as string[]);
+        if (data.prayers)    setPrayers(prev => ({ ...prev, ...(data.prayers as Record<Prayer, boolean>) }));
+      })
+      .catch(() => {/* fallback to defaults silently */})
+      .finally(() => setLoadingInit(false));
+  }, []);
+
+  const save = useCallback(async (section: string, payload: Record<string, unknown>) => {
+    setSaving(section);
+    try {
+      const res = await fetch("/api/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error((await res.json()).error ?? "Erreur serveur");
+      toast.success(`${section} enregistré`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erreur réseau");
+    } finally {
+      setSaving(null);
+    }
+  }, []);
 
   function toggleZone(z: string) {
     setFloodZones(prev => prev.includes(z) ? prev.filter(x => x !== z) : [...prev, z]);
+  }
+
+  if (loadingInit) {
+    return (
+      <div className="flex items-center justify-center min-h-[40vh]">
+        <Loader2 className="w-6 h-6 animate-spin text-emerald-500" />
+      </div>
+    );
   }
 
   return (
@@ -45,18 +97,27 @@ export default function SettingsPage() {
       {/* Plateforme */}
       <div className="bg-white rounded-lg border border-cream-200 shadow-card p-6 space-y-4">
         <h2 className="font-semibold text-ink-900">Plateforme</h2>
-        {[
-          { id: "platform-name",  label: "Nom",               defaultValue: "YONNE" },
-          { id: "platform-city",  label: "Ville principale",  defaultValue: "Dakar" },
-          { id: "platform-email", label: "Email contact",     defaultValue: "contact@yonne.sn" },
-          { id: "platform-phone", label: "Téléphone support", defaultValue: "+221 78 000 00 00" },
-        ].map(({ id, label, defaultValue }) => (
-          <div key={id} className="space-y-1">
-            <Label htmlFor={id}>{label}</Label>
-            <Input id={id} defaultValue={defaultValue} />
-          </div>
-        ))}
-        <Button onClick={() => save("Plateforme")} className="bg-emerald-500 hover:bg-emerald-600 text-white">Enregistrer</Button>
+        {(["name", "city", "email", "phone"] as const).map((field) => {
+          const labels = { name: "Nom", city: "Ville principale", email: "Email contact", phone: "Téléphone support" };
+          return (
+            <div key={field} className="space-y-1">
+              <Label htmlFor={`platform-${field}`}>{labels[field]}</Label>
+              <Input
+                id={`platform-${field}`}
+                value={platform[field]}
+                onChange={e => setPlatform(prev => ({ ...prev, [field]: e.target.value }))}
+              />
+            </div>
+          );
+        })}
+        <Button
+          onClick={() => save("Plateforme", { platform })}
+          disabled={saving === "Plateforme"}
+          className="bg-emerald-500 hover:bg-emerald-600 text-white"
+        >
+          {saving === "Plateforme" ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+          Enregistrer
+        </Button>
       </div>
 
       {/* Algorithme IA */}
@@ -83,7 +144,14 @@ export default function SettingsPage() {
             </div>
           );
         })}
-        <Button onClick={() => save("Algorithme IA")} disabled={weightsSum !== 100} className="bg-emerald-500 hover:bg-emerald-600 text-white disabled:opacity-50">Enregistrer</Button>
+        <Button
+          onClick={() => save("Algorithme IA", { ia: iaWeights })}
+          disabled={weightsSum !== 100 || saving === "Algorithme IA"}
+          className="bg-emerald-500 hover:bg-emerald-600 text-white disabled:opacity-50"
+        >
+          {saving === "Algorithme IA" ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+          Enregistrer
+        </Button>
       </div>
 
       {/* Templates WhatsApp */}
@@ -104,14 +172,21 @@ export default function SettingsPage() {
             </div>
           );
         })}
-        <Button onClick={() => save("Templates WhatsApp")} className="bg-emerald-500 hover:bg-emerald-600 text-white">Enregistrer</Button>
+        <Button
+          onClick={() => save("Templates WhatsApp", { templates })}
+          disabled={saving === "Templates WhatsApp"}
+          className="bg-emerald-500 hover:bg-emerald-600 text-white"
+        >
+          {saving === "Templates WhatsApp" ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+          Enregistrer
+        </Button>
       </div>
 
       {/* Mode Hivernage */}
       <div className="bg-white rounded-lg border border-cream-200 shadow-card p-6 space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="font-semibold text-ink-900">Mode Hivernage 🌧️</h2>
-          <Switch checked={hivernage} onCheckedChange={setHivernage} />
+          <Switch checked={hivernage} onCheckedChange={v => { setHivernage(v); save("Mode Hivernage", { hivernage: v, floodZones }); }} />
         </div>
         {hivernage && (
           <>
@@ -124,7 +199,14 @@ export default function SettingsPage() {
                 </label>
               ))}
             </div>
-            <Button onClick={() => save("Mode Hivernage")} className="bg-emerald-500 hover:bg-emerald-600 text-white">Enregistrer</Button>
+            <Button
+              onClick={() => save("Mode Hivernage", { hivernage, floodZones })}
+              disabled={saving === "Mode Hivernage"}
+              className="bg-emerald-500 hover:bg-emerald-600 text-white"
+            >
+              {saving === "Mode Hivernage" ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+              Enregistrer zones
+            </Button>
           </>
         )}
       </div>
@@ -148,7 +230,14 @@ export default function SettingsPage() {
             </div>
           ))}
         </div>
-        <Button onClick={() => save("Heures de prière")} className="bg-emerald-500 hover:bg-emerald-600 text-white">Enregistrer</Button>
+        <Button
+          onClick={() => save("Heures de prière", { prayers })}
+          disabled={saving === "Heures de prière"}
+          className="bg-emerald-500 hover:bg-emerald-600 text-white"
+        >
+          {saving === "Heures de prière" ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+          Enregistrer
+        </Button>
       </div>
     </div>
   );

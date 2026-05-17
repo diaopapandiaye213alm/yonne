@@ -11,6 +11,7 @@ import type { Driver } from "@/lib/mock-data/drivers";
 import { Button } from "@/components/ui/button";
 import { Loader2, Star } from "lucide-react";
 import { toast } from "sonner";
+import { haversineKm } from "@/lib/utils";
 
 type RecentClientEntry = { name: string; phone: string; landmarkId: string; landmarkName: string };
 function isRecentEntry(x: unknown): x is RecentClientEntry {
@@ -62,9 +63,7 @@ export function DispatchStep() {
     if (!assignedDriver || !w.landmarkId) return { distanceKm: null, etaMinutes: null };
     const pickupLm = landmarks.find(l => l.id === w.landmarkId);
     if (!pickupLm) return { distanceKm: null, etaMinutes: null };
-    const dLat = pickupLm.lat - assignedDriver.lat;
-    const dLng = pickupLm.lng - assignedDriver.lng;
-    const km = Math.round(Math.sqrt(dLat * dLat + dLng * dLng) * 111 * 10) / 10;
+    const km = Math.round(haversineKm(assignedDriver.lat, assignedDriver.lng, pickupLm.lat, pickupLm.lng) * 10) / 10;
     return { distanceKm: km, etaMinutes: Math.max(5, Math.round((km / 25) * 60)) };
   }, [assignedDriver, w.landmarkId]);
 

@@ -63,10 +63,52 @@ create table if not exists orders (
   amount          integer     not null check (amount > 0),
   payment_method  text        check (payment_method in ('wave','orange','cash')),
   insurance       boolean     default false,
-  status          text        check (status in ('créée','assignée','collecte','en route','livrée','annulée')) default 'créée',
+  status          text        check (status in (
+                                'créée',
+                                'en_attente_de_paiement',
+                                'payée_a_collecter',
+                                'assignée',
+                                'collecte',
+                                'en route',
+                                'livrée',
+                                'annulée'
+                              )) default 'créée',
+  payment_method  text        check (payment_method in ('wave','orange','cash','paytech')),
+  payment_status  text        check (payment_status in ('pending','received_manually','completed','failed')),
   active          boolean     default false,
   created_at      timestamptz default now()
 );
+
+-- Migration additive sur base existante (idempotent)
+-- Élargit la contrainte de statut si la table existe déjà.
+do $$
+begin
+  alter table orders
+    drop constraint if exists orders_status_check;
+  alter table orders
+    add constraint orders_status_check check (status in (
+      'créée',
+      'en_attente_de_paiement',
+      'payée_a_collecter',
+      'assignée',
+      'collecte',
+      'en route',
+      'livrée',
+      'annulée'
+    ));
+
+  -- Colonne payment_status — ajoutée si absente
+  if not exists (
+    select 1 from information_schema.columns
+    where table_name = 'orders' and column_name = 'payment_status'
+  ) then
+    alter table orders
+      add column payment_status text
+        check (payment_status in ('pending','received_manually','completed','failed'));
+  end if;
+exception when others then null;
+end;
+$$;
 
 -- ────────────────────────────────────────────────────────────
 -- UTILISATEURS (auth interne)
@@ -223,3 +265,15 @@ create index if not exists idx_driver_withdrawals_drv on driver_withdrawals(driv
 alter table merchants add column if not exists notif_whatsapp boolean default true;
 alter table merchants add column if not exists notif_sms      boolean default true;
 alter table merchants add column if not exists notif_email    boolean default false;
+
+-- ────────────────────────────────────────────────────────────
+-- PLATFORM SETTINGS (migration)
+-- ────────────────────────────────────────────────────────────
+create table if not exists platform_settings (
+  key        text primary key,
+  value      jsonb not null,
+  updated_at timestamptz default now()
+);
+
+-- RLS: admin access only via service role key (no public policy needed)
+alter table platform_settings enable row level security;

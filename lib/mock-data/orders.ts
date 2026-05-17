@@ -2,9 +2,18 @@
 import { drivers } from "./drivers";
 import { landmarks } from "./landmarks";
 
-export type OrderStatus   = "créée" | "assignée" | "collecte" | "en route" | "livrée" | "annulée";
-export type PaymentMethod = "wave" | "orange" | "cash";
-export type PaymentStatus = "pending" | "received_manually" | "failed";
+export type OrderStatus =
+  | "créée"
+  | "en_attente_de_paiement"
+  | "payée_a_collecter"
+  | "assignée"
+  | "collecte"
+  | "en route"
+  | "livrée"
+  | "annulée";
+
+export type PaymentMethod = "wave" | "orange" | "cash" | "paytech";
+export type PaymentStatus = "pending" | "received_manually" | "completed" | "failed";
 
 export interface Order {
   id: string;

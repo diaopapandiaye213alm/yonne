@@ -13,23 +13,28 @@ import { Button } from "@/components/ui/button";
 import { Share2, XCircle, AlertTriangle, FileText, Send, Loader2, CheckCircle2, Smartphone, ExternalLink, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { useSupabaseAuthed } from "@/components/providers/SupabaseProvider";
+import { haversineKm } from "@/lib/utils";
 
 const STATUS_STAGE: Record<OrderStatus, "created" | "assigned" | "enroute" | "delivered"> = {
-  "créée":    "created",
-  "assignée": "assigned",
-  "collecte": "assigned",
-  "en route": "enroute",
-  "livrée":   "delivered",
-  "annulée":  "created",
+  "créée":                  "created",
+  "en_attente_de_paiement": "created",
+  "payée_a_collecter":      "assigned",
+  "assignée":               "assigned",
+  "collecte":               "assigned",
+  "en route":               "enroute",
+  "livrée":                 "delivered",
+  "annulée":                "created",
 };
 
 const STATUS_COLORS: Record<OrderStatus, string> = {
-  "créée":    "bg-gray-100 text-gray-700",
-  "assignée": "bg-blue-100 text-blue-700",
-  "collecte": "bg-amber-100 text-amber-700",
-  "en route": "bg-gold-500 text-ink-900",
-  "livrée":   "bg-emerald-500/20 text-emerald-700",
-  "annulée":  "bg-red-100 text-red-600",
+  "créée":                  "bg-gray-100 text-gray-700",
+  "en_attente_de_paiement": "bg-amber-100 text-amber-700",
+  "payée_a_collecter":      "bg-emerald-100 text-emerald-700",
+  "assignée":               "bg-blue-100 text-blue-700",
+  "collecte":               "bg-amber-100 text-amber-700",
+  "en route":               "bg-gold-500 text-ink-900",
+  "livrée":                 "bg-emerald-500/20 text-emerald-700",
+  "annulée":                "bg-red-100 text-red-600",
 };
 
 const DakarMap = dynamic(() => import("@/components/map/DakarMap"), { ssr: false });
@@ -43,7 +48,9 @@ export default function TrackingPage({ params }: { params: { id: string } }) {
 
   const status: OrderStatus = order?.status ?? "créée";
   const isCancelled = order?.status === "annulée";
-  const canCancel   = order ? order.status !== "livrée" && order.status !== "annulée" : false;
+  const canCancel   = order
+    ? order.status !== "livrée" && order.status !== "annulée" && order.status !== "en_attente_de_paiement"
+    : false;
 
   const [showConfirm, setShowConfirm]     = useState(false);
   const [cancelling, setCancelling]       = useState(false);
@@ -68,6 +75,14 @@ export default function TrackingPage({ params }: { params: { id: string } }) {
       const data = await res.json() as { redirect_url?: string; error?: string };
       if (data.redirect_url) {
         setPaytechUrl(data.redirect_url);
+        // Transition de statut : la commande attend maintenant le paiement client.
+        // Conditionné sur le statut actuel pour être idempotent.
+        if (order.status === "créée" || order.status === "assignée") {
+          await supabase
+            .from("orders")
+            .update({ status: "en_attente_de_paiement", payment_status: "pending" })
+            .eq("id", order.id);
+        }
       } else {
         toast.error(data.error ?? "Impossible de générer le lien PayTech");
       }
@@ -76,7 +91,7 @@ export default function TrackingPage({ params }: { params: { id: string } }) {
     } finally {
       setGeneratingLink(false);
     }
-  }, [generatingLink, order]);
+  }, [generatingLink, order, supabase]);
 
   // ── Merchant phone — fetched once for payment confirmation display ────────
   const [merchantPhone, setMerchantPhone] = useState<string | null>(null);
@@ -155,9 +170,7 @@ export default function TrackingPage({ params }: { params: { id: string } }) {
 
   const distanceKm = useMemo(() => {
     if (!destination) return null;
-    const dLat = destination.lat - pos[0];
-    const dLng = destination.lng - pos[1];
-    return Math.round(Math.sqrt(dLat * dLat + dLng * dLng) * 111 * 10) / 10;
+    return Math.round(haversineKm(pos[0], pos[1], destination.lat, destination.lng) * 10) / 10;
   }, [pos, destination]);
 
   const [messages, setMessages] = useState<{ id: number; from_role: "merchant" | "driver"; text: string; sent_at: string }[]>([]);

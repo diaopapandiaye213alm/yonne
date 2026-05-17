@@ -11,7 +11,7 @@ import { DeliveryStepperCard } from "@/components/driver/DeliveryStepperCard";
 import { Button } from "@/components/ui/button";
 import { Phone, QrCode, Navigation2, AlertTriangle, X, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+import { cn, haversineKm } from "@/lib/utils";
 import type { Pin } from "@/components/map/DakarMap";
 import { QrScannerModal } from "@/components/driver/QrScannerModal";
 import { useSupabaseAuthed } from "@/components/providers/SupabaseProvider";
@@ -54,9 +54,7 @@ export default function LivraisonPage({ params }: { params: { id: string } }) {
       clientPhone: real.clientPhone ?? "",
       pickupLandmarkId: pickupLm.id,
       destLandmarkId: destLm.id,
-      distanceKm: Math.round(
-        Math.sqrt((destLm.lat - pickupLm.lat) ** 2 + (destLm.lng - pickupLm.lng) ** 2) * 111 * 10
-      ) / 10,
+      distanceKm: Math.round(haversineKm(pickupLm.lat, pickupLm.lng, destLm.lat, destLm.lng) * 10) / 10,
       amount: real.amount,
       paymentMethod: real.paymentMethod as "wave" | "orange" | "cash",
     };

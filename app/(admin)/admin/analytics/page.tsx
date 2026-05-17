@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { hourlyRevenue, zoneActivity, weeklyMerchants } from "@/lib/mock-data/analytics";
 import { useOrdersStore } from "@/lib/store/orders";
+import { useDriversStore } from "@/lib/store/drivers";
 import { Activity, Zap } from "lucide-react";
 import { useT } from "@/lib/i18n";
 
@@ -17,15 +18,14 @@ const LeafletMap = dynamic(() => import("@/components/map/DakarMap"), {
 
 function fmt(n: number) { return `${(n / 1000).toFixed(0)}k`; }
 
-const LIVE_EVENTS = [
-  { time: "14:32", event: "Commande YN-2026-10131 collectée — Plateau",       type: "collect" },
-  { time: "14:31", event: "Nouveau livreur actif — Ibou Diallo (Médina)",       type: "driver"  },
-  { time: "14:29", event: "Commande YN-2026-10130 livrée — Grand Yoff",         type: "deliver" },
-  { time: "14:27", event: "Surge ×1.4 activé — Parcelles Assainies",            type: "surge"   },
-  { time: "14:25", event: "Nouveau commerçant inscrit — DakarShop",             type: "merchant"},
-  { time: "14:22", event: "Commande YN-2026-10129 livrée — Almadies",           type: "deliver" },
-  { time: "14:20", event: "Pic demande prévu 16h — 48 commandes estimées",      type: "predict" },
-];
+const STATUS_EVENT_TYPE: Record<string, string> = {
+  "collecte":  "collect",
+  "livrée":    "deliver",
+  "assignée":  "driver",
+  "en route":  "deliver",
+  "créée":     "merchant",
+  "annulée":   "surge",
+};
 
 const EVENT_COLORS: Record<string, string> = {
   collect:  "bg-emerald-500",
@@ -36,23 +36,27 @@ const EVENT_COLORS: Record<string, string> = {
   predict:  "bg-ink-400",
 };
 
-const LTV_DATA = [
-  { segment: "VIP (>50 cmdes)",     ltv: "148 000 F", count: 12,  color: "bg-emerald-500", pct: 100 },
-  { segment: "Régulier (10–50)",    ltv: "52 000 F",  count: 47,  color: "bg-blue-500",    pct: 35  },
-  { segment: "Occasionnel (1–10)",  ltv: "18 000 F",  count: 103, color: "bg-gold-500",    pct: 12  },
-  { segment: "Inactif (0 cmdes)",   ltv: "0 F",       count: 34,  color: "bg-cream-300",   pct: 0   },
-];
+const STATUS_LABELS: Record<string, string> = {
+  "collecte": "collectée",
+  "livrée":   "livrée",
+  "assignée": "assignée à un livreur",
+  "en route": "en route",
+  "créée":    "créée",
+  "annulée":  "annulée",
+};
 
+// BI predictions — model estimates updated weekly
 const PREDICTIONS = [
-  { label: "Commandes prévues demain",   value: "162",    trend: "+10%",  up: true  },
-  { label: "Pic attendu",                value: "16h–18h", trend: "créneau fort", up: true },
-  { label: "Livreurs requis",            value: "24",     trend: "+3 vs hier",    up: true  },
-  { label: "Risque météo hivernage",     value: "Faible", trend: "vent 12km/h",   up: false },
+  { label: "Commandes prévues demain",   value: "162",     trend: "+10%",         up: true  },
+  { label: "Pic attendu",                value: "16h–18h", trend: "créneau fort", up: true  },
+  { label: "Livreurs requis",            value: "24",      trend: "+3 vs hier",   up: true  },
+  { label: "Risque météo hivernage",     value: "Faible",  trend: "vent 12km/h",  up: false },
 ];
 
 export default function AnalyticsPage() {
   const t = useT();
   const { orders } = useOrdersStore();
+  const { drivers } = useDriversStore();
   const ordersToday = orders.filter(o => {
     const d = new Date(o.createdAt);
     const now = new Date();
@@ -64,6 +68,52 @@ export default function AnalyticsPage() {
   const [liveCount, setLiveCount] = useState(ordersToday);
 
   useEffect(() => { setLiveCount(ordersToday); }, [ordersToday]);
+
+  // Live feed — 7 most recent orders from the store
+  const liveFeed = useMemo(() => {
+    return [...orders]
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(0, 7)
+      .map(o => {
+        const driver = drivers.find(d => d.id === o.driverId);
+        const time = new Date(o.createdAt).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+        const label = STATUS_LABELS[o.status] ?? o.status;
+        const driverPart = driver ? ` — ${driver.name}` : "";
+        return {
+          time,
+          event: `Commande ${o.id.slice(0, 16)} ${label}${driverPart}`,
+          type: STATUS_EVENT_TYPE[o.status] ?? "merchant",
+        };
+      });
+  }, [orders, drivers]);
+
+  // LTV segments — derived from orders grouped by merchantId
+  const ltvData = useMemo(() => {
+    const merchantOrderCount = new Map<string, { count: number; revenue: number }>();
+    for (const o of orders) {
+      const mid = o.merchantId ?? "__unknown__";
+      const existing = merchantOrderCount.get(mid);
+      if (existing) { existing.count++; existing.revenue += o.amount; }
+      else merchantOrderCount.set(mid, { count: 1, revenue: o.amount });
+    }
+    const segments = [
+      { key: "vip",   label: "VIP (>50 cmdes)",    min: 51, max: Infinity, color: "bg-emerald-500" },
+      { key: "reg",   label: "Régulier (10–50)",    min: 10, max: 50,       color: "bg-blue-500"    },
+      { key: "occ",   label: "Occasionnel (1–10)",  min: 1,  max: 9,        color: "bg-gold-500"    },
+      { key: "inact", label: "Inactif (0 cmdes)",   min: 0,  max: 0,        color: "bg-cream-300"   },
+    ];
+    const counts = segments.map(s => {
+      const entries = Array.from(merchantOrderCount.values()).filter(m =>
+        s.min === 0 ? m.count === 0 : m.count >= s.min && m.count <= s.max
+      );
+      const avgLtv = entries.length > 0
+        ? Math.round(entries.reduce((sum, m) => sum + m.revenue, 0) / entries.length)
+        : 0;
+      return { segment: s.label, ltv: avgLtv > 0 ? `${avgLtv.toLocaleString("fr-FR")} F` : "0 F", count: entries.length, color: s.color };
+    });
+    const maxCount = Math.max(...counts.map(c => c.count), 1);
+    return counts.map(c => ({ ...c, pct: Math.round((c.count / maxCount) * 100) }));
+  }, [orders]);
 
   // Deterministic per-cell noise using Mulberry32 PRNG — consistent with engine.ts pattern.
   const heatmap = useMemo(() => {
@@ -193,7 +243,7 @@ export default function AnalyticsPage() {
       <div className="bg-white rounded-lg border border-cream-200 shadow-card p-5">
         <h2 className="font-semibold text-ink-900 mb-4">LTV commerçants par segment</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {LTV_DATA.map(s => (
+          {ltvData.map(s => (
             <div key={s.segment} className="bg-cream-50 rounded-lg p-4">
               <div className={`w-8 h-1.5 rounded-full ${s.color} mb-3`} />
               <div className="text-lg font-display font-bold text-ink-900">{s.ltv}</div>
@@ -238,7 +288,7 @@ export default function AnalyticsPage() {
             <span className="w-2 h-2 bg-emerald-500 rounded-full animate-live-pulse ml-1" />
           </div>
           <div className="space-y-2">
-            {LIVE_EVENTS.map((ev, i) => (
+            {liveFeed.map((ev, i) => (
               <div key={i} className="flex items-start gap-3">
                 <span className="font-mono text-[10px] text-ink-400 mt-0.5 shrink-0">{ev.time}</span>
                 <div className={`w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 ${EVENT_COLORS[ev.type]}`} />

@@ -37,7 +37,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   // 3. Enregistre le paiement confirmé via RPC idempotente
   if (status === "completed" && itemPrice > 0) {
-    const { error } = await supabaseAdmin.rpc("process_payment_webhook", {
+    const { error: rpcErr } = await supabaseAdmin.rpc("process_payment_webhook", {
       p_event_id: token,
       p_order_id: refCommand,
       p_provider: provider,
@@ -46,8 +46,24 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       p_status:   "completed",
       p_raw:      Object.fromEntries(body.entries()),
     });
-    if (error) {
-      console.error("[webhooks/paytech] RPC error:", error.message);
+    if (rpcErr) {
+      console.error("[webhooks/paytech] RPC error:", rpcErr.message);
+    }
+
+    // 4. Transition de statut : en_attente_de_paiement → payée_a_collecter.
+    // Conditionné sur le statut actuel pour être idempotent (retry-safe).
+    const { error: orderErr } = await supabaseAdmin
+      .from("orders")
+      .update({
+        status:         "payée_a_collecter",
+        payment_status: "completed",
+        active:         true,
+      })
+      .eq("id", refCommand)
+      .eq("status", "en_attente_de_paiement");
+
+    if (orderErr) {
+      console.error("[webhooks/paytech] order update error:", orderErr.message);
     }
   }
 

@@ -16,6 +16,8 @@ import { Navigation, Bell } from "lucide-react";
 import { useSupabaseAuthed } from "@/components/providers/SupabaseProvider";
 import { toast } from "sonner";
 import { usePushNotification } from "@/lib/hooks/usePushNotification";
+import { haversineKm } from "@/lib/utils";
+import { InlineErrorBanner } from "@/components/driver/OfflineBanner";
 
 const DakarMap = dynamic(() => import("@/components/map/DakarMap"), {
   ssr: false,
@@ -39,6 +41,8 @@ export default function CartePage() {
 
   // Supabase real orders assigned to this driver
   const [realOrders, setRealOrders] = useState<IncomingOrder[]>([]);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  const [retryKey, setRetryKey]     = useState(0);
 
   // Only real Supabase orders — no mock fallback
   const allOrders = useMemo<IncomingOrder[]>(() => realOrders, [realOrders]);
@@ -94,9 +98,7 @@ export default function CartePage() {
     const orderId = row.id as string;
     const pickupIdx = deterministicIndex(orderId, Math.min(5, landmarks.length));
     const pickupLm = landmarks[pickupIdx];
-    const dLat = destLm.lat - (demo?.lat ?? 14.6928);
-    const dLng = destLm.lng - (demo?.lng ?? -17.4467);
-    const dist = Math.round(Math.sqrt(dLat * dLat + dLng * dLng) * 111 * 10) / 10;
+    const dist = Math.round(haversineKm(demo?.lat ?? 14.6928, demo?.lng ?? -17.4467, destLm.lat, destLm.lng) * 10) / 10;
     return {
       id: orderId,
       clientName: (row.client_name as string) ?? "Client",
@@ -113,19 +115,23 @@ export default function CartePage() {
   useEffect(() => {
     if (!demo?.id) return;
 
-    // Fetch existing assigned orders
+    // Fetch existing assigned or paid orders visible par ce livreur
     supabase
       .from("orders")
       .select("*")
       .eq("driver_id", demo.id)
-      .eq("status", "assignée")
+      .in("status", ["assignée", "payée_a_collecter"])
       .order("created_at", { ascending: false })
-      .then(({ data }) => {
+      .then(({ data, error }) => {
+        if (error) {
+          setFetchError("Impossible de charger vos commandes. Vérifiez votre connexion.");
+          return;
+        }
+        setFetchError(null);
         if (data && data.length > 0) {
           const incoming = data.map(r => rowToIncoming(r as Record<string, unknown>));
           setRealOrders(incoming);
           setOrderIndex(0);
-          // Vérifier le groupage pour chaque commande assignée existante
           incoming.forEach((o) => { void checkBatch(o.id); });
         }
       });
@@ -151,7 +157,8 @@ export default function CartePage() {
         { event: "UPDATE", schema: "public", table: "orders", filter: `driver_id=eq.${demo.id}` },
         (payload) => {
           const row = payload.new as Record<string, unknown>;
-          if (row.status !== "assignée") {
+          const visibleStatuses = ["assignée", "payée_a_collecter"];
+          if (!visibleStatuses.includes(row.status as string)) {
             setRealOrders(prev => prev.filter(o => o.id !== row.id));
           }
         }
@@ -159,7 +166,9 @@ export default function CartePage() {
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [demo?.id, rowToIncoming, supabase, checkBatch]);
+  // retryKey triggers refetch without duplicating the channel subscription logic
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [demo?.id, rowToIncoming, supabase, checkBatch, retryKey]);
 
   // Enregistrer ce livreur dans le moteur de simulation
   useEffect(() => {
@@ -228,17 +237,49 @@ export default function CartePage() {
 
   async function handleAccept() {
     if (!currentOrder) return;
+
     if (realOrders.some(o => o.id === currentOrder.id)) {
-      const { error } = await supabase
-        .from("orders")
-        .update({ status: "collecte", active: true })
-        .eq("id", currentOrder.id);
+      // RPC accept_order_safely : SELECT FOR UPDATE NOWAIT + vérification statut
+      // atomique côté PostgreSQL. Aucune race condition possible.
+      interface AcceptRpcResult {
+        success:      boolean;
+        reason?:      string;
+        order_id?:    string;
+        status?:      string;
+        idempotent?:  boolean;
+      }
+      const { data, error } = await supabase
+        .rpc("accept_order_safely", {
+          p_order_id:  currentOrder.id,
+          p_driver_id: demo?.id ?? "",
+        })
+        .then((r) => r, (err: unknown) => ({ data: null, error: err }));
+
       if (error) {
-        toast.error("Impossible d'accepter la commande");
+        toast.error("Erreur réseau — réessayez dans un instant");
         return;
       }
+
+      const result = data as AcceptRpcResult | null;
+      if (!result?.success) {
+        const reason = result?.reason ?? "unknown";
+        if (reason === "concurrent_lock") {
+          toast.error("Commande en cours d'attribution — patientez");
+        } else if (reason === "order_unavailable") {
+          toast.error("Commande déjà prise en charge par un autre livreur");
+          setRealOrders(prev => prev.filter(o => o.id !== currentOrder.id));
+        } else if (reason === "order_not_found") {
+          toast.error("Commande introuvable — rechargez la page");
+          setRealOrders(prev => prev.filter(o => o.id !== currentOrder.id));
+        } else {
+          toast.error("Impossible d'accepter la commande — réessayez");
+        }
+        return;
+      }
+
       setRealOrders(prev => prev.filter(o => o.id !== currentOrder.id));
     }
+
     acceptOrder(currentOrder.id);
     router.push(`/driver/livraison/${currentOrder.id}`);
   }
@@ -307,8 +348,21 @@ export default function CartePage() {
         </div>
       )}
 
+      {/* Fetch error banner — shown when initial order load fails */}
+      {fetchError && (
+        <div className="absolute top-16 left-4 right-4 z-[1001]">
+          <InlineErrorBanner
+            message={fetchError}
+            onRetry={() => {
+              setFetchError(null);
+              setRetryKey(k => k + 1);
+            }}
+          />
+        </div>
+      )}
+
       {/* Waiting state overlay — shown when online but no real orders */}
-      {online && allOrders.length === 0 && (
+      {online && allOrders.length === 0 && !fetchError && (
         <div className="absolute bottom-20 left-0 right-0 z-[1001] flex justify-center px-4">
           <div className="bg-white rounded-2xl shadow-card px-5 py-4 flex items-center gap-3 max-w-xs w-full">
             <div className="w-2 h-2 rounded-full bg-ink-300 animate-pulse shrink-0" />
