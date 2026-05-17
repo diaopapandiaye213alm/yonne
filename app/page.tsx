@@ -1,4 +1,5 @@
-export const revalidate = 60;
+// force-dynamic : stats toujours fraîches depuis Supabase (pas de cache build-time)
+export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { Wordmark } from "@/components/brand/Wordmark";
@@ -28,8 +29,8 @@ async function getLiveStats() {
     };
 
     const [ordersRes, driversRes] = await Promise.all([
-      fetch(`${url}/rest/v1/orders?select=count`, { headers, cache: "no-store" }),
-      fetch(`${url}/rest/v1/drivers?select=online,rating`, { headers, cache: "no-store" }),
+      fetch(`${url}/rest/v1/orders?select=count`, { headers, next: { revalidate: 0 } }),
+      fetch(`${url}/rest/v1/drivers?select=online,rating`, { headers, next: { revalidate: 0 } }),
     ]);
 
     console.log("[getLiveStats] orders status:", ordersRes.status, "| drivers status:", driversRes.status);
