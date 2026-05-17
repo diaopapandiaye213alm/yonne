@@ -212,23 +212,23 @@ export default async function LandingPage() {
             </Link>
           </div>
 
-          {/* Stats — valeurs statiques, rendu serveur pur */}
-          <div className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-4 animate-fade-in-up" style={{ animationDelay: "400ms" }}>
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/10">
-              <div className="text-3xl font-display font-bold tabular-nums text-white">147</div>
-              <div className="text-xs text-emerald-300/70 mt-1">commandes enregistrées</div>
+          {/* Stats — inline styles, zéro Tailwind, zéro animation */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: "1.5rem", marginTop: "3rem" }}>
+            <div style={{ textAlign: "center" }}>
+              <div style={{ fontSize: "3rem", fontWeight: 800, color: "#ffffff", lineHeight: 1 }}>147</div>
+              <div style={{ fontSize: "0.75rem", color: "#6ee7b7", marginTop: "0.5rem" }}>commandes enregistrées</div>
             </div>
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/10">
-              <div className="text-3xl font-display font-bold tabular-nums text-emerald-300">12</div>
-              <div className="text-xs text-emerald-300/70 mt-1">livreurs actifs en ce moment</div>
+            <div style={{ textAlign: "center" }}>
+              <div style={{ fontSize: "3rem", fontWeight: 800, color: "#4ade80", lineHeight: 1 }}>12</div>
+              <div style={{ fontSize: "0.75rem", color: "#6ee7b7", marginTop: "0.5rem" }}>livreurs actifs en ce moment</div>
             </div>
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/10">
-              <div className="text-3xl font-display font-bold tabular-nums text-gold-400">4,7/5</div>
-              <div className="text-xs text-emerald-300/70 mt-1">note moyenne sur 5</div>
+            <div style={{ textAlign: "center" }}>
+              <div style={{ fontSize: "3rem", fontWeight: 800, color: "#fbbf24", lineHeight: 1 }}>4,7/5</div>
+              <div style={{ fontSize: "0.75rem", color: "#6ee7b7", marginTop: "0.5rem" }}>note moyenne sur 5</div>
             </div>
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/10">
-              <div className="text-3xl font-display font-bold tabular-nums text-orange-300">+40%</div>
-              <div className="text-xs text-emerald-300/70 mt-1">hausse prix Tabaski</div>
+            <div style={{ textAlign: "center" }}>
+              <div style={{ fontSize: "3rem", fontWeight: 800, color: "#fb923c", lineHeight: 1 }}>+40%</div>
+              <div style={{ fontSize: "0.75rem", color: "#6ee7b7", marginTop: "0.5rem" }}>hausse prix Tabaski</div>
             </div>
           </div>
         </div>
