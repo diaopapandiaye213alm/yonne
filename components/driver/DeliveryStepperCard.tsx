@@ -7,7 +7,7 @@ const STEPS = [
   { label: "En route vers le point de collecte",  action: "J'arrive au point de collecte" },
   { label: "À la collecte — En attente du colis", action: "Colis récupéré ✓" },
   { label: "En route vers le client",             action: "J'arrive chez le client" },
-  { label: "Livraison confirmée 🎉",              action: "Voir mes gains" },
+  { label: "Livraison confirmée !",               action: "Voir mes gains" },
 ] as const;
 
 interface Props {

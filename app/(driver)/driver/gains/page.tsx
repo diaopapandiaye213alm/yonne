@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 
 import { toast } from "sonner";
 import { useT } from "@/lib/i18n";
-import { Smartphone, Banknote, ChevronRight, Star, MapPin, Target, X, CheckCircle2, Loader2 } from "lucide-react";
+import { Smartphone, Banknote, ChevronRight, Star, MapPin, Target, X, CheckCircle2, Loader2, Bike, Trophy } from "lucide-react";
 
 const DAILY_GOAL = 20000;
 
@@ -212,7 +212,7 @@ export default function GainsPage() {
         </div>
         <div className="stagger-3 animate-fade-in-up bg-white rounded-xl border border-gold-300/40 shadow-card p-4 text-center">
           <div className="font-mono font-bold text-2xl text-gold-500">{avgRating}</div>
-          <div className="text-xs text-ink-500 mt-0.5">Note ★</div>
+          <div className="text-xs text-ink-500 mt-0.5 flex items-center justify-center gap-1">Note <Star className="w-3 h-3 text-gold-400 fill-gold-400" /></div>
         </div>
       </div>
 
@@ -235,9 +235,9 @@ export default function GainsPage() {
             <span className="text-ink-400 font-normal"> / 20 000 F</span>
           </span>
           {goalPct >= 100 ? (
-            <span className="text-emerald-600 font-bold">🎉 Objectif atteint !</span>
+            <span className="text-emerald-600 font-bold">Objectif atteint !</span>
           ) : earningsToday === 0 ? (
-            <span className="text-ink-500">🚀 Première livraison du jour !</span>
+            <span className="text-ink-500">Première livraison du jour !</span>
           ) : (
             <span className="text-ink-500">
               Encore <span className="font-bold text-ink-700">{remaining.toLocaleString("fr-FR")} F</span>
@@ -269,7 +269,7 @@ export default function GainsPage() {
           <div className="border-t border-cream-100 divide-y divide-cream-50">
             {todayDeliveries.length === 0 ? (
               <div className="py-8 text-center space-y-2">
-                <div className="text-2xl">🛵</div>
+                <Bike className="w-8 h-8 text-ink-300 mx-auto" />
                 <div className="text-sm font-medium text-ink-900">Aucune livraison aujourd&apos;hui</div>
                 <div className="text-xs text-ink-500">Vos gains s&apos;afficheront ici dès votre première livraison</div>
               </div>
@@ -320,7 +320,7 @@ export default function GainsPage() {
 
       {/* Badge */}
       <div className="bg-white rounded-lg border border-gold-500 p-4 flex items-center gap-3">
-        <div className="text-2xl">🏆</div>
+        <Trophy className="w-8 h-8 text-gold-500 shrink-0" />
         <div>
           <div className="text-xs text-ink-500">{t("weekBadge")}</div>
           <Badge className="mt-1 bg-gold-500/20 text-ink-900 border border-gold-500 font-medium">

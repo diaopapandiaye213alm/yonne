@@ -9,7 +9,7 @@ import { useOrdersStore } from "@/lib/store/orders";
 import { useDriverStore } from "@/lib/store/driver";
 import { DeliveryStepperCard } from "@/components/driver/DeliveryStepperCard";
 import { Button } from "@/components/ui/button";
-import { Phone, QrCode, Navigation2, AlertTriangle, X, Loader2 } from "lucide-react";
+import { Phone, QrCode, Navigation2, AlertTriangle, X, Loader2, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { cn, haversineKm } from "@/lib/utils";
 import type { Pin } from "@/components/map/DakarMap";
@@ -232,14 +232,14 @@ export default function LivraisonPage({ params }: { params: { id: string } }) {
               <button type="button" onClick={() => setShowNavChoice(false)}><X className="w-5 h-5 text-ink-400" /></button>
             </div>
             {[
-              { label: "Google Maps", icon: "🗺️", url: `https://maps.google.com/?q=${target.lat},${target.lng}` },
-              { label: "Waze", icon: "🚗", url: `https://waze.com/ul?ll=${target.lat},${target.lng}&navigate=yes` },
-              { label: "OsmAnd / Maps.me", icon: "🌍", url: `https://osmand.net/go?lat=${target.lat}&lon=${target.lng}&z=16` },
+              { label: "Google Maps", url: `https://maps.google.com/?q=${target.lat},${target.lng}` },
+              { label: "Waze", url: `https://waze.com/ul?ll=${target.lat},${target.lng}&navigate=yes` },
+              { label: "OsmAnd / Maps.me", url: `https://osmand.net/go?lat=${target.lat}&lon=${target.lng}&z=16` },
             ].map(nav => (
               <a key={nav.label} href={nav.url} target="_blank" rel="noopener noreferrer"
                 onClick={() => setShowNavChoice(false)}
                 className="flex items-center gap-4 p-3 rounded-xl border border-cream-200 hover:bg-cream-50 transition-colors">
-                <span className="text-2xl">{nav.icon}</span>
+                <Navigation2 className="w-5 h-5 text-emerald-500 shrink-0" />
                 <span className="font-medium text-ink-900">{nav.label}</span>
                 <Navigation2 className="w-4 h-4 text-ink-400 ml-auto" />
               </a>
@@ -268,7 +268,7 @@ export default function LivraisonPage({ params }: { params: { id: string } }) {
               </button>
             </div>
             {submitted ? (
-              <div className="text-center py-6 text-emerald-600 font-semibold">✅ Incident signalé</div>
+              <div className="text-center py-6 text-emerald-600 font-semibold flex items-center justify-center gap-2"><CheckCircle2 className="w-5 h-5" /> Incident signalé</div>
             ) : (
               <>
                 <div className="space-y-2">
@@ -323,7 +323,7 @@ export default function LivraisonPage({ params }: { params: { id: string } }) {
             "bg-white rounded-t-xl p-6 text-center space-y-3",
             "animate-in zoom-in-50 duration-500"
           )}>
-            <div className="text-4xl">✅</div>
+            <CheckCircle2 className="w-12 h-12 text-emerald-500 mx-auto" />
             <div className="font-display font-bold text-lg text-ink-900">Livraison confirmée !</div>
             <Button
               className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-display font-bold"

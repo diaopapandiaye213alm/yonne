@@ -13,7 +13,7 @@ import { useT } from "@/lib/i18n";
 import { PushNotifBanner } from "@/components/driver/PushNotifBanner";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
-import { LogOut, Moon, Pencil, Check, X, Star, Award, History, ShieldAlert } from "lucide-react";
+import { LogOut, Moon, Pencil, Check, X, Star, Award, History, ShieldAlert, Medal, Circle, BarChart3 } from "lucide-react";
 
 // demo resolved in component from store
 
@@ -109,8 +109,9 @@ export default function ProfilPage() {
       <PushNotifBanner />
 
       {inPrayer && (
-        <div className="bg-gold-500/15 border border-gold-500/30 rounded-lg text-center text-sm font-medium text-ink-900 py-2 px-4">
-          🕌 Mode prière actif — vous apparaissez hors ligne
+        <div className="bg-gold-500/15 border border-gold-500/30 rounded-lg flex items-center justify-center gap-2 text-sm font-medium text-ink-900 py-2 px-4">
+          <Moon className="w-4 h-4 text-gold-600 shrink-0" />
+          Mode prière actif — vous apparaissez hors ligne
         </div>
       )}
 
@@ -195,13 +196,16 @@ export default function ProfilPage() {
       {/* Stats */}
       <div className="grid grid-cols-2 gap-3">
         {[
-          { label: "Courses auj.",      value: String(demo.ordersToday),                                    color: "text-ink-900" },
-          { label: "Gains auj.",        value: `${demo.earningsToday.toLocaleString("fr-FR")} F`,           color: "text-emerald-500" },
-          { label: "Note moyenne",      value: `${demo.rating.toFixed(1)} ★`,                              color: "text-gold-500" },
-          { label: "Total livraisons",  value: String(totalOrders),                                         color: "text-ink-700" },
-        ].map(({ label, value, color }) => (
+          { label: "Courses auj.",      value: String(demo.ordersToday),                          color: "text-ink-900",    icon: null },
+          { label: "Gains auj.",        value: `${demo.earningsToday.toLocaleString("fr-FR")} F`, color: "text-emerald-500", icon: null },
+          { label: "Note moyenne",      value: demo.rating.toFixed(1),                            color: "text-gold-500",   icon: "star" },
+          { label: "Total livraisons",  value: String(totalOrders),                               color: "text-ink-700",   icon: null },
+        ].map(({ label, value, color, icon }) => (
           <div key={label} className="bg-white rounded-lg border border-cream-200 shadow-card p-3">
-            <div className={`font-mono font-bold text-lg ${color}`}>{value}</div>
+            <div className={`font-mono font-bold text-lg ${color} flex items-center gap-1`}>
+              {value}
+              {icon === "star" && <Star className="w-3.5 h-3.5 text-gold-400 fill-gold-400" />}
+            </div>
             <div className="text-xs text-ink-500 mt-0.5">{label}</div>
           </div>
         ))}
@@ -210,7 +214,7 @@ export default function ProfilPage() {
       {/* Monthly earnings chart */}
       <div className="bg-white rounded-lg border border-cream-200 shadow-card p-4">
         <h2 className="text-sm font-display font-semibold text-ink-900 mb-3 flex items-center gap-2">
-          <Star className="w-4 h-4 text-gold-500" /> Gains mensuels
+          <BarChart3 className="w-4 h-4 text-emerald-500" /> Gains mensuels
         </h2>
         <div className="flex items-end gap-2 h-20">
           {monthlyEarnings.map(({ month, amount }, i) => (
@@ -241,10 +245,13 @@ export default function ProfilPage() {
               <div key={badge} className={`flex items-center gap-3 p-2.5 rounded-lg border transition-colors ${
                 earned ? "bg-gold-500/5 border-gold-500/20" : "border-transparent opacity-40"
               }`}>
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm shrink-0 ${
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
                   earned ? "bg-gold-500/20" : "bg-cream-100"
                 }`}>
-                  {earned ? "🏅" : "○"}
+                  {earned
+                    ? <Medal className="w-4 h-4 text-gold-600" />
+                    : <Circle className="w-4 h-4 text-ink-200" />
+                  }
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className={`text-sm font-medium ${earned ? "text-ink-900" : "text-ink-500"}`}>{badge}</div>

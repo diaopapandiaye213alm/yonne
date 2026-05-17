@@ -6,7 +6,7 @@ import { useDriversStore } from "@/lib/store/drivers";
 import { useSession } from "@/lib/hooks/useSession";
 import { landmarks } from "@/lib/mock-data/landmarks";
 import { useT } from "@/lib/i18n";
-import { History, TrendingUp, Package, Download, Filter } from "lucide-react";
+import { History, TrendingUp, Package, Download, Filter, Clock, Star } from "lucide-react";
 import { toast } from "sonner";
 
 const MONTH_LABELS = ["Jan", "Fév", "Mar", "Avr", "Mai", "Juin", "Juil", "Aoû", "Sep", "Oct", "Nov", "Déc"] as const;
@@ -211,9 +211,9 @@ export default function HistoriquePage() {
                     <div className="text-right">
                       <div className="font-mono font-bold text-emerald-500 text-sm">+{o.gain.toLocaleString("fr-FR")} F</div>
                       <div className="flex items-center justify-end gap-1 mt-0.5">
-                        <span className="text-[#F59E0B] text-xs">{"★".repeat(rating)}{"☆".repeat(5 - rating)}</span>
+                        <span className="flex items-center gap-0.5">{[1,2,3,4,5].map(n => (<Star key={n} className={`w-3 h-3 ${n <= rating ? "text-gold-500 fill-gold-500" : "text-cream-300"}`} />))}</span>
                       </div>
-                      <div className="text-xs text-ink-500 tabular-nums mt-0.5">⏱ {duration} min</div>
+                      <div className="text-xs text-ink-500 tabular-nums mt-0.5 flex items-center justify-end gap-1"><Clock className="w-3 h-3" /> {duration} min</div>
                     </div>
                   </div>
                 </div>

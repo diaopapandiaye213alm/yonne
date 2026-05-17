@@ -77,7 +77,7 @@ export default function ClassementPage() {
   const top3 = ranked.slice(0, 3);
   const rest = ranked.slice(3);
 
-  const medals = ["🥇", "🥈", "🥉"];
+  const medals = ["1er", "2e", "3e"];
   const medalBg = [
     "border-gold-500 bg-gold-500/5",
     "border-slate-300 bg-slate-50",
@@ -106,7 +106,7 @@ export default function ClassementPage() {
               key={driver.id}
               className={`rounded-xl border p-3 flex flex-col items-center gap-2 ${medalBg[i]} ${isMe ? "ring-2 ring-emerald-400" : ""}`}
             >
-              <span className="text-2xl">{medals[i]}</span>
+              <span className="text-sm font-bold font-mono text-ink-700">{medals[i]}</span>
               <div className="relative">
                 <Image
                   src={avatarUrl(driver)}

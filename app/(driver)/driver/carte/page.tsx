@@ -12,7 +12,7 @@ import { Switch } from "@/components/ui/switch";
 import type { Pin } from "@/components/map/DakarMap";
 import { triggerOrderNotification } from "@/components/driver/PushNotifBanner";
 import { simulationEngine } from "@/lib/simulation/engine";
-import { Navigation, Bell } from "lucide-react";
+import { Navigation, Bell, Moon } from "lucide-react";
 import { useSupabaseAuthed } from "@/components/providers/SupabaseProvider";
 import { toast } from "sonner";
 import { usePushNotification } from "@/lib/hooks/usePushNotification";
@@ -297,7 +297,7 @@ export default function CartePage() {
       {/* Online toggle */}
       <div className="absolute top-4 right-4 z-[1001] bg-white rounded-full shadow-card px-3 py-2 flex items-center gap-2">
         {inPrayer ? (
-          <span className="text-sm font-medium text-gold-600">🕌 Mode prière</span>
+          <span className="text-sm font-medium text-gold-600 flex items-center gap-1.5"><Moon className="w-4 h-4" /> Mode prière</span>
         ) : (
           <>
             <Switch checked={online} onCheckedChange={setOnline} />
