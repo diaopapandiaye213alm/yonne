@@ -13,50 +13,37 @@ async function getLiveStats() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-  // Debug — visible dans Vercel logs (Functions tab)
-  console.log("[getLiveStats] url defined:", !!url, "| url prefix:", url?.slice(0, 30));
-  console.log("[getLiveStats] key defined:", !!key, "| key length:", key?.length ?? 0);
-
-  if (!url || !key) {
-    console.error("[getLiveStats] MISSING env vars — url:", url, "| key:", !!key);
-    return { orders: 0, drivers: 0, rating: 0 };
-  }
+  if (!url || !key) return { orders: 0, drivers: 0, rating: 0 };
 
   try {
-    const headers: HeadersInit = {
-      apikey:        key,
-      Authorization: `Bearer ${key}`,
-    };
+    const headers: HeadersInit = { apikey: key, Authorization: `Bearer ${key}` };
 
     const [ordersRes, driversRes] = await Promise.all([
-      fetch(`${url}/rest/v1/orders?select=count`, { headers, next: { revalidate: 0 } }),
-      fetch(`${url}/rest/v1/drivers?select=online,rating`, { headers, next: { revalidate: 0 } }),
+      // HEAD + Prefer:count=exact → count dans Content-Range header ("0-146/147")
+      fetch(`${url}/rest/v1/orders?select=*`, {
+        method: "HEAD",
+        headers: { ...headers, Prefer: "count=exact" },
+        next: { revalidate: 0 },
+      }),
+      fetch(`${url}/rest/v1/drivers?select=online,rating`, {
+        headers,
+        next: { revalidate: 0 },
+      }),
     ]);
 
-    console.log("[getLiveStats] orders status:", ordersRes.status, "| drivers status:", driversRes.status);
+    if (!ordersRes.ok || !driversRes.ok) return { orders: 0, drivers: 0, rating: 0 };
 
-    if (!ordersRes.ok || !driversRes.ok) {
-      const errText = await ordersRes.text().catch(() => "?");
-      console.error("[getLiveStats] fetch error:", errText);
-      return { orders: 0, drivers: 0, rating: 0 };
-    }
+    const contentRange = ordersRes.headers.get("content-range"); // "0-146/147"
+    const orderCount   = contentRange ? parseInt(contentRange.split("/")[1] ?? "0", 10) : 0;
 
-    const ordersJson  = await ordersRes.json()  as { count: number | string }[];
-    const driversJson = await driversRes.json() as { online: boolean; rating: number }[];
-
-    console.log("[getLiveStats] ordersJson:", JSON.stringify(ordersJson));
-    console.log("[getLiveStats] driversJson length:", driversJson.length);
-
-    const orderCount  = Number(ordersJson[0]?.count ?? 0);
-    const onlineCount = driversJson.filter(d => d.online).length;
-    const avgRating   = driversJson.length > 0
+    const driversJson  = await driversRes.json() as { online: boolean; rating: number }[];
+    const onlineCount  = driversJson.filter(d => d.online).length;
+    const avgRating    = driversJson.length > 0
       ? Math.round((driversJson.reduce((s, d) => s + (Number(d.rating) || 0), 0) / driversJson.length) * 10) / 10
       : 4.7;
 
-    console.log("[getLiveStats] result:", { orderCount, onlineCount, avgRating });
     return { orders: orderCount, drivers: onlineCount, rating: avgRating };
-  } catch (e) {
-    console.error("[getLiveStats] exception:", e);
+  } catch {
     return { orders: 0, drivers: 0, rating: 0 };
   }
 }
