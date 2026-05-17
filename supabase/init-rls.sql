@@ -1,22 +1,57 @@
 -- ============================================================
--- YONNE — Initialisation RLS
+-- YONNE — Init RLS + tables manquantes
 -- Coller dans Supabase Dashboard → SQL Editor → Run
 -- ============================================================
 
--- Active RLS sur toutes les tables
-alter table if exists drivers     enable row level security;
-alter table if exists orders      enable row level security;
-alter table if exists merchants   enable row level security;
-alter table if exists users       enable row level security;
-alter table if exists sav_tickets enable row level security;
-alter table if exists sav_messages enable row level security;
-alter table if exists order_messages enable row level security;
-alter table if exists admin_messages enable row level security;
-alter table if exists driver_withdrawals enable row level security;
-alter table if exists catalogue_items enable row level security;
-alter table if exists api_rate_limits enable row level security;
+-- ── Créer les tables manquantes ──────────────────────────────
 
--- ── Policies permissives MVP (à restreindre en production) ──────────────
+create table if not exists admin_messages (
+  id           bigserial   primary key,
+  subject_type text        not null check (subject_type in ('merchant', 'driver')),
+  subject_id   text        not null,
+  from_role    text        not null check (from_role in ('admin', 'merchant', 'driver')),
+  text         text        not null,
+  sent_at      timestamptz not null default now()
+);
+
+create table if not exists driver_withdrawals (
+  id          text        primary key default gen_random_uuid()::text,
+  driver_id   text        references drivers(id) on delete set null,
+  amount      integer     not null,
+  phone       text        not null,
+  provider    text        not null check (provider in ('wave', 'orange')),
+  created_at  timestamptz not null default now()
+);
+
+create table if not exists api_rate_limits (
+  key       text        primary key,
+  count     integer     not null default 1,
+  reset_at  timestamptz not null
+);
+
+create table if not exists platform_settings (
+  key        text primary key,
+  value      jsonb not null,
+  updated_at timestamptz default now()
+);
+
+-- ── Activer RLS sur toutes les tables ────────────────────────
+
+alter table drivers            enable row level security;
+alter table orders             enable row level security;
+alter table merchants          enable row level security;
+alter table users              enable row level security;
+alter table sav_tickets        enable row level security;
+alter table sav_messages       enable row level security;
+alter table order_messages     enable row level security;
+alter table admin_messages     enable row level security;
+alter table driver_withdrawals enable row level security;
+alter table catalogue_items    enable row level security;
+alter table api_rate_limits    enable row level security;
+alter table platform_settings  enable row level security;
+
+-- ── Policies permissives MVP ──────────────────────────────────
+
 -- drivers
 drop policy if exists "anon read drivers"  on drivers;
 drop policy if exists "anon write drivers" on drivers;
@@ -60,16 +95,16 @@ create policy "anon read order_messages"  on order_messages for select using (tr
 create policy "anon write order_messages" on order_messages for all    using (true) with check (true);
 
 -- admin_messages
-drop policy if exists "admin read admin_messages"  on admin_messages;
-drop policy if exists "admin write admin_messages" on admin_messages;
-create policy "admin read admin_messages"  on admin_messages for select using (true);
-create policy "admin write admin_messages" on admin_messages for all    using (true) with check (true);
+drop policy if exists "anon read admin_messages"  on admin_messages;
+drop policy if exists "anon write admin_messages" on admin_messages;
+create policy "anon read admin_messages"  on admin_messages for select using (true);
+create policy "anon write admin_messages" on admin_messages for all    using (true) with check (true);
 
 -- driver_withdrawals
-drop policy if exists "driver read own withdrawals"  on driver_withdrawals;
-drop policy if exists "driver write own withdrawals" on driver_withdrawals;
-create policy "driver read own withdrawals"  on driver_withdrawals for select using (true);
-create policy "driver write own withdrawals" on driver_withdrawals for all    using (true) with check (true);
+drop policy if exists "anon read driver_withdrawals"  on driver_withdrawals;
+drop policy if exists "anon write driver_withdrawals" on driver_withdrawals;
+create policy "anon read driver_withdrawals"  on driver_withdrawals for select using (true);
+create policy "anon write driver_withdrawals" on driver_withdrawals for all    using (true) with check (true);
 
 -- catalogue_items
 drop policy if exists "anon read catalogue"  on catalogue_items;
@@ -81,11 +116,15 @@ create policy "anon write catalogue" on catalogue_items for all    using (true) 
 drop policy if exists "anon ratelimit" on api_rate_limits;
 create policy "anon ratelimit" on api_rate_limits for all using (true) with check (true);
 
--- ============================================================
--- Vérification — doit afficher les comptes réels
--- ============================================================
+-- platform_settings
+drop policy if exists "anon read platform_settings"  on platform_settings;
+drop policy if exists "anon write platform_settings" on platform_settings;
+create policy "anon read platform_settings"  on platform_settings for select using (true);
+create policy "anon write platform_settings" on platform_settings for all    using (true) with check (true);
+
+-- ── Vérification finale ───────────────────────────────────────
 select
-  (select count(*) from orders)   as total_orders,
-  (select count(*) from drivers)  as total_drivers,
-  (select count(*) from merchants)as total_merchants,
-  (select count(*) from users)    as total_users;
+  (select count(*) from orders)    as total_orders,
+  (select count(*) from drivers)   as total_drivers,
+  (select count(*) from merchants) as total_merchants,
+  (select count(*) from users)     as total_users;
