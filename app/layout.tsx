@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import { Inter, JetBrains_Mono } from "next/font/google";
+import { NextIntlClientProvider } from "next-intl";
+import { getMessages } from "next-intl/server";
 import { Toaster } from "@/components/ui/sonner";
 import { NavProgress } from "@/components/ui/NavProgress";
 import { DataProvider } from "@/components/providers/DataProvider";
@@ -30,14 +32,17 @@ export const viewport: Viewport = {
   themeColor: "#FAF7F0",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const messages = await getMessages();
   return (
     <html lang="fr" className={`${geist.variable} ${inter.variable} ${jetbrains.variable}`}>
       <body>
-        <ServiceWorkerRegistrar />
-        <NavProgress />
-        <DataProvider>{children}</DataProvider>
-        <Toaster />
+        <NextIntlClientProvider messages={messages}>
+          <ServiceWorkerRegistrar />
+          <NavProgress />
+          <DataProvider>{children}</DataProvider>
+          <Toaster position="top-center" richColors />
+        </NextIntlClientProvider>
       </body>
     </html>
   );

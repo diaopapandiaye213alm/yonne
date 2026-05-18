@@ -3,8 +3,9 @@
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { zoneActivity } from "@/lib/mock-data/analytics";
-import { MapPin, Plus, Zap, ToggleLeft, ToggleRight, TrendingUp, X } from "lucide-react";
+import { MapPin, Plus, Zap, ToggleLeft, ToggleRight, TrendingUp, X, Globe } from "lucide-react";
 import { useT } from "@/lib/i18n";
+import { SENEGAL_REGIONS } from "@/lib/senegal-locations";
 
 interface Zone {
   id: string;
@@ -75,9 +76,24 @@ function ActivityBar({ orders, max }: { orders: number; max: number }) {
   );
 }
 
+interface RegionCoverage {
+  region: string;
+  active: boolean;
+  surge_multiplier: number;
+  base_fee: number;
+}
+
+const INITIAL_COVERAGE: RegionCoverage[] = SENEGAL_REGIONS.map((r, i) => ({
+  region: r.name,
+  active: i < 4,
+  surge_multiplier: 1.0,
+  base_fee: i === 0 ? 900 : i < 3 ? 1200 : 1500 + i * 100,
+}));
+
 export default function ZonesPage() {
   const t = useT();
   const [zones,    setZones]    = useState<Zone[]>(INITIAL_ZONES); // loaded from localStorage on mount
+  const [coverage, setCoverage] = useState<RegionCoverage[]>(INITIAL_COVERAGE);
   useEffect(() => { setZones(loadZones()); }, []);
   function persistZones(next: Zone[]) {
     setZones(next);
@@ -276,6 +292,41 @@ export default function ZonesPage() {
               </div>
             );
           })}
+        </div>
+      </div>
+
+      {/* Sénégal regions coverage */}
+      <div className="bg-white rounded-lg border border-cream-200 shadow-card overflow-hidden">
+        <div className="flex items-center gap-2.5 px-5 py-3.5 border-b border-cream-100 bg-cream-50">
+          <Globe className="w-4 h-4 text-emerald-600" />
+          <h2 className="font-display font-semibold text-ink-900 text-sm">Couverture régionale Sénégal</h2>
+        </div>
+        <div className="divide-y divide-cream-50">
+          {coverage.map(rc => (
+            <div key={rc.region} className={`px-5 py-3 grid grid-cols-[1fr_80px_90px_48px] gap-3 items-center text-sm hover:bg-cream-50 transition-colors ${!rc.active ? "opacity-50" : ""}`}>
+              <span className="font-medium text-ink-900">{rc.region}</span>
+              <span className="text-xs tabular-nums text-ink-600">{rc.base_fee.toLocaleString("fr-FR")} F</span>
+              <span className={`text-xs font-medium tabular-nums px-1.5 py-0.5 rounded text-center ${
+                rc.surge_multiplier >= 1.4 ? "bg-red-100 text-red-700" :
+                rc.surge_multiplier >= 1.2 ? "bg-amber-100 text-amber-700" :
+                "bg-cream-100 text-ink-600"
+              }`}>× {rc.surge_multiplier.toFixed(1)}</span>
+              <button
+                type="button"
+                onClick={() => {
+                  setCoverage(prev => prev.map(c =>
+                    c.region === rc.region ? { ...c, active: !c.active } : c
+                  ));
+                  toast.success(`${rc.region} ${rc.active ? "désactivée" : "activée"}`);
+                }}
+                className="transition-colors"
+              >
+                {rc.active
+                  ? <ToggleRight className="w-7 h-7 text-emerald-500" />
+                  : <ToggleLeft className="w-7 h-7 text-ink-300" />}
+              </button>
+            </div>
+          ))}
         </div>
       </div>
 

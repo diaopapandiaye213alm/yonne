@@ -4,7 +4,8 @@ import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import { useT } from "@/lib/i18n";
 import { useSupabaseAuthed } from "@/components/providers/SupabaseProvider";
-import { Plus, Pencil, Trash2, X, Check, PackageSearch } from "lucide-react";
+import { Plus, Pencil, Trash2, X, Check, Inbox } from "lucide-react";
+import { EmptyState } from "@/components/ui/EmptyState";
 
 type Category = "Nourriture" | "Textile" | "Électronique" | "Pharmacie" | "Autre";
 
@@ -275,9 +276,8 @@ export default function CataloguePage() {
 
       {/* Articles grid */}
       {visible.length === 0 ? (
-        <div className="bg-white rounded-lg border border-cream-200 shadow-card py-16 flex flex-col items-center gap-3 text-center">
-          <PackageSearch className="w-10 h-10 text-ink-300" />
-          <p className="text-sm text-ink-500">Aucun article dans cette catégorie.</p>
+        <div className="bg-white rounded-lg border border-cream-200 shadow-card">
+          <EmptyState icon={Inbox} title="Aucun article dans cette catégorie" description="Ajoutez votre premier article pour commencer." />
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

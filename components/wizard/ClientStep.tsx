@@ -196,8 +196,9 @@ export function ClientStep() {
             try { localStorage.removeItem("yonne_prefill_order"); } catch { /* ignore */ }
             w.next();
           }}
+          variant="primary"
           disabled={!canNext}
-          className="bg-emerald-500 hover:bg-emerald-600"
+          className="bg-emerald-600 hover:bg-emerald-700"
         >
           Suivant
         </Button>

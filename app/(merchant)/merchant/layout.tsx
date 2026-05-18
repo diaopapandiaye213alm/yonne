@@ -10,6 +10,7 @@ import { OnboardingGuard } from "@/components/providers/OnboardingGuard";
 import { SupabaseProvider } from "@/components/providers/SupabaseProvider";
 import { StoreCleanup } from "@/components/providers/StoreCleanup";
 import { ErrorBoundary } from "@/components/providers/ErrorBoundary";
+import { MotionPage } from "@/components/ui/MotionPage";
 
 export default async function MerchantLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession();
@@ -37,7 +38,7 @@ export default async function MerchantLayout({ children }: { children: React.Rea
           <MerchantNotifier merchantId={merchant?.id} />
           <OnboardingGuard />
           <main className="flex-1 overflow-y-auto pb-16 md:pb-0">
-            <ErrorBoundary>{children}</ErrorBoundary>
+            <ErrorBoundary><MotionPage>{children}</MotionPage></ErrorBoundary>
           </main>
         </div>
       </SupabaseProvider>

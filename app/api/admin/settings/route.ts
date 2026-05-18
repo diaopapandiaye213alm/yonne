@@ -26,19 +26,15 @@ export async function GET(req: NextRequest) {
 
   const { data, error } = await supabaseAdmin
     .from("platform_settings")
-    .select("key, value");
+    .select("value")
+    .eq("key", "commissions")
+    .maybeSingle();
 
   if (error) {
-    // Table may not exist yet — return defaults
-    return NextResponse.json({ settings: null }, { headers: CORS });
+    return NextResponse.json({ config: null }, { headers: CORS });
   }
 
-  // Merge rows into a single object: { key: value }
-  const settings = Object.fromEntries(
-    (data ?? []).map(row => [row.key as string, row.value])
-  );
-
-  return NextResponse.json({ settings }, { headers: CORS });
+  return NextResponse.json({ config: data?.value ?? null }, { headers: CORS });
 }
 
 // ── POST /api/admin/settings ──────────────────────────────────────────────────
@@ -54,16 +50,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "JSON invalide" }, { status: 400, headers: CORS });
   }
 
-  // Upsert each key individually so partial updates work
-  const rows = Object.entries(body).map(([key, value]) => ({
-    key,
-    value,
-    updated_at: new Date().toISOString(),
-  }));
-
   const { error } = await supabaseAdmin
     .from("platform_settings")
-    .upsert(rows, { onConflict: "key" });
+    .upsert(
+      { key: "commissions", value: body, updated_at: new Date().toISOString() },
+      { onConflict: "key" }
+    );
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500, headers: CORS });

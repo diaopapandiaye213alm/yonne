@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import {
   Settings2, Percent, Save, TrendingUp, Truck,
-  ShieldCheck, Smartphone, Gift, BadgeDollarSign, RefreshCw,
+  ShieldCheck, Smartphone, Gift, BadgeDollarSign, RefreshCw, Crown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -21,6 +21,7 @@ interface CommissionConfig {
   paytech_fee_percent: number;
   referral_bonus: number;
   advance_fee_percent: number;
+  premium_plan_monthly: number;
 }
 
 const DEFAULTS: CommissionConfig = {
@@ -35,6 +36,7 @@ const DEFAULTS: CommissionConfig = {
   paytech_fee_percent: 2.5,
   referral_bonus: 5000,
   advance_fee_percent: 2,
+  premium_plan_monthly: 15000,
 };
 
 function SectionCard({ title, icon: Icon, children }: { title: string; icon: React.ElementType; children: React.ReactNode }) {
@@ -46,14 +48,14 @@ function SectionCard({ title, icon: Icon, children }: { title: string; icon: Rea
         </div>
         <h2 className="font-display font-semibold text-ink-900 text-sm">{title}</h2>
       </div>
-      <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-5">
         {children}
       </div>
     </div>
   );
 }
 
-function FieldInput({
+function Field({
   label, hint, value, onChange, step = 1, min = 0, max,
 }: {
   label: string; hint?: string; value: number;
@@ -61,27 +63,40 @@ function FieldInput({
 }) {
   return (
     <div className="space-y-1.5">
-      <label className="text-xs font-medium text-ink-700">{label}</label>
-      <input
-        type="number"
-        value={value}
-        step={step}
-        min={min}
-        max={max}
-        onChange={e => onChange(parseFloat(e.target.value) || 0)}
-        className="w-full h-10 rounded-lg border border-cream-200 px-3 text-sm focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400/30 tabular-nums"
-      />
+      <div className="flex items-center justify-between gap-3">
+        <label className="text-xs font-medium text-ink-700 leading-tight">{label}</label>
+        <input
+          type="number"
+          value={value}
+          step={step}
+          min={min}
+          max={max}
+          onChange={e => onChange(parseFloat(e.target.value) || 0)}
+          className="w-24 h-8 text-right rounded-lg border border-cream-200 px-2 text-sm focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400/30 tabular-nums shrink-0"
+        />
+      </div>
+      {max !== undefined && (
+        <input
+          type="range"
+          value={value}
+          step={step}
+          min={min}
+          max={max}
+          onChange={e => onChange(parseFloat(e.target.value))}
+          className="w-full accent-emerald-500 cursor-pointer"
+        />
+      )}
       {hint && <p className="text-[11px] text-ink-400">{hint}</p>}
     </div>
   );
 }
 
-function SimRow({ label, value, highlight }: { label: string; value: number; highlight?: boolean }) {
+function Row({ label, value, highlight, negative }: { label: string; value: number; highlight?: boolean; negative?: boolean }) {
   return (
     <div className={cn("flex items-center justify-between py-2.5 px-4 rounded-lg text-sm", highlight ? "bg-emerald-500/5 font-semibold" : "")}>
       <span className={highlight ? "text-emerald-700" : "text-ink-600"}>{label}</span>
-      <span className={cn("font-mono tabular-nums", highlight ? "text-emerald-600" : "text-ink-900")}>
-        {value.toLocaleString("fr-FR")} F
+      <span className={cn("font-mono tabular-nums", highlight ? "text-emerald-600" : negative ? "text-red-500" : "text-ink-900")}>
+        {negative ? "−" : ""}{Math.abs(value).toLocaleString("fr-FR")} F
       </span>
     </div>
   );
@@ -96,8 +111,8 @@ export default function CommissionsPage() {
   useEffect(() => {
     fetch("/api/admin/settings")
       .then(r => r.ok ? r.json() : null)
-      .then((data: { settings?: CommissionConfig } | null) => {
-        if (data?.settings) setConfig({ ...DEFAULTS, ...data.settings });
+      .then((data: { config?: CommissionConfig } | null) => {
+        if (data?.config) setConfig({ ...DEFAULTS, ...data.config });
       })
       .catch(() => null)
       .finally(() => setLoading(false));
@@ -124,13 +139,16 @@ export default function CommissionsPage() {
     }
   }
 
-  // Simulator calculations
+  // Simulator
   const platformFee    = Math.round(simAmount * config.platform_fee_percent / 100 + config.fixed_fee);
   const driverShare    = Math.round(platformFee * config.driver_share_percent / 100);
   const yonneNet       = platformFee - driverShare;
   const paytechFee     = Math.round(platformFee * config.paytech_fee_percent / 100);
   const yonneAfterFees = yonneNet - paytechFee;
   const insuranceFee   = Math.max(config.insurance_min, Math.round(simAmount * config.insurance_percent / 100));
+  const breakevenOrders = yonneAfterFees > 0
+    ? Math.ceil(config.premium_plan_monthly / yonneAfterFees)
+    : 0;
 
   if (loading) {
     return (
@@ -153,38 +171,36 @@ export default function CommissionsPage() {
           <p className="text-sm text-ink-500 mt-1">Paramètres financiers de la plateforme</p>
         </div>
         <Button
-          variant="primary"
-          size="md"
           onClick={save}
           disabled={saving}
-          className="hidden sm:inline-flex"
+          icon={saving ? RefreshCw : Save}
+          className={cn("hidden sm:inline-flex", saving && "[&_svg]:animate-spin")}
         >
-          {saving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
           Enregistrer
         </Button>
       </div>
 
       {/* Platform commission */}
       <SectionCard title="Commission plateforme" icon={Percent}>
-        <FieldInput
+        <Field
           label="Pourcentage commission (%)"
           hint="Appliqué sur le montant de la commande"
           value={config.platform_fee_percent}
           onChange={v => set("platform_fee_percent", v)}
           step={0.5} min={0} max={50}
         />
-        <FieldInput
+        <Field
           label="Frais fixe par commande (F CFA)"
           hint="S'ajoute au % commission"
           value={config.fixed_fee}
           onChange={v => set("fixed_fee", v)}
-          step={50} min={0}
+          step={50} min={0} max={2000}
         />
       </SectionCard>
 
       {/* Driver share */}
       <SectionCard title="Rémunération livreur" icon={Truck}>
-        <FieldInput
+        <Field
           label="% des frais reversés au livreur"
           hint="Le reste constitue la marge YONNE"
           value={config.driver_share_percent}
@@ -195,20 +211,20 @@ export default function CommissionsPage() {
 
       {/* Surge pricing */}
       <SectionCard title="Tarification dynamique (Surge)" icon={TrendingUp}>
-        <FieldInput
+        <Field
           label="Multiplicateur normal"
           value={config.surge_base}
           onChange={v => set("surge_base", v)}
           step={0.1} min={1} max={5}
         />
-        <FieldInput
+        <Field
           label="Multiplicateur heures de pointe"
           hint="Matin 7h-9h / Soir 17h-20h"
           value={config.surge_peak}
           onChange={v => set("surge_peak", v)}
           step={0.1} min={1} max={5}
         />
-        <FieldInput
+        <Field
           label="Multiplicateur fêtes (Tabaski / Korité)"
           value={config.surge_tabaski}
           onChange={v => set("surge_tabaski", v)}
@@ -218,23 +234,23 @@ export default function CommissionsPage() {
 
       {/* Insurance */}
       <SectionCard title="Assurance colis" icon={ShieldCheck}>
-        <FieldInput
+        <Field
           label="% du montant de la commande"
           value={config.insurance_percent}
           onChange={v => set("insurance_percent", v)}
           step={0.1} min={0} max={10}
         />
-        <FieldInput
+        <Field
           label="Minimum F CFA"
           value={config.insurance_min}
           onChange={v => set("insurance_min", v)}
-          step={50} min={0}
+          step={50} min={0} max={5000}
         />
       </SectionCard>
 
       {/* PayTech */}
       <SectionCard title="Frais PayTech (agrégateur paiement)" icon={Smartphone}>
-        <FieldInput
+        <Field
           label="Frais agrégateur (%)"
           hint="Déduits de la marge YONNE"
           value={config.paytech_fee_percent}
@@ -243,16 +259,27 @@ export default function CommissionsPage() {
         />
       </SectionCard>
 
+      {/* Plan Premium */}
+      <SectionCard title="Plan Premium marchand" icon={Crown}>
+        <Field
+          label="Abonnement mensuel (F CFA)"
+          hint="Coût du plan Premium pour les marchands"
+          value={config.premium_plan_monthly}
+          onChange={v => set("premium_plan_monthly", v)}
+          step={500} min={0} max={100000}
+        />
+      </SectionCard>
+
       {/* Bonus & advances */}
       <SectionCard title="Bonus & avances livreur" icon={Gift}>
-        <FieldInput
+        <Field
           label="Bonus parrainage livreur (F CFA)"
           hint="Versé au parrain à la 1ère livraison"
           value={config.referral_bonus}
           onChange={v => set("referral_bonus", v)}
-          step={500} min={0}
+          step={500} min={0} max={50000}
         />
-        <FieldInput
+        <Field
           label="Frais avance sur salaire (%)"
           hint="Prélevé sur le montant de l'avance"
           value={config.advance_fee_percent}
@@ -271,34 +298,57 @@ export default function CommissionsPage() {
         </div>
         <div className="p-5 space-y-4">
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-ink-700">Montant de la commande (F CFA)</label>
+            <div className="flex items-center justify-between gap-3">
+              <label className="text-xs font-medium text-ink-700">Montant de la commande (F CFA)</label>
+              <input
+                type="number"
+                value={simAmount}
+                step={1000}
+                min={0}
+                onChange={e => setSimAmount(parseFloat(e.target.value) || 0)}
+                className="w-28 h-8 text-right rounded-lg border border-cream-200 px-2 text-sm font-mono focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400/30 shrink-0"
+              />
+            </div>
             <input
-              type="number"
+              type="range"
               value={simAmount}
               step={1000}
-              min={0}
-              onChange={e => setSimAmount(parseFloat(e.target.value) || 0)}
-              className="w-full h-10 rounded-lg border border-cream-200 px-3 text-sm font-mono focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400/30"
+              min={1000}
+              max={200000}
+              onChange={e => setSimAmount(parseFloat(e.target.value))}
+              className="w-full accent-emerald-500 cursor-pointer"
             />
           </div>
           <div className="rounded-xl border border-cream-100 divide-y divide-cream-100 overflow-hidden">
-            <SimRow label="Commission totale prélevée" value={platformFee} />
-            <SimRow label="Part livreur" value={driverShare} />
-            <SimRow label="Marge brute YONNE" value={yonneNet} />
-            <SimRow label={`Frais PayTech (${config.paytech_fee_percent}%)`} value={-paytechFee} />
-            <SimRow label="Marge nette YONNE" value={yonneAfterFees} highlight />
-            <SimRow label="Assurance colis (optionnelle)" value={insuranceFee} />
+            <Row label="Commission totale prélevée" value={platformFee} />
+            <Row label="Part livreur" value={driverShare} />
+            <Row label="Marge brute YONNE" value={yonneNet} />
+            <Row label={`Frais PayTech (${config.paytech_fee_percent}%)`} value={paytechFee} negative />
+            <Row label="Marge nette YONNE" value={yonneAfterFees} highlight />
+            <Row label="Assurance colis (optionnelle)" value={insuranceFee} />
           </div>
-          <p className="text-xs text-ink-400">
-            Taux effectif : {((platformFee / simAmount) * 100).toFixed(1)}% du montant
-          </p>
+          <div className="flex items-start justify-between gap-4 text-xs text-ink-500 pt-1">
+            <span>Taux effectif : <strong className="text-ink-700">{simAmount > 0 ? ((platformFee / simAmount) * 100).toFixed(1) : "0.0"}%</strong> du montant</span>
+            {breakevenOrders > 0 && (
+              <span className="text-right">
+                Seuil de rentabilité Premium :{" "}
+                <strong className="text-emerald-700">{breakevenOrders} commandes/mois</strong>
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
       {/* Mobile save button */}
       <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-cream-200 sm:hidden z-40">
-        <Button variant="primary" size="lg" onClick={save} disabled={saving} className="w-full">
-          {saving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+        <Button
+          onClick={save}
+          disabled={saving}
+          icon={saving ? RefreshCw : Save}
+          fullWidth
+          size="lg"
+          className={saving ? "[&_svg]:animate-spin" : ""}
+        >
           Enregistrer les commissions
         </Button>
       </div>

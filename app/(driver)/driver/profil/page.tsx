@@ -10,6 +10,7 @@ import { useSupabaseAuthed } from "@/components/providers/SupabaseProvider";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { useT } from "@/lib/i18n";
+import { RegionCitySelector } from "@/components/wizard/RegionCitySelector";
 import { PushNotifBanner } from "@/components/driver/PushNotifBanner";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -56,6 +57,8 @@ export default function ProfilPage() {
   const [editing,     setEditing]     = useState(false);
   const [editPhone,   setEditPhone]   = useState(demo.phone);
   const [editVehicle, setEditVehicle] = useState(demo.vehicle);
+  const [editRegion,  setEditRegion]  = useState("Dakar");
+  const [editCity,    setEditCity]    = useState("");
 
   const myOrders = useMemo(() => orders.filter(o => o.driverId === demo.id && o.status === "livrée"), [orders, demo.id]);
   const totalOrders = myOrders.length;
@@ -167,6 +170,12 @@ export default function ProfilPage() {
                 ))}
               </select>
             </div>
+            <RegionCitySelector
+              region={editRegion}
+              city={editCity}
+              onRegionChange={setEditRegion}
+              onCityChange={setEditCity}
+            />
           </div>
         ) : (
           <div className="mt-3 grid grid-cols-2 gap-1.5 text-sm">
@@ -174,6 +183,14 @@ export default function ProfilPage() {
             <span className="text-ink-900 font-medium text-right">{editPhone}</span>
             <span className="text-ink-500">Véhicule</span>
             <span className="text-ink-900 font-medium text-right">{editVehicle}</span>
+            {editRegion && <>
+              <span className="text-ink-500">Région</span>
+              <span className="text-ink-900 font-medium text-right">{editRegion}</span>
+            </>}
+            {editCity && <>
+              <span className="text-ink-500">Ville</span>
+              <span className="text-ink-900 font-medium text-right">{editCity}</span>
+            </>}
           </div>
         )}
       </div>

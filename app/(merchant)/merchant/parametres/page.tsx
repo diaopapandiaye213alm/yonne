@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { QRCodeSVG } from "qrcode.react";
 import { QrCode, Download, Copy } from "lucide-react";
+import { RegionCitySelector } from "@/components/wizard/RegionCitySelector";
 
 export default function ParametresPage() {
   const session = useSession();
@@ -27,9 +28,10 @@ export default function ParametresPage() {
   useEffect(() => { setOrigin(window.location.origin); }, []);
   const qrValue = merchant.id ? `${origin}/m/${merchant.id}` : "";
 
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [city,  setCity]  = useState("");
+  const [email,  setEmail]  = useState("");
+  const [phone,  setPhone]  = useState("");
+  const [city,   setCity]   = useState("");
+  const [region, setRegion] = useState("Dakar");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -75,6 +77,15 @@ export default function ParametresPage() {
           <div className="space-y-1">
             <Label htmlFor="city">Ville</Label>
             <Input id="city" value={city} onChange={e => setCity(e.target.value)} />
+          </div>
+          <div className="space-y-1">
+            <Label>Zone de livraison</Label>
+            <RegionCitySelector
+              region={region}
+              city={city}
+              onRegionChange={setRegion}
+              onCityChange={setCity}
+            />
           </div>
         </div>
         <Button
