@@ -7,6 +7,7 @@ import { useSession } from "@/lib/hooks/useSession";
 import { landmarks } from "@/lib/mock-data/landmarks";
 import { useT } from "@/lib/i18n";
 import { History, TrendingUp, Package, Download, Filter, Clock, Star } from "lucide-react";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { toast } from "sonner";
 
 const MONTH_LABELS = ["Jan", "Fév", "Mar", "Avr", "Mai", "Juin", "Juil", "Aoû", "Sep", "Oct", "Nov", "Déc"] as const;
@@ -185,7 +186,7 @@ export default function HistoriquePage() {
           <span className="text-xs text-ink-500">{filtered.length} commandes</span>
         </div>
         {filtered.length === 0 ? (
-          <div className="py-10 text-center text-sm text-ink-500">{t("noDeliveries")}</div>
+          <EmptyState icon={Package} title={t("noDeliveries")} size="sm" />
         ) : (
           <div className="divide-y divide-cream-100">
             {filtered.map(o => {

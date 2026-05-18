@@ -9,7 +9,7 @@ import type { StringKey } from "@/lib/i18n";
 import {
   Home, Package, Bike, Store, Wallet, BarChart3, Zap, Sparkles, Settings, LogOut,
   Bell, HeadphonesIcon, Trophy, MapPin, Umbrella, GitMerge, Gift,
-  PiggyBank, Moon, Leaf, Code2, Bot, Users, FileBarChart, ShieldCheck
+  PiggyBank, Moon, Leaf, Code2, Bot, Users, FileBarChart, ShieldCheck, Percent
 } from "lucide-react";
 
 type NavItem = {
@@ -28,8 +28,9 @@ const sections: Section[] = [
       { href: "/admin/livreurs",  key: "navDrivers",   icon: Bike },
       { href: "/admin/marchands", key: "navMerchants", icon: Store },
       { href: "/admin/clients",   key: "navClients",   icon: Users },
-      { href: "/admin/finance",   key: "navFinance",   icon: Wallet },
-      { href: "/admin/analytics", key: "navAnalytics", icon: BarChart3 },
+      { href: "/admin/finance",      key: "navFinance",      icon: Wallet },
+      { href: "/admin/commissions",  key: "navCommissions",  icon: Percent },
+      { href: "/admin/analytics",    key: "navAnalytics",    icon: BarChart3 },
       { href: "/admin/rapport",   key: "navRapport",   icon: FileBarChart },
       { href: "/admin/surge",     key: "navSurge",     icon: Zap },
       { href: "/admin/tabaski",   key: "navTabaski",   icon: Sparkles, badge: "J-7" },

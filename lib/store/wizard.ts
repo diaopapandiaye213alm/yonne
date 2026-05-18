@@ -13,6 +13,9 @@ interface WizardState {
   amount: number;
   paymentMethod: PaymentMethod | null;
   insurance: boolean;
+  // Localisation Sénégal
+  deliveryRegion: string;
+  deliveryCity: string;
   // Surge pricing — calculé côté serveur à l'étape 2
   surgeMultiplier: number;
   surgeZoneId: string | null;
@@ -29,6 +32,8 @@ const initial = {
   clientPhone: "",
   landmarkId: null,
   addressDetails: "",
+  deliveryRegion: "Dakar",
+  deliveryCity: "",
   amount: 0,
   paymentMethod: null,
   insurance: false,

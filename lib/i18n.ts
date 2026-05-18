@@ -23,6 +23,7 @@ const dict = {
   navDrivers:       { fr: "Livreurs",         en: "Drivers",        wo: "Yëgëlkat yi" },
   navMerchants:     { fr: "Commerçants",      en: "Merchants",      wo: "Jëkërbaat yi" },
   navFinance:       { fr: "Finance",          en: "Finance",        wo: "Xaalis" },
+  navCommissions:   { fr: "Commissions",      en: "Commissions",    wo: "Commissions" },
   navAnalytics:     { fr: "Analytics",        en: "Analytics",      wo: "Xabar yi" },
   navSurge:         { fr: "Surge",            en: "Surge",          wo: "Surge" },
   navTabaski:       { fr: "Tabaski",          en: "Tabaski",        wo: "Tabaski" },
@@ -84,6 +85,13 @@ const dict = {
   newOrder:         { fr: "Nouvelle commande",     en: "New order",         wo: "Komaand bu bees" },
   recentOrders:     { fr: "Dernières commandes",   en: "Recent orders",     wo: "Komaand yi mujj" },
   vsLastMonth:      { fr: "vs mois passé",         en: "vs last month",     wo: "ak wiyu" },
+
+  // ── Driver bottom nav ──
+  navCarte:         { fr: "Carte",                 en: "Map",               wo: "Kaart" },
+  navLivraison:     { fr: "Livraison",             en: "Delivery",          wo: "Yëgël" },
+  navGains:         { fr: "Gains",                 en: "Earnings",          wo: "Xaalis" },
+  navClassement:    { fr: "Classement",            en: "Ranking",           wo: "Xayma" },
+  navProfil:        { fr: "Profil",                en: "Profile",           wo: "Xeex bi" },
 
   // ── Driver ──
   myEarnings:       { fr: "Mes gains",             en: "My earnings",       wo: "Sam xaalis yi" },

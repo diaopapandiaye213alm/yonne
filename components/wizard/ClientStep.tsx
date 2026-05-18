@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { searchLandmarks, landmarks } from "@/lib/mock-data/landmarks";
-import { MapPin, User } from "lucide-react";
+import { MapPin, User, Globe } from "lucide-react";
+import { SENEGAL_REGIONS, citiesForRegion } from "@/lib/senegal-locations";
 
 type RecentClient = {
   name: string;
@@ -153,6 +154,35 @@ export function ClientStep() {
             )}
           </>
         )}
+      </div>
+
+      {/* Region + City selectors */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label className="flex items-center gap-1.5"><Globe className="w-3.5 h-3.5 text-ink-400" /> Région</Label>
+          <select
+            value={w.deliveryRegion}
+            onChange={e => { w.set("deliveryRegion", e.target.value); w.set("deliveryCity", ""); }}
+            className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+          >
+            {SENEGAL_REGIONS.map(r => (
+              <option key={r.name} value={r.name}>{r.name}</option>
+            ))}
+          </select>
+        </div>
+        <div className="space-y-2">
+          <Label>Ville / Commune</Label>
+          <select
+            value={w.deliveryCity}
+            onChange={e => w.set("deliveryCity", e.target.value)}
+            className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+          >
+            <option value="">— Toutes les villes —</option>
+            {citiesForRegion(w.deliveryRegion).map(c => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
+        </div>
       </div>
 
       <div className="space-y-2">

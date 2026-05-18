@@ -7,6 +7,7 @@ import { FilterBar, FilterDef } from "@/components/admin/FilterBar";
 import { downloadCsv } from "@/lib/utils/csv";
 import type { Order, OrderStatus } from "@/lib/mock-data/orders";
 import { OrderListSkeleton, KpiCardSkeleton } from "@/components/ui/OrderSkeleton";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { InlineErrorBanner } from "@/components/driver/OfflineBanner";
 import {
   Package, Truck, CheckCircle2, Banknote, MapPin, Share2, RotateCcw,
@@ -420,16 +421,13 @@ export default function MesCommandesPage() {
         {loading && orders.length === 0 ? (
           <OrderListSkeleton rows={8} />
         ) : filtered.length === 0 ? (
-          <div className="rounded-xl border border-cream-200 bg-white shadow-card p-12 text-center">
-            <Package className="w-10 h-10 text-ink-300 mx-auto mb-3" />
-            <p className="font-display font-semibold text-ink-700">Aucune commande trouvée</p>
-            <p className="text-sm text-ink-400 mt-1">Essayez de modifier le statut ou la recherche.</p>
-            <button
-              type="button" onClick={handleReset}
-              className="mt-4 text-xs font-semibold text-emerald-600 hover:underline"
-            >
-              Réinitialiser les filtres
-            </button>
+          <div className="rounded-xl border border-cream-200 bg-white shadow-card">
+            <EmptyState
+              icon={Package}
+              title="Aucune commande trouvée"
+              description="Essayez de modifier le statut ou la recherche."
+              action={{ label: "Réinitialiser les filtres", onClick: handleReset }}
+            />
           </div>
         ) : (
           <div className="rounded-xl border border-cream-200 bg-white shadow-card overflow-hidden">
